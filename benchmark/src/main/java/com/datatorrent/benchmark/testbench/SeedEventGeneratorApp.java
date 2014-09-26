@@ -10,8 +10,8 @@ import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.StreamingApplication;
 import static com.datatorrent.benchmark.ApplicationFixed.QUEUE_CAPACITY;
 import com.datatorrent.benchmark.WordCountOperator;
-import com.datatorrent.lib.io.ConsoleOutputOperator;
 import com.datatorrent.lib.testbench.SeedEventGenerator;
+import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 
 
@@ -30,7 +30,7 @@ public class SeedEventGeneratorApp implements StreamingApplication
       seedEvent.addKeyData("y", 0, 9);
       seedEvent.addKeyData("gender", 0, 1);
       seedEvent.addKeyData("age", 10, 19);
-      WordCountOperator<byte[]> counter = dag.addOperator("Counter", new WordCountOperator<byte[]>());
+      WordCountOperator<HashMap<String,String>> counter = dag.addOperator("Counter", new WordCountOperator<HashMap<String,String>>());
       dag.getMeta(counter).getMeta(counter.input).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
 
       dag.addStream("SeedEventGenerator2Counter", seedEvent.string_data ,  counter.input).setLocality(locality);
