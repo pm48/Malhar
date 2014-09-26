@@ -32,7 +32,7 @@ import com.datatorrent.lib.io.fs.AbstractHdfsRollingFileOutputOperator;
  *
  * @since 0.9.4
  */
-public class HdfsByteOutputOperator extends AbstractHdfsRollingFileOutputOperator<byte[]>
+public class HDFSByteOutputOperator extends AbstractHdfsRollingFileOutputOperator<byte[]>
 {
 
   /**

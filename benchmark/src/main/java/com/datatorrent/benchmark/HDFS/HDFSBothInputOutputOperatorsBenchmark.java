@@ -17,37 +17,40 @@ package com.datatorrent.benchmark;
 
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.DAG;
+import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
-
+import com.datatorrent.lib.io.fs.HdfsWordInputOperator;
 
 import org.apache.hadoop.conf.Configuration;
 
 /**
- * Application used to benchmark HDFS output operator
- * The DAG consists of random word generator operator that is
- * connected to HDFS output operator that writes to a file on HDFS.<p>
+ * Application used to benchmark both HDFS input and HDFS output operators
+ * connected in a DAG<p>
  *
- * @since 0.9.4
+ * @since 0.3.2
  */
 
-@ApplicationAnnotation(name="HDFSOutputOperatorBenchmarkingApp")
-public abstract class HDFSOutputOperatorBenchmark
+@ApplicationAnnotation(name="HDFSBothInOutOperatorsBenchmarkingApp")
+public abstract class HDFSBothInputOutputOperatorsBenchmark
 {
   static abstract class AbstractApplication implements StreamingApplication
   {
-    public static final int QUEUE_CAPACITY = 32 * 1024;
+    static final int QUEUE_CAPACITY = 32 * 1024;
 
     @Override
     public void populateDAG(DAG dag, Configuration conf)
     {
-      RandomWordInputModule wordGenerator = dag.addOperator("wordGenerator", RandomWordInputModule.class);
+      HdfsWordInputOperator wordGenerator =  dag.addOperator("wordGenerator", HdfsWordInputOperator.class);
+      wordGenerator.setFilePath("hdfs:///user/hadoop/hdfsOperatorBenchmarking/2/transactions.out.part0");
+      dag.getMeta(wordGenerator).getMeta(wordGenerator.output).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
    
-      HdfsByteOutputOperator hdfsOutputOperator = dag.addOperator("hdfsOutputOperator", new HdfsByteOutputOperator());
-      hdfsOutputOperator.setFilePath("hdfsOperatorBenchmarking" + "/%(contextId)/transactions.out.part%(partIndex)");
+      HDFSByteOutputOperator hdfsOutputOperator = dag.addOperator("hdfsOutputOperator", new HDFSByteOutputOperator());
+      hdfsOutputOperator.setFilePath("hdfsBothInputOutputOperatorBenchmarking" + "/%(contextId)/transactions.out.part%(partIndex)");
       hdfsOutputOperator.setAppend(false);
-   
-      dag.addStream("Generator2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input).setLocality(getLocality());      
+      dag.getMeta(wordGenerator).getMeta(wordGenerator.output).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
+ 
+      dag.addStream("HDFSInput2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input).setLocality(getLocality());      
     }
     
     public abstract Locality getLocality();
@@ -57,7 +60,7 @@ public abstract class HDFSOutputOperatorBenchmark
   /**
    * Let the engine decide how to best place the 2 operators.
    */
-  @ApplicationAnnotation(name="HDFSOutputOperatorBenchmarkNoLocality")
+  @ApplicationAnnotation(name="HDFSBothInOutOperatorsBenchmarkNoLocality")
   public static class NoLocality extends AbstractApplication
   {
     @Override
@@ -70,7 +73,7 @@ public abstract class HDFSOutputOperatorBenchmark
   /**
    * Place the 2 operators so that they are in the same Rack.
    */
-  @ApplicationAnnotation(name="HDFSOutputOperatorBenchmarkRackLocality")
+  @ApplicationAnnotation(name="HDFSBothInOutOperatorsBenchmarkRackLocality")
   public static class RackLocal extends AbstractApplication
   {
     @Override
@@ -83,7 +86,7 @@ public abstract class HDFSOutputOperatorBenchmark
   /**
    * Place the 2 operators so that they are in the same node.
    */
-  @ApplicationAnnotation(name="HDFSOutputOperatorBenchmarkNodeLocality")
+  @ApplicationAnnotation(name="HDFSBothInOutOperatorsBenchmarkNodeLocality")
   public static class NodeLocal extends AbstractApplication
   {
     @Override
@@ -96,7 +99,7 @@ public abstract class HDFSOutputOperatorBenchmark
   /**
    * Place the 2 operators so that they are in the same container.
    */
-  @ApplicationAnnotation(name="HDFSOutputOperatorBenchmarkContainerLocality")
+  @ApplicationAnnotation(name="HDFSBothInOutOperatorsBenchmarkContainerLocality")
   public static class ContainerLocal extends AbstractApplication
   {
     @Override
@@ -109,7 +112,7 @@ public abstract class HDFSOutputOperatorBenchmark
   /**
    * Place the 2 operators so that they are in the same thread.
    */
-  @ApplicationAnnotation(name="HDFSOutputOperatorBenchmarkThreadLocality")
+  @ApplicationAnnotation(name="HDFSBothInOutOperatorsBenchmarkThreadLocality")
   public static class ThreadLocal extends AbstractApplication
   {
     @Override

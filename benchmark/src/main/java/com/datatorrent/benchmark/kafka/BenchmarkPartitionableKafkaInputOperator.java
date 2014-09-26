@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.contrib.kafka.benchmark;
+package com.datatorrent.benchmark.kafka;
 
 import kafka.message.Message;
 
@@ -30,7 +30,7 @@ public class BenchmarkPartitionableKafkaInputOperator extends AbstractPartitiona
 {
 
   public transient DefaultOutputPort<String>  oport = new DefaultOutputPort<String>();
-  
+
   @Override
   protected AbstractPartitionableKafkaInputOperator cloneOperator()
   {
@@ -42,5 +42,5 @@ public class BenchmarkPartitionableKafkaInputOperator extends AbstractPartitiona
   {
     oport.emit("Received");
   }
-  
+
 }

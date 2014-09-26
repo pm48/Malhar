@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.lib.stream;
+package com.datatorrent.benchmark.stream;
 
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.StreamingApplication;
+import com.datatorrent.lib.stream.DevNullCounter;
+import com.datatorrent.lib.testbench.RandomEventGenerator;
 import org.apache.hadoop.conf.Configuration;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 /**
  *
@@ -40,25 +41,21 @@ public class DevNullCounterBenchmark implements StreamingApplication
 {
   private final Locality locality = null;
 
-  private static Logger log = LoggerFactory.getLogger(DevNullCounter.class);
-
   /**
    * Tests both string and non string schema
+   * @param dag
+   * @param conf
    */
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
-    DevNullCounter oper = new DevNullCounter();
+    RandomEventGenerator rand = dag.addOperator("rand", new RandomEventGenerator());
+    rand.setMinvalue(0);
+    rand.setMaxvalue(1000);
+    rand.setTuplesBlast(200);
+    DevNullCounter oper = dag.addOperator("oper",new DevNullCounter());
     oper.setRollingwindowcount(5);
-    oper.setup(null);
+    dag.addStream("dev", rand.integer_data, oper.data).setLocality(locality);
 
-    oper.beginWindow(0);
-    long numtuples = 100000000;
-    Object o = new Object();
-    for (long i = 0; i < numtuples; i++) {
-      oper.data.process(o);
-    }
-    oper.endWindow();
-    log.info(String.format("\n*******************************************************\nnumtuples(%d)", numtuples));
   }
 }

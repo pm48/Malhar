@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.contrib.kafka.benchmark;
+package com.datatorrent.benchmark.kafka;
 
 import kafka.producer.Partitioner;
 import kafka.utils.VerifiableProperties;
@@ -24,13 +24,11 @@ import kafka.utils.VerifiableProperties;
  * Key is a int string
  * Messages are distributed to 2 partitions
  * One for even number, the other for odd
- *
- * @since 0.9.3
  */
 public class KafkaTestPartitioner implements Partitioner
 {
   public KafkaTestPartitioner (VerifiableProperties props) {
-    
+
   }
   @Override
   public int partition(Object key, int num_Partitions)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.datatorrent.contrib.kafka.benchmark;
+package com.datatorrent.benchmark.kafka;
 
 import java.util.HashSet;
 import java.util.Properties;
@@ -43,7 +43,7 @@ import com.datatorrent.contrib.kafka.SimpleKafkaConsumer;
 @ApplicationAnnotation(name="KafkaInputBenchmark")
 public class KafkaInputBenchmark implements StreamingApplication
 {
-  
+
   public static class CollectorModule extends BaseOperator
   {
     public final transient DefaultInputPort<String> inputPort = new DefaultInputPort<String>() {
@@ -55,21 +55,21 @@ public class KafkaInputBenchmark implements StreamingApplication
     };
 
   }
-  
+
 
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
-    
+
     dag.setAttribute(DAG.APPLICATION_NAME, "KafkaInputOperatorPartitionDemo");
     BenchmarkPartitionableKafkaInputOperator bpkio = new BenchmarkPartitionableKafkaInputOperator();
-    
-    
+
+
     String type = conf.get("kafka.consumertype");
-    
+
     KafkaConsumer consumer = null;
-    
-    
+
+
     if (type.equals("highlevel")) {
       // Create template high-level consumer
 
@@ -82,8 +82,8 @@ public class KafkaInputBenchmark implements StreamingApplication
       // topic is set via property file
       consumer = new SimpleKafkaConsumer(null, 10000, 100000, "test_kafka_autop_client", new HashSet<Integer>());
     }
-    
-    
+
+
     bpkio.setTuplesBlast(1024 * 1024);
     bpkio.setConsumer(consumer);
     bpkio = dag.addOperator("KafkaBenchmarkConsumer", bpkio);
@@ -93,7 +93,7 @@ public class KafkaInputBenchmark implements StreamingApplication
     dag.setInputPortAttribute(cm.inputPort, PortContext.PARTITION_PARALLEL, true);
     dag.setAttribute(bpkio, OperatorContext.INITIAL_PARTITION_COUNT, 1);
 //    dag.setAttribute(bpkio, OperatorContext.STATS_LISTENER, KafkaMeterStatsListener.class);
- 
+
 
   }
 

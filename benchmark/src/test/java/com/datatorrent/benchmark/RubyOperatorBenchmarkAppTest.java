@@ -15,6 +15,7 @@
  */
 package com.datatorrent.benchmark;
 
+import com.datatorrent.benchmark.script.RubyOperatorBenchmarkApplication;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
