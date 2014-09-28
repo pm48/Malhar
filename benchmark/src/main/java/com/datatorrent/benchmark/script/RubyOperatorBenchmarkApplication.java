@@ -15,6 +15,7 @@
  */
 package com.datatorrent.benchmark.script;
 
+import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.DAG.Locality;
@@ -30,15 +31,15 @@ import org.apache.hadoop.conf.Configuration;
  *
  * Application to benchmark the performance of ruby operator.
  * The operator was tested on the DT cluster and the
- * number of tuples processed by the operator per second were around 10,000
+ * number of tuples processed by the operator per second were around 11,500
  *
  * @since 1.0.4
  */
 
-
+// Dependent on libjar: jruby-core-1.7.12.jar
 @ApplicationAnnotation(name="RubyOperatorBenchmarkApplication")
 public class RubyOperatorBenchmarkApplication implements StreamingApplication {
-
+  public static final int QUEUE_CAPACITY = 16 * 1024;
   private final Locality locality = null;
   @Override
   public void populateDAG(DAG dag, Configuration conf) {
@@ -58,7 +59,8 @@ public class RubyOperatorBenchmarkApplication implements StreamingApplication {
     ruby.setPassThru(true);
 
     ConsoleOutputOperator console = dag.addOperator("console", new ConsoleOutputOperator());
-
+    dag.getMeta(console).getMeta(console.input).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
+    dag.getMeta(ruby).getMeta(ruby.result).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     dag.addStream("rand_randMap", rand.integer_data, randMap.input).setLocality(Locality.THREAD_LOCAL);
     dag.addStream("randMap_ruby", randMap.map_data, ruby.inBindings).setLocality(locality);
     dag.addStream("ruby_console", ruby.result, console.input).setLocality(locality);

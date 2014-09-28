@@ -15,18 +15,17 @@
  */
 package com.datatorrent.benchmark.stream;
 
+import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.lib.stream.DevNullCounter;
-import com.datatorrent.lib.testbench.RandomEventGenerator;
 import org.apache.hadoop.conf.Configuration;
-
-
 
 /**
  *
- * Functional tests for {@link com.datatorrent.lib.testbench.DevNullCounter}. <p>
+ * Functional tests for {@link com.datatorrent.lib.testbench.DevNullCounter}.
+ * <p>
  * <br>
  * oper.process is called a billion times<br>
  * With extremely high throughput it does not impact the performance of any other oper
@@ -40,22 +39,28 @@ import org.apache.hadoop.conf.Configuration;
 public class DevNullCounterBenchmark implements StreamingApplication
 {
   private final Locality locality = null;
+  public static final int QUEUE_CAPACITY = 16 * 1024;
 
   /**
    * Tests both string and non string schema
+   *
    * @param dag
    * @param conf
    */
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
-    RandomEventGenerator rand = dag.addOperator("rand", new RandomEventGenerator());
-    rand.setMinvalue(0);
-    rand.setMaxvalue(1000);
-    rand.setTuplesBlast(200);
-    DevNullCounter oper = dag.addOperator("oper",new DevNullCounter());
+   // RandomEventGenerator rand = dag.addOperator("rand", new RandomEventGenerator());
+   // rand.setMinvalue(0);
+   // rand.setMaxvalue(999999);
+   // rand.setTuplesBlastIntervalMillis(50);
+   // dag.getMeta(rand).getMeta(rand.integer_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
+    IntegerOperator intInput = dag.addOperator("intInput", new IntegerOperator());
+    DevNullCounter oper = dag.addOperator("oper", new DevNullCounter());
+    dag.getMeta(oper).getMeta(oper.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     oper.setRollingwindowcount(5);
-    dag.addStream("dev", rand.integer_data, oper.data).setLocality(locality);
+    dag.addStream("dev", intInput.integer_data, oper.data).setLocality(locality);
 
   }
+
 }
