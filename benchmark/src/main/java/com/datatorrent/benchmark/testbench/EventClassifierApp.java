@@ -8,28 +8,38 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.StreamingApplication;
+import com.datatorrent.lib.stream.DevNull;
 import com.datatorrent.lib.testbench.EventClassifier;
+import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
+
 /**
  *
  * @author prerna
  */
 public class EventClassifierApp implements StreamingApplication
 {
-private final Locality locality = null;
-public static final int QUEUE_CAPACITY = 16 * 1024;
+  private final Locality locality = null;
+  public static final int QUEUE_CAPACITY = 16 * 1024;
+
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
     HashMapOperator hmapOper = dag.addOperator("hmap", new HashMapOperator());
-    dag.getMeta(hmapOper).getMeta(hmapOper.string_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-
+    dag.getMeta(hmapOper).getMeta(hmapOper.hmap_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
+    HashMap<String, Double> keymap = new HashMap<String, Double>();
+    for(int i=0;i<1000;i++){
+      keymap.put("a" + i, 1.0);
+      keymap.put("b" + i, 4.0);
+      keymap.put("c" + i, 5.0);
+    }
     EventClassifier eventInput = dag.addOperator("eventInput", new EventClassifier());
-    EventClassifier eventOutput = dag.addOperator("eventOutput", new EventClassifier());
+    eventInput.setKeyMap(keymap);
     dag.getMeta(eventInput).getMeta(eventInput.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    dag.getMeta(eventOutput).getMeta(eventOutput.event).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    dag.addStream("eventtest1", hmapOper.string_data, eventInput.event).setLocality(locality);
-    dag.addStream("eventtest2", eventInput.data, eventOutput.event).setLocality(locality);
+    dag.addStream("eventtest1", hmapOper.hmap_data, eventInput.event).setLocality(locality);
+    DevNull<HashMap<String,Double>> dev = dag.addOperator("dev", new DevNull());
+
+    dag.addStream("eventtest2", eventInput.data, dev.data).setLocality(locality);
 
   }
 

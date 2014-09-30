@@ -15,7 +15,6 @@ import com.datatorrent.api.InputOperator;
 public class IntegerOperator implements InputOperator
 {
   public final transient DefaultOutputPort<Integer> integer_data = new DefaultOutputPort<Integer>();
-
   @Override
   public void emitTuples()
   {

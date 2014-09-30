@@ -4,12 +4,12 @@
  */
 package com.datatorrent.benchmark.testbench;
 
-import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.StreamingApplication;
-import com.datatorrent.benchmark.WordCountOperator;
+import com.datatorrent.lib.stream.DevNull;
 import com.datatorrent.lib.testbench.EventGenerator;
+import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -23,9 +23,15 @@ public class EventGeneratorApp implements StreamingApplication
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
-    WordCountOperator<String> counterString = dag.addOperator("counterString", new WordCountOperator<String>());
-    dag.getMeta(counterString).getMeta(counterString.input).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     EventGenerator eventGen = dag.addOperator("eventGen", new EventGenerator());
+    DevNull<String> devString = dag.addOperator("devString", new DevNull());
+    DevNull<HashMap<String,Double>> devMap = dag.addOperator("devMap", new DevNull());
+    DevNull<HashMap<String,Number>> devInt= dag.addOperator("devInt", new DevNull());
+    dag.addStream("EventGenString", eventGen.string_data,devString.data).setLocality(locality);
+    dag.addStream("EventGenMap", eventGen.hash_data,devMap.data).setLocality(locality);
+    dag.addStream("EventGenInt",eventGen.count,devInt.data).setLocality(locality);
+
+
   }
 
 }

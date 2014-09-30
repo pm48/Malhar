@@ -14,7 +14,7 @@ import org.apache.hadoop.conf.Configuration;
 
 /**
  *
- * @author Chetan Narsude  <change_this_by_going_to_Tools-Options-Settings@datatorrent.com>
+ * @author prerna
  */
 public class StreamMergeApp implements StreamingApplication
 {
@@ -28,13 +28,12 @@ public class StreamMergeApp implements StreamingApplication
     StreamMerger stream = dag.addOperator("oper", new StreamMerger());
     dag.getMeta(stream).getMeta(stream.data1).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     dag.getMeta(stream).getMeta(stream.data2).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    dag.addStream("streammerge1", intInput.integer_data, stream.data1).setLocality(locality);
-    dag.addStream("streammerge2", intInput.integer_data, stream.data2).setLocality(locality);
+    dag.addStream("streammerge1", intInput.integer_data, stream.data1,stream.data2).setLocality(locality);
 
     WordCountOperator<Integer> counter = dag.addOperator("counter", new WordCountOperator<Integer>());
     dag.getMeta(counter).getMeta(counter.input).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     dag.getMeta(stream).getMeta(stream.out).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    dag.addStream("streammerge3", stream.out, counter.input).setLocality(locality);
+    dag.addStream("streammerge2", stream.out, counter.input).setLocality(locality);
 
   }
 
