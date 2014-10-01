@@ -1,26 +1,47 @@
 /*
- *  Copyright (c) 2012-2014 Malhar, Inc.
- *  All Rights Reserved.
+ * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.datatorrent.lib.streamquery;
 
+import com.datatorrent.api.BaseOperator;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
-import com.datatorrent.api.Operator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-/**
- *
- * @author prerna
- */
-public class SchemaNormalizeOperator implements Operator
+public class SchemaNormalizeOperator extends BaseOperator
 {
-  protected Map<String, Object> stream1;
+  protected Map<String, Object> buffer;
   protected Map<String, Object> stream2;
+  protected Set<String> keySet = new HashSet<String>();
+  protected boolean stream1Buffer = false;
+
+  public void setKeySet(Set<String> keySet)
+  {
+    this.keySet = keySet;
+  }
+
+  public Set<String> getKeySet()
+  {
+    return keySet;
+  }
+
+
 
   /**
    * Input port 1.
@@ -30,16 +51,22 @@ public class SchemaNormalizeOperator implements Operator
     @Override
     public void process(Map<String, Object> tuple)
     {
-      stream1 = tuple;
-      if (stream2 != null) {
+      if (stream2 == null && !stream1Buffer) {
+        buffer.putAll(tuple);
+      }
+      else if (stream2 != null && !stream1Buffer) {
         for (String key: stream2.keySet()) {
-          if (!(stream1.containsKey(key))) {
-            stream1.put(key, null);
+          if (!(buffer.containsKey(key))) {
+            buffer.put(key, null);
           }
         }
+        stream1Buffer = true;
+        outport.emit(buffer);
       }
-      outport.emit(stream1);
-
+      else {
+        buffer.putAll(tuple);
+      }
+      outport.emit(buffer);
     }
 
   };
@@ -53,48 +80,21 @@ public class SchemaNormalizeOperator implements Operator
     public void process(Map<String, Object> tuple)
     {
       stream2 = tuple;
-      if (stream1 != null) {
-        for (String key: stream1.keySet()) {
-          if (!(stream2.containsKey(key))) {
-            stream2.put(key, null);
-          }
-        }
-      }
       outport.emit(stream2);
     }
 
   };
 
+ @Override
+  public void setup(OperatorContext arg0)
+  {
+    buffer = new HashMap<String, Object>();
+    stream2 = new HashMap<String, Object>();
+  }
   /**
    * Output port.
    */
   public final transient DefaultOutputPort<Map<String, Object>> outport
           = new DefaultOutputPort<Map<String, Object>>();
-
-  @Override
-  public void beginWindow(long windowId)
-  {
-    //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-  }
-
-  @Override
-  public void endWindow()
-  {
-    stream1.clear();
-    stream2.clear();
-  }
-
-  @Override
-  public void setup(OperatorContext context)
-  {
-    stream1 = new HashMap<String, Object>();
-    stream2 = new HashMap<String, Object>();
-  }
-
-  @Override
-  public void teardown()
-  {
-    //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-  }
 
 }
