@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark;
+package com.datatorrent.benchmark.HBase;
 
-import com.datatorrent.benchmark.algo.UniqueValueCountBenchmarkApplication;
-import com.datatorrent.api.LocalMode;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
+import com.datatorrent.api.LocalMode;
 
 /**
  * Test the DAG declaration in local mode.
  */
-public class UniqueValueCountBenchmarkTest
-{
-  @Test
-  public void testApplication() throws Exception
-  {
-    LocalMode lma = LocalMode.newInstance();
-    new UniqueValueCountBenchmarkApplication().populateDAG(lma.getDAG(), new Configuration(false));
-    LocalMode.Controller lc = lma.getController();
-    lc.run(10000);
-  }
-}
+public class HBaseApplicationTest {
 
+  @Test
+  public void test() throws Exception {
+     LocalMode.runApp(new HBaseCsvMappingApplication(), 20000);
+  }
+
+}

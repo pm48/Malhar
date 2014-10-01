@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark;
+package com.datatorrent.benchmark.Cassandra;
 
-import com.datatorrent.benchmark.script.RubyOperatorBenchmarkApplication;
-import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
-
 import com.datatorrent.api.LocalMode;
 
-public class RubyOperatorBenchmarkAppTest {
+/**
+ * Test the DAG declaration in local mode.
+ */
+public class CassandraApplicatonTest {
 
   @Test
-  public void testApplication() throws Exception
-  {
-    LocalMode lma = LocalMode.newInstance();
-    new RubyOperatorBenchmarkApplication().populateDAG(lma.getDAG(), new Configuration(false));
-    LocalMode.Controller lc = lma.getController();
-    lc.run(10000);
+  public void test() throws Exception {
+    LocalMode.runApp(new CassandraOutputBenchmarkApplication(), 10000);
   }
+
 }

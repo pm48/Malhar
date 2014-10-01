@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark;
+package com.datatorrent.benchmark.HDFS;
 
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.DAG;
@@ -44,19 +44,19 @@ public abstract class HDFSBothInputOutputOperatorsBenchmark
       HdfsWordInputOperator wordGenerator =  dag.addOperator("wordGenerator", HdfsWordInputOperator.class);
       wordGenerator.setFilePath("hdfs:///user/hadoop/hdfsOperatorBenchmarking/2/transactions.out.part0");
       dag.getMeta(wordGenerator).getMeta(wordGenerator.output).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-   
+
       HDFSByteOutputOperator hdfsOutputOperator = dag.addOperator("hdfsOutputOperator", new HDFSByteOutputOperator());
       hdfsOutputOperator.setFilePath("hdfsBothInputOutputOperatorBenchmarking" + "/%(contextId)/transactions.out.part%(partIndex)");
       hdfsOutputOperator.setAppend(false);
       dag.getMeta(wordGenerator).getMeta(wordGenerator.output).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
- 
-      dag.addStream("HDFSInput2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input).setLocality(getLocality());      
+
+      dag.addStream("HDFSInput2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input).setLocality(getLocality());
     }
-    
+
     public abstract Locality getLocality();
-    
+
   }
-  
+
   /**
    * Let the engine decide how to best place the 2 operators.
    */

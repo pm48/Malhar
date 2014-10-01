@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark;
+package com.datatorrent.benchmark.HDFS;
 
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import com.datatorrent.benchmark.RandomWordInputModule;
 
 
 import org.apache.hadoop.conf.Configuration;
@@ -42,18 +43,18 @@ public abstract class HDFSOutputOperatorBenchmark
     public void populateDAG(DAG dag, Configuration conf)
     {
       RandomWordInputModule wordGenerator = dag.addOperator("wordGenerator", RandomWordInputModule.class);
-   
+
       HDFSByteOutputOperator hdfsOutputOperator = dag.addOperator("hdfsOutputOperator", new HDFSByteOutputOperator());
       hdfsOutputOperator.setFilePath("hdfsOperatorBenchmarking" + "/%(contextId)/transactions.out.part%(partIndex)");
       hdfsOutputOperator.setAppend(false);
-   
-      dag.addStream("Generator2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input).setLocality(getLocality());      
+
+      dag.addStream("Generator2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input).setLocality(getLocality());
     }
-    
+
     public abstract Locality getLocality();
-    
+
   }
-  
+
   /**
    * Let the engine decide how to best place the 2 operators.
    */

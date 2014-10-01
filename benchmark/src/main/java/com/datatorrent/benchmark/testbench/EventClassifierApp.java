@@ -27,18 +27,10 @@ public class EventClassifierApp implements StreamingApplication
   {
     HashMapOperator hmapOper = dag.addOperator("hmap", new HashMapOperator());
     dag.getMeta(hmapOper).getMeta(hmapOper.hmap_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    HashMap<String, Double> keymap = new HashMap<String, Double>();
-    for(int i=0;i<1000;i++){
-      keymap.put("a" + i, 1.0);
-      keymap.put("b" + i, 4.0);
-      keymap.put("c" + i, 5.0);
-    }
     EventClassifier eventInput = dag.addOperator("eventInput", new EventClassifier());
-    eventInput.setKeyMap(keymap);
     dag.getMeta(eventInput).getMeta(eventInput.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     dag.addStream("eventtest1", hmapOper.hmap_data, eventInput.event).setLocality(locality);
     DevNull<HashMap<String,Double>> dev = dag.addOperator("dev", new DevNull());
-
     dag.addStream("eventtest2", eventInput.data, dev.data).setLocality(locality);
 
   }

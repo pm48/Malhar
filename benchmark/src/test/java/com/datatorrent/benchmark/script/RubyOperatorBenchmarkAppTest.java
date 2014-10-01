@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark;
+package com.datatorrent.benchmark.script;
 
+import com.datatorrent.benchmark.script.RubyOperatorBenchmarkApplication;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.AccumuloApp;
 
-public class AccumuloAppTest {
+public class RubyOperatorBenchmarkAppTest {
+
   @Test
-  public void testSomeMethod() throws Exception {
-    LocalMode.runApp(new AccumuloApp(), 30000);
+  public void testApplication() throws Exception
+  {
+    LocalMode lma = LocalMode.newInstance();
+    new RubyOperatorBenchmarkApplication().populateDAG(lma.getDAG(), new Configuration(false));
+    LocalMode.Controller lc = lma.getController();
+    lc.run(10000);
   }
 }
