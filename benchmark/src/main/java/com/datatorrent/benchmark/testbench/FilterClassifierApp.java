@@ -24,6 +24,13 @@ public class FilterClassifierApp implements StreamingApplication
   public void populateDAG(DAG dag, Configuration conf)
   {
     FilterClassifier filter = dag.addOperator("filter", new FilterClassifier());
+    HashMap<String, Double> keymap = new HashMap<String, Double>();
+    for(int i=0;i<1000;i++){
+      keymap.put("a" + i, 1.0);
+      keymap.put("b" + i, 4.0);
+      keymap.put("c" + i, 5.0);
+    }
+    //filter.setKeyMap(keymap);
     HashMapOperator hmapOper = dag.addOperator("hmap", new HashMapOperator());
     DevNull<HashMap<String,Double>> dev = dag.addOperator("dev",  new DevNull());
     dag.addStream("filter1",hmapOper.hmap_data,filter.data).setLocality(locality);

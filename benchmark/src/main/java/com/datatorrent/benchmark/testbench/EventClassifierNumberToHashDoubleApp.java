@@ -30,9 +30,9 @@ public class EventClassifierNumberToHashDoubleApp implements StreamingApplicatio
     dag.getMeta(counterString).getMeta(counterString.input).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     EventClassifierNumberToHashDouble eventClassify = dag.addOperator("eventClassify", new EventClassifierNumberToHashDouble());
     dag.getMeta(eventClassify).getMeta(eventClassify.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    dag.addStream("eventclassifier1",eventClassify.data,counterString.input).setLocality(locality);
     IntegerOperator intInput = dag.addOperator("intInput", new IntegerOperator());
     dag.addStream("eventclassifier2",intInput.integer_data,eventClassify.event).setLocality(locality);
+    dag.addStream("eventclassifier1",eventClassify.data,counterString.input).setLocality(locality);
 
   }
 

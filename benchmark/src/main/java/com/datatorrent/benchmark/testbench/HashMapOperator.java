@@ -29,11 +29,16 @@ public class HashMapOperator implements InputOperator
     HashMap<String, HashMap<String,Integer>> hmapMap = new HashMap<String, HashMap<String,Integer>>();
     ArrayList<Integer> list = new ArrayList<Integer>();
     HashMap<String,Integer> hmapMapTemp = new HashMap<String, Integer>();
-    for (int i = 0; i < 1000; i++) {
-      hmap.put("key" + i, i + 23.30);
+
+    for(int i=0;i<1000;i++){
+      hmap.put("a" + i, 1.0);
+      hmap.put("b" + i, 4.0);
+      hmap.put("c" + i, 5.0);
       hmapMapTemp.put("Key" + i, i);
       list.add(i);
     }
+
+
 
     hmapList.put("Key1", list);
     hmapList.put("Key2", list);
