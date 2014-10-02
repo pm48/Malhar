@@ -26,7 +26,8 @@ import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 
 /**
- * Benchmark App for EventGenerator Operator.Benchmarked at 1,089,063 tuples.
+ * Benchmark App for EventGenerator Operator.
+ * This operator is Benchmarked to emit 1,360,000 tuples/sec on cluster node.
  */
 @ApplicationAnnotation(name = "EventGeneratorApp")
 public class EventGeneratorApp implements StreamingApplication

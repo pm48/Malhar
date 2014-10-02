@@ -36,7 +36,7 @@ public class StreamMergeApp implements StreamingApplication
   public void populateDAG(DAG dag, Configuration conf)
   {
     IntegerOperator intInput = dag.addOperator("intInput", new IntegerOperator());
-    StreamMerger stream = dag.addOperator("oper", new StreamMerger());
+    StreamMerger stream = dag.addOperator("stream", new StreamMerger());
     dag.getMeta(stream).getMeta(stream.data1).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     dag.getMeta(stream).getMeta(stream.data2).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     dag.addStream("streammerge1", intInput.integer_data, stream.data1,stream.data2).setLocality(locality);

@@ -58,7 +58,7 @@ public class FilteredEventClassifierApp implements StreamingApplication
     filterEvent.setKeyWeights(wmap);
     filterEvent.setPassFilter(10);
     filterEvent.setTotalFilter(100);
-    HashMapOperator hmapOper = dag.addOperator("hmap", new HashMapOperator());
+    HashMapOperator hmapOper = dag.addOperator("hmapOper", new HashMapOperator());
     DevNull<HashMap<String, Double>> dev = dag.addOperator("dev", new DevNull());
     dag.addStream("filter1", hmapOper.hmap_data, filterEvent.data).setLocality(locality);
     dag.addStream("filer2", filterEvent.filter, dev.data).setLocality(locality);

@@ -63,7 +63,7 @@ public class EventClassifierApp implements StreamingApplication
     list.add(15);
     list.add(35);
     wmap.put("id", list);
-    HashMapOperator hmapOper = dag.addOperator("hmap", new HashMapOperator());
+    HashMapOperator hmapOper = dag.addOperator("hmapOper", new HashMapOperator());
     dag.getMeta(hmapOper).getMeta(hmapOper.hmap_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     EventClassifier eventClassifier = dag.addOperator("eventClassifier", new EventClassifier());
     eventClassifier.setKeyMap(keymap);
