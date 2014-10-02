@@ -15,10 +15,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 
-/**
- *
- * @author prerna
- */
 public class SeedEventGeneratorApp implements StreamingApplication
 {
   public static final int QUEUE_CAPACITY = 16 * 1024;

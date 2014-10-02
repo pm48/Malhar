@@ -11,11 +11,7 @@ import com.datatorrent.lib.stream.DevNull;
 import com.datatorrent.lib.testbench.ThroughputCounter;
 import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
-
-/**
- *
- * @author Chetan Narsude  <change_this_by_going_to_Tools-Options-Settings@datatorrent.com>
- */
+//3,608..expected: String schema generates over 11 Million tuples/sec<br>HashMap schema generates over 1.7 Million tuples/sec<
 public class ThroughputCounterApp implements StreamingApplication
 {
   public static final int QUEUE_CAPACITY = 16 * 1024;

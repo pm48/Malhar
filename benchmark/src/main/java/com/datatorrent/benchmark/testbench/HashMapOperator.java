@@ -19,7 +19,7 @@ public class HashMapOperator implements InputOperator
   public final transient DefaultOutputPort<HashMap<String, Double>> hmap_data = new DefaultOutputPort<HashMap<String, Double>>();
   public final transient DefaultOutputPort<HashMap<String, ArrayList<Integer>>> hmapList_data = new DefaultOutputPort<HashMap<String, ArrayList<Integer>>>();
   public final transient DefaultOutputPort<HashMap<String, HashMap<String, Integer>>> hmapMap_data = new DefaultOutputPort<HashMap<String, HashMap<String, Integer>>>();
-  //public final transient DefaultOutputPort<HashMap<String, Integer>> hmapInt_data = new DefaultOutputPort<HashMap<String, Integer>>();
+  public final transient DefaultOutputPort<HashMap<String, Integer>> hmapInt_data = new DefaultOutputPort<HashMap<String, Integer>>();
 
   @Override
   public void emitTuples()
@@ -30,28 +30,36 @@ public class HashMapOperator implements InputOperator
     ArrayList<Integer> list = new ArrayList<Integer>();
     HashMap<String, Integer> hmapMapTemp = new HashMap<String, Integer>();
     int numTuples = 1000;
+    Integer aval = 1000;
+    Integer bval = 100;
+
+   /* HashMap<String, Object> stuple = new HashMap<String, Object>(1);
+    String seed1 = "a";
+    ArrayList val = new ArrayList();
+    val.add(10);
+    val.add(20);
+    stuple.put(seed1, val);*/
+
     for (int i = 0; i < numTuples; i++) {
       hmap.clear();
+      list.clear();
+      hmapList.clear();
+      hmapMapTemp.clear();
       hmap.put("ia", 2.0);
       hmap.put("ib", 20.0);
       hmap.put("ic", 1000.0);
       hmap.put("id", 1000.0);
+      hmap_data.emit(hmap);
       list.add(i);
-      hmapMapTemp.put("Key"+ i, i);
+      hmapList.put("Key" +i, list);
+      hmapList_data.emit(hmapList);
+      hmapMapTemp.put("a", aval);
+      hmapMapTemp.put("b", bval);
+      hmapInt_data.emit(hmapMapTemp);
+      hmapMap.put("a", hmapMapTemp);
+      hmapMap_data.emit(hmapMap);
     }
-    
-    hmapList.put("Key1", list);
-    hmapList.put("Key2", list);
-    hmapList.put("Key3", list);
-    hmapMap.put("Key1", hmapMapTemp);
-    hmapMap.put("Key2", hmapMapTemp);
-    hmapMap.put("Key3", hmapMapTemp);
-    hmap_data.emit(hmap);
-    hmapList_data.emit(hmapList);
-    hmapMap_data.emit(hmapMap);
-    //hmapInt_data.emit(hmapMapTemp);
-    list.clear();
-    hmapMapTemp.clear();
+
   }
 
   @Override

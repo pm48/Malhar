@@ -5,11 +5,11 @@
     <value>a,b,c,d</value>
   </property>
    <property>
-    <name>dt.application.EventGeneratorApp.operator.eventGenerator.weightsArray</name>
-    <value>1,2,3</value>
+    <name>dt.application.EventGeneratorApp.operator.eventGenerator.weightsHelper</name>
+    <value>1,2,3,4</value>
   </property>
   <property>
-    <name>dt.application.EventGeneratorApp.operator.eventGenerator.valuesArray</name>
+    <name>dt.application.EventGeneratorApp.operator.eventGenerator.valuesHelper</name>
     <value>10,20,30,40</value>
   </property>
   <property>

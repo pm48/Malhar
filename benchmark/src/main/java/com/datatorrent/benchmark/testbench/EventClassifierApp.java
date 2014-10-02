@@ -14,7 +14,7 @@ import com.datatorrent.lib.testbench.EventClassifier;
 import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
-
+//1,089,063 tuples, expected :3 Million tuples/sec
 @ApplicationAnnotation(name = "EventClassifierApp")
 public class EventClassifierApp implements StreamingApplication
 {
