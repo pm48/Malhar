@@ -12,10 +12,6 @@ import com.datatorrent.lib.stream.DevNull;
 import com.datatorrent.lib.stream.StreamDuplicater;
 import org.apache.hadoop.conf.Configuration;
 
-/**
- *
- * @author prerna
- */
 public class StreamDuplicaterApp implements StreamingApplication
 {
    private final Locality locality = null;

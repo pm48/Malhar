@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 //1,089,063 tuples, expected :3 Million tuples/sec
+
 @ApplicationAnnotation(name = "EventClassifierApp")
 public class EventClassifierApp implements StreamingApplication
 {
@@ -51,13 +52,13 @@ public class EventClassifierApp implements StreamingApplication
     wmap.put("id", list);
     HashMapOperator hmapOper = dag.addOperator("hmap", new HashMapOperator());
     dag.getMeta(hmapOper).getMeta(hmapOper.hmap_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    EventClassifier eventClassifier = dag.addOperator("eventClassifier",new EventClassifier() );
+    EventClassifier eventClassifier = dag.addOperator("eventClassifier", new EventClassifier());
     eventClassifier.setKeyMap(keymap);
     eventClassifier.setOperationReplace();
     eventClassifier.setKeyWeights(wmap);
     dag.getMeta(eventClassifier).getMeta(eventClassifier.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     dag.addStream("eventtest1", hmapOper.hmap_data, eventClassifier.event).setLocality(locality);
-    DevNull<HashMap<String,Double>> dev = dag.addOperator("dev", new DevNull());
+    DevNull<HashMap<String, Double>> dev = dag.addOperator("dev", new DevNull());
     dag.addStream("eventtest2", eventClassifier.data, dev.data).setLocality(locality);
 
   }

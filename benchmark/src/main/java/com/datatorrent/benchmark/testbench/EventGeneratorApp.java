@@ -19,21 +19,20 @@ public class EventGeneratorApp implements StreamingApplication
 {
   private final Locality locality = null;
   public static final int QUEUE_CAPACITY = 16 * 1024;
+
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
     EventGenerator eventGenerator = dag.addOperator("eventGenerator", new EventGenerator());
     dag.getMeta(eventGenerator).getMeta(eventGenerator.count).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
 
-    //eventGenerator.setKey_keys("a,b");
     DevNull<String> devString = dag.addOperator("devString", new DevNull());
-    DevNull<HashMap<String,Double>> devMap = dag.addOperator("devMap", new DevNull());
-    DevNull<HashMap<String,Number>> devInt= dag.addOperator("devInt", new DevNull());
+    DevNull<HashMap<String, Double>> devMap = dag.addOperator("devMap", new DevNull());
+    DevNull<HashMap<String, Number>> devInt = dag.addOperator("devInt", new DevNull());
 
-    dag.addStream("EventGenString", eventGenerator.string_data,devString.data).setLocality(locality);
-    dag.addStream("EventGenMap", eventGenerator.hash_data,devMap.data).setLocality(locality);
-    dag.addStream("EventGenInt",eventGenerator.count,devInt.data).setLocality(locality);
-
+    dag.addStream("EventGenString", eventGenerator.string_data, devString.data).setLocality(locality);
+    dag.addStream("EventGenMap", eventGenerator.hash_data, devMap.data).setLocality(locality);
+    dag.addStream("EventGenInt", eventGenerator.count, devInt.data).setLocality(locality);
 
   }
 

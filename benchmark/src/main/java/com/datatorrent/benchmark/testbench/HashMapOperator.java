@@ -28,7 +28,7 @@ public class HashMapOperator implements InputOperator
     HashMap<String, ArrayList<Integer>> hmapList = new HashMap<String, ArrayList<Integer>>();
     HashMap<String, HashMap<String, Integer>> hmapMap = new HashMap<String, HashMap<String, Integer>>();
     ArrayList<Integer> list = new ArrayList<Integer>();
-    HashMap<String, Integer> hmapMapTemp = new HashMap<String, Integer>();
+    HashMap<String, Integer> hmapMapTemp;
     int numTuples = 1000;
     Integer aval = 1000;
     Integer bval = 100;
@@ -44,7 +44,7 @@ public class HashMapOperator implements InputOperator
       hmap.clear();
       list.clear();
       hmapList.clear();
-      hmapMapTemp.clear();
+      hmapMapTemp = new HashMap<String, Integer>();
       hmap.put("ia", 2.0);
       hmap.put("ib", 20.0);
       hmap.put("ic", 1000.0);

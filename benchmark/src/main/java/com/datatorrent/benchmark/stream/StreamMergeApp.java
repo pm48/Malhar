@@ -12,10 +12,6 @@ import com.datatorrent.benchmark.WordCountOperator;
 import com.datatorrent.lib.stream.StreamMerger;
 import org.apache.hadoop.conf.Configuration;
 
-/**
- *
- * @author prerna
- */
 public class StreamMergeApp implements StreamingApplication
 {
   private final Locality locality = null;

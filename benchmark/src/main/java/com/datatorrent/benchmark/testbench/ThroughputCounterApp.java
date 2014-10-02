@@ -22,7 +22,7 @@ public class ThroughputCounterApp implements StreamingApplication
     ThroughputCounter counter = dag.addOperator("counter", new ThroughputCounter());
     HashMapOperator oper = dag.addOperator("oper", new HashMapOperator());
     DevNull<HashMap<String,Number>> dev = dag.addOperator("dev", new DevNull());
-    dag.addStream("count1",oper.hmap_data,counter.data).setLocality(locality);
+    dag.addStream("count1",oper.hmapInt_data,counter.data).setLocality(locality);
     dag.addStream("count2",counter.count,dev.data).setLocality(locality);
 
   }
