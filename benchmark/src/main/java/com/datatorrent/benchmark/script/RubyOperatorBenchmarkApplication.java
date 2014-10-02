@@ -35,14 +35,16 @@ import org.apache.hadoop.conf.Configuration;
  *
  * @since 1.0.4
  */
-
 // Dependent on libjar: jruby-core-1.7.12.jar
-@ApplicationAnnotation(name="RubyOperatorBenchmarkApplication")
-public class RubyOperatorBenchmarkApplication implements StreamingApplication {
+@ApplicationAnnotation(name = "RubyOperatorBenchmarkApplication")
+public class RubyOperatorBenchmarkApplication implements StreamingApplication
+{
   public static final int QUEUE_CAPACITY = 16 * 1024;
   private final Locality locality = null;
+
   @Override
-  public void populateDAG(DAG dag, Configuration conf) {
+  public void populateDAG(DAG dag, Configuration conf)
+  {
 
     RandomEventGenerator rand = dag.addOperator("rand", new RandomEventGenerator());
     rand.setMaxvalue(3000);

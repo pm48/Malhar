@@ -18,7 +18,6 @@ package com.datatorrent.benchmark.Aerospike;
 import org.junit.Test;
 
 import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.AerospikeOutputBenchmarkApplication;
 
 public class AerospikeBenchmarkAppTest {
 

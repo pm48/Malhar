@@ -34,7 +34,7 @@ import org.apache.hadoop.conf.Configuration;
  *
  * @since 1.0.2
  */
-@ApplicationAnnotation(name="UniqueCountBenchmark")
+@ApplicationAnnotation(name = "UniqueCountBenchmark")
 public class UniqueValueCountBenchmarkApplication implements StreamingApplication
 {
 
@@ -46,13 +46,13 @@ public class UniqueValueCountBenchmarkApplication implements StreamingApplicatio
     dag.setAttribute(dag.DEBUG, true);
 
 
-        /* Generate random key-value pairs */
+    /* Generate random key-value pairs */
     RandomEventGenerator randGen = dag.addOperator("randomgen", new RandomEventGenerator());
     randGen.setMaxvalue(999999);
     randGen.setTuplesBlastIntervalMillis(50);
     dag.setAttribute(randGen, Context.OperatorContext.INITIAL_PARTITION_COUNT, 3);
 
-        /* Initialize with three partition to start with */
+    /* Initialize with three partition to start with */
     // UniqueCount1 uniqCount = dag.addOperator("uniqevalue", new UniqueCount1());
     PartitionableUniqueCount<Integer> uniqCount = dag.addOperator("uniqevalue", new PartitionableUniqueCount<Integer>());
     dag.setAttribute(uniqCount, Context.OperatorContext.INITIAL_PARTITION_COUNT, 3);
@@ -66,5 +66,5 @@ public class UniqueValueCountBenchmarkApplication implements StreamingApplicatio
     dag.addStream("consoutput", uniqCount.count, counter.data);
     dag.addStream("final", counter.count, output.input);
   }
-}
 
+}

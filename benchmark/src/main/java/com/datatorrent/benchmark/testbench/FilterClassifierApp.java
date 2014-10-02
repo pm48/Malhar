@@ -15,7 +15,6 @@ import org.apache.hadoop.conf.Configuration;
 
 public class FilterClassifierApp implements StreamingApplication
 {
-  //do same as test for this class
   private final Locality locality = null;
   public static final int QUEUE_CAPACITY = 16 * 1024;
   @Override
@@ -57,7 +56,7 @@ public class FilterClassifierApp implements StreamingApplication
     filter.setKeyWeights(wmap);
     filter.setPassFilter(10);
     filter.setTotalFilter(100);
-    
+
     HashMapOperator hmapOper = dag.addOperator("hmap", new HashMapOperator());
     DevNull<HashMap<String,Double>> dev = dag.addOperator("dev",  new DevNull());
     dag.addStream("filter1",hmapOper.hmap_data,filter.data).setLocality(locality);

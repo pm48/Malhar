@@ -16,7 +16,6 @@ import org.apache.hadoop.conf.Configuration;
 
 public class EventIncrementerApp implements StreamingApplication
 {
-  //implement test
   private final Locality locality = null;
   public static final int QUEUE_CAPACITY = 16 * 1024;
   @Override

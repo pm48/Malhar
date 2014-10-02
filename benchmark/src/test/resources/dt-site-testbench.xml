@@ -6,11 +6,11 @@
   </property>
    <property>
     <name>dt.application.EventGeneratorApp.operator.eventGenerator.weightsHelper</name>
-    <value>1,2,3,4</value>
+    <value>10,20,30,40</value>
   </property>
   <property>
     <name>dt.application.EventGeneratorApp.operator.eventGenerator.valuesHelper</name>
-    <value>10,20,30,40</value>
+    <value></value>
   </property>
   <property>
     <name>dt.application.EventClassifierNumberToHashDoubleApp.operator.eventClassify.key</name>

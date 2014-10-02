@@ -10,10 +10,6 @@ import com.datatorrent.api.InputOperator;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-/**
- *
- * @author prerna
- */
 public class HashMapOperator implements InputOperator
 {
   public final transient DefaultOutputPort<HashMap<String, Double>> hmap_data = new DefaultOutputPort<HashMap<String, Double>>();
@@ -29,35 +25,53 @@ public class HashMapOperator implements InputOperator
     HashMap<String, HashMap<String, Integer>> hmapMap = new HashMap<String, HashMap<String, Integer>>();
     ArrayList<Integer> list = new ArrayList<Integer>();
     HashMap<String, Integer> hmapMapTemp;
-    int numTuples = 1000;
-    Integer aval = 1000;
-    Integer bval = 100;
+    int numTuples = 100;
+    Integer aval = 10;
+    Integer bval = 50;
 
-   /* HashMap<String, Object> stuple = new HashMap<String, Object>(1);
-    String seed1 = "a";
-    ArrayList val = new ArrayList();
-    val.add(10);
-    val.add(20);
-    stuple.put(seed1, val);*/
-
+    /* HashMap<String, Object> stuple = new HashMap<String, Object>(1);
+     String seed1 = "a";
+     ArrayList val = new ArrayList();
+     val.add(10);
+     val.add(20);
+     stuple.put(seed1, val);*/
     for (int i = 0; i < numTuples; i++) {
       hmap.clear();
       list.clear();
       hmapList.clear();
       hmapMapTemp = new HashMap<String, Integer>();
+      hmapMap.clear();
       hmap.put("ia", 2.0);
       hmap.put("ib", 20.0);
       hmap.put("ic", 1000.0);
       hmap.put("id", 1000.0);
-      hmap_data.emit(hmap);
-      list.add(i);
-      hmapList.put("Key" +i, list);
-      hmapList_data.emit(hmapList);
+      if (hmap_data.isConnected()) {
+        hmap_data.emit(hmap);
+      }
+
+      list.add(1);
+      list.add(10);
+      hmapList.put("x", list);
+      list.add(20);
+      hmapList.put("y", list);
+
+      if (hmapList_data.isConnected()) {
+        hmapList_data.emit(hmapList);
+      }
+
       hmapMapTemp.put("a", aval);
       hmapMapTemp.put("b", bval);
-      hmapInt_data.emit(hmapMapTemp);
-      hmapMap.put("a", hmapMapTemp);
-      hmapMap_data.emit(hmapMap);
+
+      if (hmapInt_data.isConnected()) {
+        hmapInt_data.emit(hmapMapTemp);
+      }
+
+      hmapMap.put("x", hmapMapTemp);
+      hmapMap.put("y", hmapMapTemp);
+
+      if (hmapMap_data.isConnected()) {
+        hmapMap_data.emit(hmapMap);
+      }
     }
 
   }

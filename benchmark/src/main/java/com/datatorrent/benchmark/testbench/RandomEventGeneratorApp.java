@@ -11,10 +11,6 @@ import com.datatorrent.lib.stream.DevNull;
 import com.datatorrent.lib.testbench.RandomEventGenerator;
 import org.apache.hadoop.conf.Configuration;
 
-/**
- *
- * @author prerna
- */
 public class RandomEventGeneratorApp implements StreamingApplication
 {
   private final Locality locality = null;

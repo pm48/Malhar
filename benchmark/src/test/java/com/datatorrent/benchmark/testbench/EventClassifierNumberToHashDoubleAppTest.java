@@ -10,10 +10,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-/**
- *
- * @author Chetan Narsude  <change_this_by_going_to_Tools-Options-Settings@datatorrent.com>
- */
 public class EventClassifierNumberToHashDoubleAppTest
 {
   @Test
@@ -30,7 +26,6 @@ public class EventClassifierNumberToHashDoubleAppTest
     try {
       lm.prepareDAG(new EventClassifierNumberToHashDoubleApp(), conf);
       LocalMode.Controller lc = lm.getController();
-      //lc.setHeartbeatMonitoringEnabled(false);
       lc.run(20000);
     }
     catch (Exception ex) {

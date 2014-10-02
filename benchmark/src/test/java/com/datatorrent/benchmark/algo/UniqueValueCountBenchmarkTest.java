@@ -15,7 +15,6 @@
  */
 package com.datatorrent.benchmark.algo;
 
-import com.datatorrent.benchmark.algo.UniqueValueCountBenchmarkApplication;
 import com.datatorrent.api.LocalMode;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
