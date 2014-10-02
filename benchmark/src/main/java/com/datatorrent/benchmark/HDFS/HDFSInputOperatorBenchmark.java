@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark;
+package com.datatorrent.benchmark.HDFS;
 
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.DAG;
-import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.lib.io.fs.HdfsWordInputOperator;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import com.datatorrent.benchmark.WordCountOperator;
 
 import org.apache.hadoop.conf.Configuration;
 
@@ -46,14 +46,14 @@ public abstract class HDFSInputOperatorBenchmark
       wordGenerator.setFilePath("hdfs:///user/hadoop/hdfsOperatorBenchmarking/2/transactions.out.part0");
 
       WordCountOperator<byte[]> counter = dag.addOperator("counter", new WordCountOperator<byte[]>());
- 
-      dag.addStream("HDFSInputOperator2Counter", wordGenerator.output, counter.input).setLocality(getLocality());  
+
+      dag.addStream("HDFSInputOperator2Counter", wordGenerator.output, counter.input).setLocality(getLocality());
     }
-    
+
     public abstract Locality getLocality();
-    
+
   }
-  
+
   /**
    * Let the engine decide how to best place the 2 operators.
    */

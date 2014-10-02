@@ -8,16 +8,14 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.StreamingApplication;
+import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.benchmark.WordCountOperator;
 import com.datatorrent.benchmark.stream.IntegerOperator;
 import com.datatorrent.lib.testbench.EventClassifierNumberToHashDouble;
 import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 
-/**
- *
- * @author prerna
- */
+@ApplicationAnnotation(name = "EventClassifierNumberToHashDoubleApp")
 public class EventClassifierNumberToHashDoubleApp implements StreamingApplication
 {
   private final Locality locality = null;

@@ -14,7 +14,7 @@
 
   <properties>
     <maven.deploy.skip>false</maven.deploy.skip>
-    <skipTests>true</skipTests>
+    <skipTests>false</skipTests>
   </properties>
 	<build>
 		<plugins>
@@ -41,7 +41,7 @@
 				</executions>
 			</plugin>
     </plugins>
-  </build>  
+  </build>
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

@@ -1,4 +1,4 @@
-package com.datatorrent.benchmark;
+package com.datatorrent.benchmark.Cassandra;
 
 
 import com.datastax.driver.core.BoundStatement;
