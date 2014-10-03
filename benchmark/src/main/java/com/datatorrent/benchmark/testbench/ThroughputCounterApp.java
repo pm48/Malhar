@@ -1,6 +1,17 @@
 /*
- *  Copyright (c) 2012-2014 Malhar, Inc.
- *  All Rights Reserved.
+ * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.datatorrent.benchmark.testbench;
 
@@ -11,7 +22,10 @@ import com.datatorrent.lib.stream.DevNull;
 import com.datatorrent.lib.testbench.ThroughputCounter;
 import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
-//3,608..expected: String schema generates over 11 Million tuples/sec<br>HashMap schema generates over 1.7 Million tuples/sec<
+/**
+ * Benchmark App for ThroughputCounter Operator.
+ * This operator is benchmarked to emit 750 tuples/sec on cluster node.
+ */
 public class ThroughputCounterApp implements StreamingApplication
 {
   public static final int QUEUE_CAPACITY = 16 * 1024;

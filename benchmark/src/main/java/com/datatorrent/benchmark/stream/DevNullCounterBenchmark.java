@@ -31,7 +31,7 @@ import org.apache.hadoop.conf.Configuration;
  * With extremely high throughput it does not impact the performance of any other oper
  * <br>
  * Benchmarks:<br>
- * Object payload benchmarked at over 125 Million/sec
+ * Object payload benchmarked at over 1 Million/sec
  * <br>
  * DRC checks are validated<br>
  *
@@ -58,7 +58,6 @@ public class DevNullCounterBenchmark implements StreamingApplication
     IntegerOperator intInput = dag.addOperator("intInput", new IntegerOperator());
     DevNullCounter oper = dag.addOperator("oper", new DevNullCounter());
     dag.getMeta(oper).getMeta(oper.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
-    oper.setRollingwindowcount(5);
     dag.addStream("dev", intInput.integer_data, oper.data).setLocality(locality);
 
   }

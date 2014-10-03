@@ -25,7 +25,8 @@ import java.util.HashMap;
 import org.apache.hadoop.conf.Configuration;
 
 /**
- * Benchmark App for EventIncrementer Operator.Benchmarked at 1,089,063 tuples.
+ * Benchmark App for EventIncrementer Operator.
+ * This operator is benchmarked to emit 700K tuples/second on cluster node.
  */
 public class EventIncrementerApp implements StreamingApplication
 {

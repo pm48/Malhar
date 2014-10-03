@@ -19,7 +19,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import com.datatorrent.api.LocalMode;
-
+/**
+ * Benchmark Test for Ruby Operator in local mode.
+ */
 public class RubyOperatorBenchmarkAppTest {
 
   @Test

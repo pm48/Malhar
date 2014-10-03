@@ -1,6 +1,17 @@
 /*
- *  Copyright (c) 2012-2014 Malhar, Inc.
- *  All Rights Reserved.
+ * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.datatorrent.benchmark.testbench;
 
@@ -10,6 +21,9 @@ import com.datatorrent.api.InputOperator;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * HashMap Input Operator used as a helper in testbench benchmarking apps.
+ */
 public class HashMapOperator implements InputOperator
 {
   public final transient DefaultOutputPort<HashMap<String, Double>> hmap_data = new DefaultOutputPort<HashMap<String, Double>>();
@@ -25,20 +39,25 @@ public class HashMapOperator implements InputOperator
     HashMap<String, HashMap<String, Integer>> hmapMap = new HashMap<String, HashMap<String, Integer>>();
     ArrayList<Integer> list = new ArrayList<Integer>();
     HashMap<String, Integer> hmapMapTemp;
-    int numTuples = 100;
-    Integer aval = 10;
-    Integer bval = 50;
+    int numTuples = 1000;
+    Integer aval = 1000;
+    Integer bval = 100;
 
-    /* HashMap<String, Object> stuple = new HashMap<String, Object>(1);
-     String seed1 = "a";
-     ArrayList val = new ArrayList();
-     val.add(10);
-     val.add(20);
-     stuple.put(seed1, val);*/
+    HashMap<String, ArrayList<Integer>> stuple = new HashMap<String, ArrayList<Integer>>();
+    //int numtuples = 100000000; // For benchmarking
+    int numtuples = 1000;
+    String seed1 = "a";
+    ArrayList val = new ArrayList();
+    val.add(10);
+    val.add(20);
+    stuple.put(seed1, val);
+     if (hmapList_data.isConnected()) {
+        hmapList_data.emit(stuple);
+      }
     for (int i = 0; i < numTuples; i++) {
       hmap.clear();
-      list.clear();
-      hmapList.clear();
+      //list.clear();
+      //hmapList.clear();
       hmapMapTemp = new HashMap<String, Integer>();
       hmapMap.clear();
       hmap.put("ia", 2.0);
@@ -49,15 +68,12 @@ public class HashMapOperator implements InputOperator
         hmap_data.emit(hmap);
       }
 
-      list.add(1);
-      list.add(10);
-      hmapList.put("x", list);
-      list.add(20);
-      hmapList.put("y", list);
+      //list.add(i);
+      //hmapList.put("x", list);
+      //list.add(20);
+      //hmapList.put("y", list);
 
-      if (hmapList_data.isConnected()) {
-        hmapList_data.emit(hmapList);
-      }
+
 
       hmapMapTemp.put("a", aval);
       hmapMapTemp.put("b", bval);
