@@ -28,20 +28,29 @@ public class SchemaNormalizeOperator extends BaseOperator
 {
   protected Map<String, Object> buffer;
   protected Map<String, Object> stream2;
-  protected Set<String> keySet = new HashSet<String>();
-  protected boolean stream1Buffer = false;
+  protected Set<String> keySet1 = new HashSet<String>();
+  protected Set<String> keySet2 = new HashSet<String>();
+  protected boolean firstTime = true;
 
-  public void setKeySet(Set<String> keySet)
+  public void setKeySet1(Set<String> keySet)
   {
-    this.keySet = keySet;
+    this.keySet1 = keySet;
   }
 
-  public Set<String> getKeySet()
+  public Set<String> getKeySet1()
   {
-    return keySet;
+    return keySet1;
   }
 
+ public void setKeySet2(Set<String> keySet)
+  {
+    this.keySet2 = keySet;
+  }
 
+  public Set<String> getKeySet2()
+  {
+    return keySet2;
+  }
 
   /**
    * Input port 1.
@@ -51,22 +60,22 @@ public class SchemaNormalizeOperator extends BaseOperator
     @Override
     public void process(Map<String, Object> tuple)
     {
-      if (stream2 == null && !stream1Buffer) {
+      if (stream2 == null && firstTime) {
         buffer.putAll(tuple);
       }
-      else if (stream2 != null && !stream1Buffer) {
+      else if (stream2 != null) {
         for (String key: stream2.keySet()) {
           if (!(buffer.containsKey(key))) {
             buffer.put(key, null);
           }
         }
-        stream1Buffer = true;
+        firstTime = false;
+
+      }
+
+      if(!firstTime)
         outport.emit(buffer);
-      }
-      else {
-        buffer.putAll(tuple);
-      }
-      outport.emit(buffer);
+
     }
 
   };
@@ -84,6 +93,7 @@ public class SchemaNormalizeOperator extends BaseOperator
     }
 
   };
+
 
  @Override
   public void setup(OperatorContext arg0)
