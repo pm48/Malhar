@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+  <property>
+    <name>seedSize</name>
+    <value>10000</value>
+    <description>Seed Size.</description>
+  </property>
+  <property>
+    <name>rootDbUrl</name>
+    <value>jdbc:hive://localhost:10000</value>
+    <description>Root DbUrl.</description>
+  </property>
+
+   <property>
+    <name>dt.application.HiveOutputBenchmark.operator.hiveOutputOperator.store.dbUrl</name>
+    <value>jdbc:hive://localhost:10000/default</value>
+    <description>Test database connector string.</description>
+  </property>
+
+  <property>
+    <name>dt.application.HiveOutputBenchmark.operator.hiveOutputOperator.store.connectionProperties</name>
+    <value>user:"",port:10000,password:""</value>
+    <description>The connection properties for the database.</description>
+  </property>
+</configuration>
