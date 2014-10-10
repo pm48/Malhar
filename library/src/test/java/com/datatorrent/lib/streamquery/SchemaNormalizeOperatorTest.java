@@ -16,7 +16,6 @@
 package com.datatorrent.lib.streamquery;
 
 import com.datatorrent.lib.testbench.CollectorTestSink;
-import com.datatorrent.lib.testbench.CountTestSink;
 import java.util.HashMap;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -76,7 +75,7 @@ public class SchemaNormalizeOperatorTest
   	oper.teardown();
 
     logger.info("numer of emitted tuples" + sink.collectedTuples);
-  	Assert.assertEquals("number emitted tuples",201,sink.collectedTuples.size());
+  	Assert.assertEquals("number emitted tuples",200,sink.collectedTuples.size());
   }
 
 }

@@ -45,7 +45,6 @@ public class SchemaNormalizeOperator extends BaseOperator
     return keySet;
   }
 
-
   /**
    * Input port 1.
    */
@@ -54,14 +53,14 @@ public class SchemaNormalizeOperator extends BaseOperator
     @Override
     public void process(Map<String, Object> tuple)
     {
-        for (String key: keySet) {
-          if (!(tuple.containsKey(key))) {
-            tuple.put(key, null);
-          }
+      for (String key: keySet) {
+        if (!(tuple.containsKey(key))) {
+          tuple.put(key, null);
         }
-        outport.emit(tuple);
-
       }
+      outport.emit(tuple);
+
+    }
 
   };
 
@@ -74,18 +73,15 @@ public class SchemaNormalizeOperator extends BaseOperator
     public void process(Map<String, Object> tuple)
     {
 
-        for (String key: keySet) {
-          if (!(tuple.containsKey(key))) {
-            tuple.put(key, null);
-          }
+      for (String key: keySet) {
+        if (!(tuple.containsKey(key))) {
+          tuple.put(key, null);
         }
-        outport.emit(tuple);
-
       }
+      outport.emit(tuple);
 
+    }
 
   };
 
-
- 
 }
