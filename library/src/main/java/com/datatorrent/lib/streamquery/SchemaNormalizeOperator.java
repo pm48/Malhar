@@ -26,31 +26,25 @@ import java.util.Set;
 
 public class SchemaNormalizeOperator extends BaseOperator
 {
-  protected Map<String, Object> buffer;
-  protected Map<String, Object> stream2;
-  protected Set<String> keySet1 = new HashSet<String>();
-  protected Set<String> keySet2 = new HashSet<String>();
-  protected boolean firstTime = true;
 
-  public void setKeySet1(Set<String> keySet)
+  protected Set<String> keySet = new HashSet<String>();
+
+  /**
+   * Output port.
+   */
+  public final transient DefaultOutputPort<Map<String, Object>> outport
+          = new DefaultOutputPort<Map<String, Object>>();
+
+  public void setKeySet(Set<String> keySet)
   {
-    this.keySet1 = keySet;
+    this.keySet = keySet;
   }
 
-  public Set<String> getKeySet1()
+  public Set<String> getKeySet()
   {
-    return keySet1;
+    return keySet;
   }
 
- public void setKeySet2(Set<String> keySet)
-  {
-    this.keySet2 = keySet;
-  }
-
-  public Set<String> getKeySet2()
-  {
-    return keySet2;
-  }
 
   /**
    * Input port 1.
@@ -60,23 +54,14 @@ public class SchemaNormalizeOperator extends BaseOperator
     @Override
     public void process(Map<String, Object> tuple)
     {
-      if (stream2 == null && firstTime) {
-        buffer.putAll(tuple);
-      }
-      else if (stream2 != null) {
-        for (String key: stream2.keySet()) {
-          if (!(buffer.containsKey(key))) {
-            buffer.put(key, null);
+        for (String key: keySet) {
+          if (!(tuple.containsKey(key))) {
+            tuple.put(key, null);
           }
         }
-        firstTime = false;
+        outport.emit(tuple);
 
       }
-
-      if(!firstTime)
-        outport.emit(buffer);
-
-    }
 
   };
 
@@ -88,23 +73,19 @@ public class SchemaNormalizeOperator extends BaseOperator
     @Override
     public void process(Map<String, Object> tuple)
     {
-      stream2 = tuple;
-      outport.emit(stream2);
-    }
+
+        for (String key: keySet) {
+          if (!(tuple.containsKey(key))) {
+            tuple.put(key, null);
+          }
+        }
+        outport.emit(tuple);
+
+      }
+
 
   };
 
 
- @Override
-  public void setup(OperatorContext arg0)
-  {
-    buffer = new HashMap<String, Object>();
-    stream2 = new HashMap<String, Object>();
-  }
-  /**
-   * Output port.
-   */
-  public final transient DefaultOutputPort<Map<String, Object>> outport
-          = new DefaultOutputPort<Map<String, Object>>();
-
+ 
 }
