@@ -15,9 +15,7 @@
  */
 package com.datatorrent.contrib.hive;
 
-import com.datatorrent.lib.db.jdbc.JdbcNonTransactionalStore;
 import com.datatorrent.lib.db.jdbc.JdbcStore;
-import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,9 +28,19 @@ public class HiveStore extends JdbcStore
 
   private static final Logger logger = LoggerFactory.getLogger(HiveStore.class);
 
+  //protected HiveStore store = new HiveStore();
+
   public HiveStore(){
     super();
     this.setDbDriver(driverName);
+  }
+
+  /*public HiveStore getHiveStore(){
+    return store;
+  }
+
+  public void setHiveStore(HiveStore store){
+    this.store = store;
   }
  /* public String getHost()
   {
@@ -98,6 +106,15 @@ public class HiveStore extends JdbcStore
       throw new RuntimeException(e);
     }
   }*/
+
+  void storeCommittedWindowId(String appId, int operatorId, long currentWindowId)
+  {
+  }
+
+  long getCommittedWindowId(String appId, int operatorId)
+  {
+    return -1;
+  }
 
 
 

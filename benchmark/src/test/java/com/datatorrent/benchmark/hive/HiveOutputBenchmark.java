@@ -48,13 +48,13 @@ public class HiveOutputBenchmark implements StreamingApplication
     randomMapGenerator.setTuplesBlast(TUPLE_BLAST);
 
     LOG.debug("Before making output operator");
-    HiveOutputOperator hiveOutputOperator = dag.addOperator("hiveOutputOperator",
-                                                                new HiveOutputOperator());
+   // HiveOutputOperator hiveOutputOperator = dag.addOperator("hiveOutputOperator",
+                                                                //new HiveOutputOperator());
     LOG.debug("After making output operator");
 
-    hiveOutputOperator.setBatchSize(DEFAULT_BATCH_SIZE);
+   // hiveOutputOperator.setBatchSize(DEFAULT_BATCH_SIZE);
 
-    dag.addStream("hiveConnector",randomMapGenerator.map_data,
-                  hiveOutputOperator.input);
+   // dag.addStream("hiveConnector",randomMapGenerator.map_data,
+                  //hiveOutputOperator.input);
   }
 }

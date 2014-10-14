@@ -90,12 +90,6 @@
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>mysql</groupId>
-      <artifactId>mysql-connector-java</artifactId>
-      <version>5.1.22</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>net.sf.uadetector</groupId>
       <artifactId>uadetector-resources</artifactId>
       <version>2014.01</version>
@@ -387,11 +381,22 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+    <groupId>org.apache.hive</groupId>
+    <artifactId>hive-jdbc</artifactId>
+    <version>0.13.1</version>
+    </dependency>
+    <dependency>
+    <groupId>org.apache.hive</groupId>
+    <artifactId>hive-exec</artifactId>
+    <version>0.13.1</version>
+    </dependency>
+    <dependency>
      <groupId>org.apache.thrift</groupId>
      <artifactId>libthrift</artifactId>
      <version>0.9.0</version>
      <optional>true</optional>
    </dependency>
+   
    <dependency>
       <groupId>com.aerospike</groupId>
       <artifactId>aerospike-client</artifactId>

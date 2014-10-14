@@ -16,13 +16,13 @@
 
 package com.datatorrent.benchmark.hive;
 
-import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorbad;
+import com.datatorrent.contrib.hive.AbstractHiveOutputOperator;
 import com.datatorrent.contrib.hive.HiveStore;
 import java.util.HashMap;
 
 
 
-public class HiveOutputOperator extends AbstractHiveOutputOperatorbad<HashMap,HiveStore>
+public class HiveOutputOperator extends AbstractHiveOutputOperator<HashMap,HiveStore>
 {
   static String filepath = "/tmp/a.txt";
   private static String INSERT = "load data local inpath '" + filepath + "' into table test";

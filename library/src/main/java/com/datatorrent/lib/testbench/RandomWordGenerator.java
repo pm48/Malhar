@@ -31,6 +31,7 @@ public class RandomWordGenerator implements InputOperator
    * The output port on which byte arrays are emitted.
    */
   public final transient DefaultOutputPort<byte[]> output = new DefaultOutputPort<byte[]>();
+  public final transient DefaultOutputPort<byte[]> outputString = new DefaultOutputPort<byte[]>();
 
   /**
    * The default number of tuples emitted per window.
@@ -83,14 +84,22 @@ public class RandomWordGenerator implements InputOperator
   @Override
   public void emitTuples()
   {
-    for(;
+   /* for(;
         tupleCounter < tuplesPerWindow;
         tupleCounter++)
     {
       byte[] bytes = new byte[tupleByteSize];
       random.nextBytes(bytes);
       output.emit(bytes);
+    }*/
+    for(;
+        tupleCounter < tuplesPerWindow;
+        tupleCounter++)
+    {
+      String str = "prerna";
+      outputString.emit(str.getBytes());
     }
+
   }
 
   @Override
