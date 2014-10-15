@@ -22,7 +22,6 @@ import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 import com.google.common.collect.Lists;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.List;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.Min;

@@ -21,101 +21,86 @@ import org.slf4j.LoggerFactory;
 
 public class HiveStore extends JdbcStore
 {
-
-
-
   private static final String driverName = "org.apache.hadoop.hive.jdbc.HiveDriver";
-
   private static final Logger logger = LoggerFactory.getLogger(HiveStore.class);
 
   //protected HiveStore store = new HiveStore();
-
-  public HiveStore(){
+  public HiveStore()
+  {
     super();
     this.setDbDriver(driverName);
   }
 
   /*public HiveStore getHiveStore(){
-    return store;
-  }
+   return store;
+   }
 
-  public void setHiveStore(HiveStore store){
-    this.store = store;
-  }
- /* public String getHost()
-  {
-    return host;
-  }
+   public void setHiveStore(HiveStore store){
+   this.store = store;
+   }
+   /* public String getHost()
+   {
+   return host;
+   }
 
-  public Connection getConnection(){
-    return connection;
-  }
+   public Connection getConnection(){
+   return connection;
+   }
 
-  public void setHost(String host)
-  {
-    this.host = host;
-  }
+   public void setHost(String host)
+   {
+   this.host = host;
+   }
 
-  public String getUser()
-  {
-    return user;
-  }
+   public String getUser()
+   {
+   return user;
+   }
 
-  public void setUser(String user)
-  {
-    this.user = user;
-  }
-
-
-  public int getPort()
-  {
-    return port;
-  }
-
-  public void setPort(int port)
-  {
-    this.port = port;
-  }
+   public void setUser(String user)
+   {
+   this.user = user;
+   }
 
 
-  @Override
-  public void connect()
-  {
-    super.connect();
-  }
+   public int getPort()
+   {
+   return port;
+   }
+
+   public void setPort(int port)
+   {
+   this.port = port;
+   }
 
 
-  @Override
-  public void disconnect()
-  {
-    try {
-      connection.close();
-    }
-    catch (SQLException ex) {
-      throw new RuntimeException("Error while closing database resource", ex);
-    }
-  }
-
-  @Override
-  public boolean connected()
-  {
-    try {
-      return !connection.isClosed();
-    }
-    catch (SQLException e) {
-      throw new RuntimeException(e);
-    }
-  }*/
-
-  void storeCommittedWindowId(String appId, int operatorId, long currentWindowId)
-  {
-  }
-
-  long getCommittedWindowId(String appId, int operatorId)
-  {
-    return -1;
-  }
+   @Override
+   public void connect()
+   {
+   super.connect();
+   }
 
 
+   @Override
+   public void disconnect()
+   {
+   try {
+   connection.close();
+   }
+   catch (SQLException ex) {
+   throw new RuntimeException("Error while closing database resource", ex);
+   }
+   }
+
+   @Override
+   public boolean connected()
+   {
+   try {
+   return !connection.isClosed();
+   }
+   catch (SQLException e) {
+   throw new RuntimeException(e);
+   }
+   }*/
 
 }

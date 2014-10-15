@@ -9,11 +9,9 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.annotation.Stateless;
 import com.datatorrent.lib.db.AbstractStoreOutputOperator;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Level;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 import org.apache.hadoop.conf.Configuration;
@@ -23,10 +21,10 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractHiveHDFS<T,S extends HiveStore> extends AbstractStoreOutputOperator<T, HiveStore>
+public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends AbstractStoreOutputOperator<T, HiveMetaStore>
 {
   protected transient FSDataOutputStream fsOutput;
-  protected transient BufferedOutputStream bufferedOutput;
+ // protected transient BufferedOutputStream bufferedOutput;
   protected transient FileSystem fs;
   private long currentWindowId;
   private long committedWindowId = Stateless.WINDOW_ID;
@@ -73,13 +71,8 @@ public abstract class AbstractHiveHDFS<T,S extends HiveStore> extends AbstractSt
       logger.debug(AbstractHiveHDFS.class.getName()+ ex);
     }
   }
-  /**
-   * This function opens the stream to given path.
-   *
-   * @param filepath
-   * @throws IOException
-   */
-  protected void openFile(Path filepath) throws IOException
+
+   protected void openFile(Path filepath) throws IOException
   {
     if (fs.exists(filepath)) {
         fs.delete(filepath, true);
@@ -89,19 +82,15 @@ public abstract class AbstractHiveHDFS<T,S extends HiveStore> extends AbstractSt
       fsOutput = fs.create(filepath);
       logger.debug("creating {} ", filepath);
     }
-    if (bufferSize > 0) {
-      this.bufferedOutput = new BufferedOutputStream(fsOutput, bufferSize);
-      logger.debug("buffering with size {}", bufferSize);
-    }
 
   }
 
   protected void closeFile() throws IOException
   {
-    if (bufferedOutput != null) {
+    /*if (bufferedOutput != null) {
       bufferedOutput.close();
       bufferedOutput = null;
-    }
+    }*/
     if (fsOutput != null) {
       fsOutput.close();
       fsOutput = null;
@@ -201,10 +190,10 @@ public abstract class AbstractHiveHDFS<T,S extends HiveStore> extends AbstractSt
   {
     super.beginWindow(windowId);
     try {
-      fsOutput = fs.create(new Path(filePath));
+      openFile(new Path(filePath));
     }
     catch (IOException ex) {
-      java.util.logging.Logger.getLogger(AbstractHiveHDFS.class.getName()).log(Level.SEVERE, null, ex);
+      logger.info(AbstractHiveHDFS.class.getName() + ex);
     }
     this.currentWindowId = windowId;
     logger.debug("Committed window {}, current window {}", committedWindowId, currentWindowId);
@@ -242,7 +231,7 @@ public abstract class AbstractHiveHDFS<T,S extends HiveStore> extends AbstractSt
    stmt.execute(command);
    }
     catch (SQLException ex) {
-      java.util.logging.Logger.getLogger(AbstractHiveHDFS.class.getName()).log(Level.SEVERE, null, ex);
+      logger.info(AbstractHiveHDFS.class.getName() + ex);
     }
 
   }
