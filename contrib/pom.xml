@@ -252,13 +252,13 @@
         </exclusion>
         <!-- Needed for running local server for tests -->
         <!--exclusion>
-<artifactId>jetty</artifactId>
-<groupId>org.mortbay.jetty</groupId>
-</exclusion>
-<exclusion>
-<artifactId>jetty-util</artifactId>
-<groupId>org.mortbay.jetty</groupId>
-</exclusion-->
+        <artifactId>jetty</artifactId>
+        <groupId>org.mortbay.jetty</groupId>
+        </exclusion>
+        <exclusion>
+        <artifactId>jetty-util</artifactId>
+        <groupId>org.mortbay.jetty</groupId>
+        </exclusion-->
       </exclusions>
     </dependency>
     <dependency>
@@ -381,27 +381,52 @@
       <optional>true</optional>
     </dependency>
     <dependency>
-    <groupId>org.apache.hive</groupId>
-    <artifactId>hive-jdbc</artifactId>
-    <version>0.13.1</version>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-exec</artifactId>
+      <version>0.13.1</version>
     </dependency>
     <dependency>
-    <groupId>org.apache.hive</groupId>
-    <artifactId>hive-exec</artifactId>
-    <version>0.13.1</version>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-jdbc</artifactId>
+      <version>0.13.1</version>
+    </dependency>
+    
+
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-service</artifactId>
+      <version>0.13.1</version>
     </dependency>
     <dependency>
-     <groupId>org.apache.thrift</groupId>
-     <artifactId>libthrift</artifactId>
-     <version>0.9.0</version>
-     <optional>true</optional>
-   </dependency>
-   
-   <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libfb303</artifactId>
+      <version>0.9.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.0.4</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.thrift</groupId>
+      <artifactId>libthrift</artifactId>
+      <version>0.9.0</version>
+      <optional>true</optional>
+    </dependency>
+
+
+    <dependency>
       <groupId>com.aerospike</groupId>
       <artifactId>aerospike-client</artifactId>
       <version>3.0.26</version>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.6.1</version>
+    </dependency>
+
   </dependencies>
 </project>

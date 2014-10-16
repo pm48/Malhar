@@ -17,9 +17,10 @@
 package com.datatorrent.benchmark.hive;
 
 import com.datatorrent.api.LocalMode;
+import com.datatorrent.benchmark.HiveFileBenchmarkingApp;
 import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
-import com.datatorrent.contrib.hive.HiveStore;
+import com.datatorrent.contrib.hive.HiveMetaStore;
 import java.io.InputStream;
 import java.sql.SQLException;
 import org.apache.commons.io.IOUtils;
@@ -39,14 +40,13 @@ public class HiveOutputBenchmarkTest
     InputStream inputStream = getClass().getResourceAsStream("/dt-site-hive.xml");
     conf.addResource(inputStream);
 
-    HiveStore store = new HiveStore();
+    HiveMetaStore store = new HiveMetaStore();
     store.setDbUrl(conf.get("rootDbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveOutputBenchmark.operator.hiveOutputOperator.store.connectionProperties"));
+    store.setConnectionProperties(conf.get("dt.application.HiveFileBenchmarkingApp.operator.hiveHDFSOperator.store.connectionProperties"));
 
-    HiveOutputBenchmark app = new HiveOutputBenchmark();
+    HiveFileBenchmarkingApp app = new HiveFileBenchmarkingApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
-
     try {
       lm.prepareDAG(app, conf);
       LocalMode.Controller lc = lm.getController();

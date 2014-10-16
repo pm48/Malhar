@@ -12,8 +12,8 @@ import org.apache.log4j.Logger;
 public class HiveHDFSOutput extends AbstractHiveHDFS<String, HiveMetaStore>
 {
   //map,list
-  protected String tableName = "temp";
-  Logger logger = Logger.getLogger("HiveHDFSOutput.class");
+  public static final String tableName = "temp";
+  private static final Logger logger = Logger.getLogger("HiveHDFSOutput.class");
 
   @Override
   protected byte[] getBytesForTuple(String tuple)
@@ -24,14 +24,14 @@ public class HiveHDFSOutput extends AbstractHiveHDFS<String, HiveMetaStore>
   @Override
   protected String getInsertCommand(String filepath)
   {
-    return "load data local inpath '" + filepath + "' into table test";
+    return "load data inpath '" + filepath + "' into table " + tableName;
   }
 
   @Override
   protected void setTableparams(String tuple)
   {
     try {
-      stmt.executeQuery("drop table " + tableName);
+      stmt.execute("drop table " + tableName);
       stmt.execute("CREATE TABLE IF NOT EXISTS" + tableName + "(col1 tuple) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
               + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
               + "LINES TERMINATED BY '\n'  \n"

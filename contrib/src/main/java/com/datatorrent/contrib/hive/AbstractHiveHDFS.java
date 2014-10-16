@@ -40,7 +40,7 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   protected Statement stmt;
 
   public AbstractHiveHDFS(){
-    this.setStore((S) new HiveStore());
+    this.setStore((S) new HiveMetaStore());
   }
 
   public final transient DefaultInputPort<T> input = new DefaultInputPort<T>()
@@ -104,6 +104,7 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   @Override
   public void setup(OperatorContext context)
   {
+    super.setup(context);
     System.out.println("application name is " + context.getValue(DAG.APPLICATION_NAME));
     //Minimize duplicated data in the atleast once case
     if(committedWindowId >= currentWindowId) {
@@ -190,7 +191,7 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   {
     super.beginWindow(windowId);
     try {
-      openFile(new Path(filePath));
+      fsOutput = fs.create(new Path(filePath));
     }
     catch (IOException ex) {
       logger.info(AbstractHiveHDFS.class.getName() + ex);

@@ -8,6 +8,7 @@ import com.datatorrent.lib.db.TransactionableStore;
 import static com.datatorrent.lib.db.jdbc.JdbcTransactionalStore.*;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -32,7 +33,7 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
   public static String DEFAULT_META_FILE = "dt_file";
   protected transient FileSystem fsMeta;
   protected transient FSDataOutputStream fsMetaOutput;
-  protected transient BufferedOutputStream bufferedMetaOutput;
+ // protected transient BufferedOutputStream bufferedMetaOutput;
   protected Statement stmtMetaInsert;
   protected Statement stmtMetaFetch;
   private boolean inTransaction;
@@ -113,6 +114,19 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
     return false;
   }
 
+  @Override
+  public void disconnect()
+  {
+    if (stmtMetaInsert != null) {
+      try {
+        stmtMetaInsert.close();
+      }
+      catch (SQLException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    super.disconnect();
+  }
    /**
    * Sets the name of the window column.<br/>
    * <b>Default:</b> {@value #DEFAULT_WINDOW_COL}
@@ -145,9 +159,9 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
       throw new RuntimeException(ex);
     }
 
-    Path metaFilePath = new Path("hdfs://localhost:9000/user" + fileMeta);
+    Path metaFilePath = new Path("hdfs://localhost:9000/user/" + fileMeta);
     try {
-      openFile(metaFilePath);
+      fsMetaOutput = fsMeta.create(metaFilePath);
     }
     catch (IOException ex) {
       logger.info(HiveMetaStore.class.getName() + ex);
@@ -172,7 +186,7 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
 
     try {
       stmtMetaInsert = getConnection().createStatement();
-      stmtMetaInsert.execute("load data local inpath '" + metaFilePath + "' into table " + metaTable);
+      stmtMetaInsert.execute("load data inpath '" + metaFilePath + "' into table " + metaTable);
     }
     catch (SQLException ex) {
       logger.info(HiveMetaStore.class.getName()+ ex);
@@ -186,11 +200,7 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
     Long lastWindow = getCommittedWindowIdHelper(appId, operatorId);
 
     try {
-      if(lastWindow == null) {
-        stmtMetaInsert.close();
-        connection.commit();
-      }
-
+      if(stmtMetaFetch!=null)
       stmtMetaFetch.close();
       logger.debug("Last window id: {}", lastWindow);
 
@@ -216,9 +226,10 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
   {
     try {
       String command = "select " + metaTableWindowColumn + " from " + metaTable + " where " + metaTableAppIdColumn +
-        " = " + appId + "and " + metaTableOperatorIdColumn + " = " + operatorId;
+        " = '" + appId + "' and " + metaTableOperatorIdColumn + " = " + operatorId ;
+
       logger.debug(command);
-      stmtMetaFetch = connection.prepareStatement(command);
+      stmtMetaFetch = getConnection().createStatement();
       Long lastWindow = null;
       ResultSet resultSet = stmtMetaFetch.executeQuery(command);
       if (resultSet.next()) {

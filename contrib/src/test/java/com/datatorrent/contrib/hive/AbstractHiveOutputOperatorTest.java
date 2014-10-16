@@ -37,13 +37,13 @@ public class AbstractHiveOutputOperatorTest
   public static final String HOST = "localhost";
   public static final String PORT = "10000";
   public static final String DATABASE = "default";
-  public static final String table = "test";
+  public static final String table = "dt_meta";
   public static final int NUM_WINDOWS = 10;
   public static final int BLAST_SIZE = 10;
   public static final int DATABASE_SIZE = NUM_WINDOWS * BLAST_SIZE;
   public static final int BATCH_SIZE = DATABASE_SIZE / 5;
 
-  public static HiveStore createStore(HiveStore hiveStore)
+  public static HiveMetaStore createStore(HiveMetaStore hiveStore)
   {
     String host = HOST;
     String user = "";
@@ -51,7 +51,7 @@ public class AbstractHiveOutputOperatorTest
     String password ="";
 
     if(hiveStore == null) {
-      hiveStore = new HiveStore();
+      hiveStore = new HiveMetaStore();
     }
 
     StringBuilder sb = new StringBuilder();
@@ -73,11 +73,11 @@ public class AbstractHiveOutputOperatorTest
     return hiveStore;
   }
 
-  public static void hiveInitializeDatabase(HiveStore hiveStore) throws SQLException
+  public static void hiveInitializeDatabase(HiveMetaStore hiveStore) throws SQLException
   {
     hiveStore.connect();
     Statement stmt = hiveStore.getConnection().createStatement();
-    stmt.executeQuery("drop table " + table);
+    stmt.execute("drop table " + table);
   /* ResultSet res = stmt.executeQuery("CREATE TABLE test (cities_and_size MAP<INT, STRING>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n" +
 "COLLECTION ITEMS TERMINATED BY '\n'  \n" +
 "MAP KEYS TERMINATED BY ':'  \n" +
@@ -87,65 +87,14 @@ public class AbstractHiveOutputOperatorTest
             //CREATE TABLE IF NOT EXISTS testHiveDriverTable (key INT, value STRING)");
 
     // show tables
-   // String sql = "show tables '" + table + "'";
-   stmt.executeQuery("drop table temp");
-    stmt.executeQuery("Create table temp (key int,value string) stored as TEXTFILE");
- String sql = "update table temp set key=? value=?";
-   PreparedStatement prepstmt =hiveStore.getConnection().prepareStatement(sql);
-
-    prepstmt.setInt(1, 20);
-		prepstmt.setString(2, "prerna");
-     ResultSet res = prepstmt.executeQuery();
-    if (res.next()) {
-      System.out.println(res.getString(1));
-    }
-
-    System.out.println("Running: " + sql);
-    res = stmt.executeQuery(sql);
-    if (res.next()) {
-      System.out.println(res.getString(1));
-    }
-    // describe table
-    sql = "describe " + table;
-    System.out.println("Running: " + sql);
-    res = stmt.executeQuery(sql);
-    while (res.next()) {
-      System.out.println(res.getString(1) + "\t" + res.getString(2));
-    }
-
-    // load data into table
-    // NOTE: filepath has to be local to the hive server
-    // NOTE: /tmp/a.txt is a ctrl-A separated file with two fields per line
-    String filepath = "/tmp/a.txt";
-
-
-    System.out.println("Running: " + sql);
-    //Map<Integer,String> insertMap = new HashMap<Integer,String>();
-    //insertMap.put(1, "prerna");
-    sql = "load data local inpath '" + filepath + "' into table test";
-    res = stmt.executeQuery(sql);
-
-    // select * query
-    sql = "select * from " + table;
-    System.out.println("Running: " + sql);
-    res = stmt.executeQuery(sql);
-    while (res.next()) {
-      System.out.println(res.getString(1));
-    }
-
-    // regular hive query
-    sql = "select count(1) from " + table;
-    System.out.println("Running: " + sql);
-    res = stmt.executeQuery(sql);
-    while (res.next()) {
-      System.out.println(res.getString(1));
-
-    }
-
-
-    stmt.close();
-
-    hiveStore.disconnect();
+   String sql = "show tables";
+   LOG.debug(sql);
+   stmt.execute(sql);
+   stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
+   sql = "describe" + table;
+   LOG.debug(sql);
+   stmt.close();
+   hiveStore.disconnect();
   }
 
   public static void cleanDatabase() throws SQLException
@@ -157,7 +106,7 @@ public class AbstractHiveOutputOperatorTest
   public void testHiveOutputOperator() throws SQLException
   {
     cleanDatabase();
-    HiveStore hiveStore = createStore(null);
+    HiveMetaStore hiveStore = createStore(null);
 
     Random random = new Random();
     HiveOutputOperator outputOperator = new HiveOutputOperator();

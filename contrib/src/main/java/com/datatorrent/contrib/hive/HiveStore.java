@@ -15,7 +15,12 @@
  */
 package com.datatorrent.contrib.hive;
 
+import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.lib.db.jdbc.JdbcStore;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +35,10 @@ public class HiveStore extends JdbcStore
     super();
     this.setDbDriver(driverName);
   }
+
+  
+
+
 
   /*public HiveStore getHiveStore(){
    return store;

@@ -14,14 +14,14 @@
   </property>
 
    <property>
-    <name>dt.application.HiveOutputBenchmark.operator.hiveOutputOperator.store.dbUrl</name>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.hiveHDFSOperator.store.dbUrl</name>
     <value>jdbc:hive://localhost:10000/default</value>
     <description>Test database connector string.</description>
   </property>
 
   <property>
-    <name>dt.application.HiveOutputBenchmark.operator.hiveOutputOperator.store.connectionProperties</name>
-    <value>user:"",port:10000,password:""</value>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.hiveHDFSOperator.store.connectionProperties</name>
+    <value>user:"",password:""</value>
     <description>The connection properties for the database.</description>
   </property>
 </configuration>
