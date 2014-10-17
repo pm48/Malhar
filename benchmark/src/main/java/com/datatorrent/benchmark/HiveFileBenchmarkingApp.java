@@ -21,6 +21,7 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import com.datatorrent.lib.testbench.RandomWordGenerator;
 
 
 import org.apache.hadoop.conf.Configuration;
@@ -42,17 +43,17 @@ public class HiveFileBenchmarkingApp implements StreamingApplication
 
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
 
-    RandomEventGenerator eventGenerator = dag.addOperator("eventGenerator", RandomEventGenerator.class);
+    RandomWordGenerator wordGenerator = dag.addOperator("wordGenerator", RandomWordGenerator.class);
 
-    dag.getOperatorMeta("eventGenerator").getMeta(eventGenerator.string_data).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
-    dag.getOperatorMeta("eventGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
+    dag.getOperatorMeta("wordGenerator").getMeta(wordGenerator.outputString).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
+    dag.getOperatorMeta("wordGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
 
     HiveHDFSOutput hiveHDFSOperator = dag.addOperator("hiveHDFSOperator", new HiveHDFSOutput());
-    hiveHDFSOperator.setFilePath("hdfs://localhost:9000/user/c.txt");
+    hiveHDFSOperator.setFilePath("hdfs://localhost:9000/user/d.txt");
     hiveHDFSOperator.setAppend(false);
     // dag.getOperatorMeta("hiveOutputOperator").getAttributes().put(OperatorContext.COUNTERS_AGGREGATOR, new BasicCounters.LongAggregator<MutableLong>());
 
-    dag.addStream("Generator2HDFSOutput", eventGenerator.string_data, hiveHDFSOperator.input);
+    dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveHDFSOperator.input);
   }
 
 }

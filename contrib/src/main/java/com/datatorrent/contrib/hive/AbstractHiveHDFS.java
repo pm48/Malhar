@@ -10,6 +10,7 @@ import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.annotation.Stateless;
 import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.annotation.Nonnull;
@@ -232,7 +233,7 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
    stmt.execute(command);
    }
     catch (SQLException ex) {
-      logger.info(AbstractHiveHDFS.class.getName() + ex);
+      logger.info(AbstractHiveHDFS.class.getName() + " " + ex.getMessage());
     }
 
   }

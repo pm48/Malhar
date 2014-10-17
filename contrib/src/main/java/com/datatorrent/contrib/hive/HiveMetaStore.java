@@ -5,14 +5,10 @@
 package com.datatorrent.contrib.hive;
 
 import com.datatorrent.lib.db.TransactionableStore;
-import static com.datatorrent.lib.db.jdbc.JdbcTransactionalStore.*;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.logging.Level;
 import javax.validation.constraints.NotNull;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -187,9 +183,10 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
     try {
       stmtMetaInsert = getConnection().createStatement();
       stmtMetaInsert.execute("load data inpath '" + metaFilePath + "' into table " + metaTable);
+
     }
     catch (SQLException ex) {
-      logger.info(HiveMetaStore.class.getName()+ ex);
+      logger.info(HiveMetaStore.class.getName()+ ex.getCause());
     }
 
   }

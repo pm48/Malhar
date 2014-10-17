@@ -23,7 +23,7 @@ public class HiveJdbcClient
       Logger.getLogger(HiveJdbcClient.class.getName()).log(Level.SEVERE, null, ex);
     }
 
-    Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "", "");
+    Connection con = DriverManager.getConnection("jdbc:hive2://localhost:9000/default", "", "");
     Statement stmt = con.createStatement();
     String tableName = "temp";
    //stmt.executeQuery("drop table " + tableName);

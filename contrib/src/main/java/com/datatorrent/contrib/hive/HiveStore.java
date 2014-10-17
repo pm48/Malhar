@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public class HiveStore extends JdbcStore
 {
-  private static final String driverName = "org.apache.hadoop.hive.jdbc.HiveDriver";
+  private static final String driverName = "org.apache.hive.jdbc.HiveDriver";
   private static final Logger logger = LoggerFactory.getLogger(HiveStore.class);
 
   //protected HiveStore store = new HiveStore();
@@ -36,7 +36,7 @@ public class HiveStore extends JdbcStore
     this.setDbDriver(driverName);
   }
 
-  
+
 
 
 

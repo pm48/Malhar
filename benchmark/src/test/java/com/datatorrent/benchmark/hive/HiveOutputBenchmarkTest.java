@@ -50,7 +50,7 @@ public class HiveOutputBenchmarkTest
     try {
       lm.prepareDAG(app, conf);
       LocalMode.Controller lc = lm.getController();
-      lc.run(20000);
+      lc.run(50000);
     }
     catch (Exception ex) {
       DTThrowable.rethrow(ex);

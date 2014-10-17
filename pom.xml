@@ -23,7 +23,7 @@
     </repository>
   </repositories>
 
-  <properties> 
+  <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <netbeans.hint.license>malhar-inc</netbeans.hint.license>
     <maven.deploy.skip>false</maven.deploy.skip>

@@ -17,16 +17,40 @@ package com.datatorrent.benchmark.hive;
 
 import org.junit.Test;
 import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.HiveFileBenchmarkOperator;
-
+import com.datatorrent.benchmark.HiveFileBenchmarkingApp;
+import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
+import com.datatorrent.contrib.hive.HiveMetaStore;
+import java.io.InputStream;
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * Test the DAG declaration in local mode.
  */
-public class HiveFileBenchmarkTest {
+public class HiveFileBenchmarkTest
+{
+   Logger logger = LoggerFactory.getLogger("HiveFileBenchmarkTest.class");
+
+    Configuration conf = new Configuration();
+    InputStream inputStream = getClass().getResourceAsStream("/dt-site-hive.xml");
+
+    //conf.addResource(inputStream);
+
+    HiveMetaStore store = new HiveMetaStore();
+
+   // store.setDbUrl("jdbc:hive://localhost:10000");
+
+   // hiveStore.setConnectionProperties(conf.get("dt.application.HiveOutputBenchmark.operator.hiveOutputOperator.store.connectionProperties"));
+
+   // AbstractHiveOutputOperatorTest.hiveInitializeDatabase(hiveStore);
+
+
+  LocalMode lm = LocalMode.newInstance();
 
   @Test
-  public void test() throws Exception {
-     LocalMode.runApp(new HiveFileBenchmarkOperator(), 20000);
+  public void test() throws Exception
+  {
+    LocalMode.runApp(new HiveFileBenchmarkingApp(), 20000);
   }
 
 }

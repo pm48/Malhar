@@ -31,8 +31,7 @@ public class HiveHDFSOutput extends AbstractHiveHDFS<String, HiveMetaStore>
   protected void setTableparams(String tuple)
   {
     try {
-      stmt.execute("drop table " + tableName);
-      stmt.execute("CREATE TABLE IF NOT EXISTS" + tableName + "(col1 tuple) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+      stmt.execute("CREATE TABLE IF NOT EXISTS" + tableName + "(col1 " + tuple +" ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
               + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
               + "LINES TERMINATED BY '\n'  \n"
               + "STORED AS TEXTFILE ");

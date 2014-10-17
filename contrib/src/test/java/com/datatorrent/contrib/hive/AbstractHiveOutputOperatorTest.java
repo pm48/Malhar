@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 public class AbstractHiveOutputOperatorTest
 {
   private static transient final Logger LOG = LoggerFactory.getLogger(AbstractHiveOutputOperatorTest.class);
-  public static final String HOST_PREFIX = "jdbc:hive://";
+  public static final String HOST_PREFIX = "jdbc:hive2://";
   public static final String HOST = "localhost";
   public static final String PORT = "10000";
   public static final String DATABASE = "default";
@@ -77,7 +77,6 @@ public class AbstractHiveOutputOperatorTest
   {
     hiveStore.connect();
     Statement stmt = hiveStore.getConnection().createStatement();
-    stmt.execute("drop table " + table);
   /* ResultSet res = stmt.executeQuery("CREATE TABLE test (cities_and_size MAP<INT, STRING>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n" +
 "COLLECTION ITEMS TERMINATED BY '\n'  \n" +
 "MAP KEYS TERMINATED BY ':'  \n" +
@@ -89,11 +88,23 @@ public class AbstractHiveOutputOperatorTest
     // show tables
    String sql = "show tables";
    LOG.debug(sql);
-   stmt.execute(sql);
+   ResultSet res = stmt.executeQuery(sql);
+   if (res.next()) {
+      LOG.debug(res.getString(1));
+    }
+   stmt.execute("drop table temp");
+   stmt.execute("drop table dt_meta");
    stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
-   sql = "describe" + table;
+   stmt.execute("CREATE TABLE IF NOT EXISTS temp (col1 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+              + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
+              + "LINES TERMINATED BY '\n'  \n"
+              + "STORED AS TEXTFILE ");
+   sql = "describe temp";
+   res = stmt.executeQuery(sql);
    LOG.debug(sql);
-   stmt.close();
+    if (res.next()) {
+      LOG.debug(res.getString(1));
+    }
    hiveStore.disconnect();
   }
 
