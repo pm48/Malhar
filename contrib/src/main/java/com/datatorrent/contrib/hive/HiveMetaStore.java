@@ -162,8 +162,9 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
     catch (IOException ex) {
       logger.info(HiveMetaStore.class.getName() + ex);
     }
+    int currentWindow = (int)currentWindowId;
     try {
-      fsMetaOutput.writeLong(currentWindowId);
+      fsMetaOutput.writeInt(currentWindow);
       fsMetaOutput.write(appId.getBytes());
       fsMetaOutput.writeByte(operatorId);
     }
@@ -229,8 +230,14 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
       stmtMetaFetch = getConnection().createStatement();
       Long lastWindow = null;
       ResultSet resultSet = stmtMetaFetch.executeQuery(command);
+      logger.info("Got result");
+      int lastWindowInt = -1;
       if (resultSet.next()) {
-        lastWindow = resultSet.getLong(1);
+        lastWindowInt = resultSet.getInt(1);
+        logger.info("In resultset next method");
+        lastWindow = (long)lastWindowInt;
+        logger.debug("last window is" + lastWindow);
+        logger.info("last integer window is" + lastWindowInt);
       }
       return lastWindow;
     }
