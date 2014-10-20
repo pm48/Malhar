@@ -17,7 +17,6 @@ package com.datatorrent.benchmark;
 
 import com.datatorrent.contrib.hive.AbstractHiveHDFS;
 import com.datatorrent.contrib.hive.HiveMetaStore;
-import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,18 +37,5 @@ public class HiveHDFSOutput extends AbstractHiveHDFS<String, HiveMetaStore>
     return "load data inpath '" + filepath + "' into table " + tableName;
   }
 
-  @Override
-  protected void setTableparams(String tuple)
-  {
-    try {
-      stmt.execute("CREATE TABLE IF NOT EXISTS" + tableName + "(col1 " + tuple +" ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
-              + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
-              + "LINES TERMINATED BY '\n'  \n"
-              + "STORED AS TEXTFILE ");
-    }
-    catch (SQLException ex) {
-      logger.debug(HiveHDFSOutput.class.getName() + ex);
-    }
-  }
 
 }
