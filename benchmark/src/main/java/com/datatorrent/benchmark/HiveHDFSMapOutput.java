@@ -17,29 +17,50 @@ package com.datatorrent.benchmark;
 
 import com.datatorrent.contrib.hive.AbstractHiveHDFS;
 import com.datatorrent.contrib.hive.HiveMetaStore;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.sql.SQLException;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HiveHDFSOutput extends AbstractHiveHDFS<String, HiveMetaStore>
+public class HiveHDFSMapOutput extends AbstractHiveHDFS<Map, HiveMetaStore>
 {
-  public static final String tableName = "temp";
+  public static final String tableName = "tempMap";
   private static final Logger logger = LoggerFactory.getLogger("HiveHDFSOutput.class");
 
-  @Override
-  protected byte[] getBytesForTuple(String tuple)
+  protected byte[] getBytesForTuple(Map tuple)
   {
-    return tuple.getBytes();
+    ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+    ObjectOutputStream out =null;
+    try {
+      out = new ObjectOutputStream(byteOut);
+      out.writeObject(tuple);
+    }
+    catch (IOException ex) {
+      logger.info(HiveHDFSMapOutput.class.getName() + ex);
+    }
+    if(out!=null)
+      try {
+        out.close();
+    }
+    catch (IOException ex) {
+      logger.info(HiveHDFSMapOutput.class.getName() + ex);
+    }
+    return byteOut.toByteArray();
+
   }
 
   @Override
   protected String getInsertCommand(String filepath)
   {
-    return "load data inpath '" + filepath + "' into table " + tableName;
+        return "load data inpath '" + filepath + "' into table " + tableName;
+
   }
 
   @Override
-  protected void setTableparams(String tuple)
+  protected void setTableparams(Map tuple)
   {
     try {
       stmt.execute("CREATE TABLE IF NOT EXISTS" + tableName + "(col1 " + tuple +" ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"

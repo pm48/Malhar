@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.datatorrent.contrib.hive;
 
 import com.datatorrent.api.Attribute.AttributeMap;
@@ -48,9 +47,9 @@ public class AbstractHiveOutputOperatorTest
     String host = HOST;
     String user = "";
     String port = PORT;
-    String password ="";
+    String password = "";
 
-    if(hiveStore == null) {
+    if (hiveStore == null) {
       hiveStore = new HiveMetaStore();
     }
 
@@ -60,7 +59,7 @@ public class AbstractHiveOutputOperatorTest
 
     LOG.debug("Host name: {}", tempHost);
     LOG.debug("User name: {}", user);
-    LOG.debug("Port: {}" , port);
+    LOG.debug("Port: {}", port);
     hiveStore.setDbUrl(tempHost);
 
     sb.append("user:").append(user).append(",");
@@ -77,40 +76,44 @@ public class AbstractHiveOutputOperatorTest
   {
     hiveStore.connect();
     Statement stmt = hiveStore.getConnection().createStatement();
-  /* ResultSet res = stmt.executeQuery("CREATE TABLE test (cities_and_size MAP<INT, STRING>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n" +
-"COLLECTION ITEMS TERMINATED BY '\n'  \n" +
-"MAP KEYS TERMINATED BY ':'  \n" +
-"LINES TERMINATED BY '\n'  \n" +
-"STORED AS TEXTFILE ");*/
+    /* ResultSet res = stmt.executeQuery("CREATE TABLE test (cities_and_size MAP<INT, STRING>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n" +
+     "COLLECTION ITEMS TERMINATED BY '\n'  \n" +
+     "MAP KEYS TERMINATED BY ':'  \n" +
+     "LINES TERMINATED BY '\n'  \n" +
+     "STORED AS TEXTFILE ");*/
 
             //CREATE TABLE IF NOT EXISTS testHiveDriverTable (key INT, value STRING)");
-
     // show tables
-   String sql = "show tables";
-   LOG.debug(sql);
-   ResultSet res = stmt.executeQuery(sql);
-   if (res.next()) {
-      LOG.debug(res.getString(1));
-    }
-   stmt.execute("drop table temp");
-   stmt.execute("drop table dt_meta");
-   stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
-   stmt.execute("CREATE TABLE IF NOT EXISTS temp (col1 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
-              + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
-              + "LINES TERMINATED BY '\n'  \n"
-              + "STORED AS TEXTFILE ");
-   sql = "describe temp";
-   res = stmt.executeQuery(sql);
-   LOG.debug(sql);
+    String sql = "show tables";
+    LOG.debug(sql);
+    ResultSet res = stmt.executeQuery(sql);
     if (res.next()) {
       LOG.debug(res.getString(1));
     }
-   hiveStore.disconnect();
+    stmt.execute("drop table temp");
+    stmt.execute("drop table dt_meta");
+    stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
+    stmt.execute("CREATE TABLE IF NOT EXISTS temp (col1 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+            + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
+            + "LINES TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
+    stmt.execute("CREATE TABLE IF NOT EXISTS tempMap (col1 map<string,string>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+            + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
+            + "MAP KEYS TERMINATED BY ':'  \n"
+            + "LINES TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
+    sql = "describe temp";
+    res = stmt.executeQuery(sql);
+    LOG.debug(sql);
+    if (res.next()) {
+      LOG.debug(res.getString(1));
+    }
+    hiveStore.disconnect();
   }
 
   public static void cleanDatabase() throws SQLException
   {
-     hiveInitializeDatabase(createStore(null));
+    hiveInitializeDatabase(createStore(null));
   }
 
   @Test
@@ -123,8 +126,7 @@ public class AbstractHiveOutputOperatorTest
     HiveOutputOperator outputOperator = new HiveOutputOperator();
 
   //  outputOperator.setStore(hiveStore);
- //   outputOperator.setBatchSize(BATCH_SIZE);
-
+    //   outputOperator.setBatchSize(BATCH_SIZE);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -132,24 +134,21 @@ public class AbstractHiveOutputOperatorTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
   //  outputOperator.setup(context);
+    for (int wid = 0, total = 0;
+            wid < NUM_WINDOWS;
+            wid++) {
+      //   outputOperator.beginWindow(wid);
 
-    for(int wid = 0, total = 0;
-        wid < NUM_WINDOWS;
-        wid++) {
-   //   outputOperator.beginWindow(wid);
-
-      for(int tupleCounter = 0;
-          tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
-          tupleCounter++,
-          total++) {
-       // outputOperator.input.put(random.nextInt());
+      for (int tupleCounter = 0;
+              tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
+              tupleCounter++, total++) {
+        // outputOperator.input.put(random.nextInt());
       }
 
-    //  outputOperator.endWindow();
+      //  outputOperator.endWindow();
     }
 
    // outputOperator.teardown();
-
     hiveStore.connect();
 
     int databaseSize = -1;
@@ -165,4 +164,5 @@ public class AbstractHiveOutputOperatorTest
                         DATABASE_SIZE,
                         databaseSize);
   }
+
 }

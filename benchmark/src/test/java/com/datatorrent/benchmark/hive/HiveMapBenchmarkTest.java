@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.datatorrent.benchmark.hive;
 
 import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.HiveFileBenchmarkingApp;
+import com.datatorrent.benchmark.HiveMapBenchmarkApp;
 import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
 import com.datatorrent.contrib.hive.HiveMetaStore;
@@ -26,13 +25,9 @@ import java.sql.SQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class HiveOutputBenchmarkTest
+public class HiveMapBenchmarkTest
 {
-  private static final Logger LOG = LoggerFactory.getLogger(HiveOutputBenchmarkTest.class);
-
   @Test
   public void testMethod() throws SQLException
   {
@@ -42,9 +37,9 @@ public class HiveOutputBenchmarkTest
 
     HiveMetaStore store = new HiveMetaStore();
     store.setDbUrl(conf.get("rootDbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.connectionProperties"));
+    store.setConnectionProperties(conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHDFSMapOutput.store.connectionProperties"));
 
-    HiveFileBenchmarkingApp app = new HiveFileBenchmarkingApp();
+    HiveMapBenchmarkApp app = new HiveMapBenchmarkApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {
@@ -58,4 +53,7 @@ public class HiveOutputBenchmarkTest
 
     IOUtils.closeQuietly(inputStream);
   }
+
+
+
 }

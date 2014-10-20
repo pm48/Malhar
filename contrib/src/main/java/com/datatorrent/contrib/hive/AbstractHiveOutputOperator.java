@@ -38,7 +38,6 @@ public abstract class AbstractHiveOutputOperator<T,S extends HiveStore> extends 
   private final List<T> tuples;
 
   private transient int batchStartIdx;
-  //private transient Statement stmt;
   private transient PreparedStatement updateCommand;
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveOutputOperator.class);
   protected long tupleCount = 0;

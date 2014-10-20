@@ -13,15 +13,40 @@
     <description>Root DbUrl.</description>
   </property>
 
-   <property>
-    <name>dt.application.HiveFileBenchmarkingApp.operator.hiveHDFSOperator.store.dbUrl</name>
+  <property>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.filepath</name>
+    <value>hdfs://localhost:9000/user/stringOutput.txt"</value>
+    <description>Test database connector string.</description>
+  </property>
+
+  <property>
+    <name>dt.application.HiveMapBenchmarkApp.operator.HiveHDFSMapOutput.store.filepath</name>
+    <value>hdfs://localhost:9000/user/map.txt"</value>
+    <description>Test database connector string.</description>
+  </property>
+
+  <property>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
     <description>Test database connector string.</description>
   </property>
 
   <property>
-    <name>dt.application.HiveFileBenchmarkingApp.operator.hiveHDFSOperator.store.connectionProperties</name>
+    <name>dt.application.HiveMapBenchmarkApp.operator.HiveHDFSMapOutput.store.dbUrl</name>
+    <value>jdbc:hive2://localhost:10000/default</value>
+    <description>Test database connector string.</description>
+  </property>
+
+
+  <property>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.connectionProperties</name>
     <value>user:"",password:""</value>
     <description>The connection properties for the database.</description>
+  </property>
+
+  <property>
+    <name>dt.application.HiveMapBenchmarkApp.operator.HiveHDFSMapOutput.store.connectionProperties</name>
+    <value>user:"",password:""</value>
+    <description>Test database connector string.</description>
   </property>
 </configuration>
