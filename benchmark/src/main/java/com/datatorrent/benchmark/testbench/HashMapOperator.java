@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,25 +35,23 @@ public class HashMapOperator implements InputOperator
   public void emitTuples()
   {
     HashMap<String, Double> hmap = new HashMap<String, Double>();
-    HashMap<String, ArrayList<Integer>> hmapList = new HashMap<String, ArrayList<Integer>>();
+    //HashMap<String, ArrayList<Integer>> hmapList = new HashMap<String, ArrayList<Integer>>();
     HashMap<String, HashMap<String, Integer>> hmapMap = new HashMap<String, HashMap<String, Integer>>();
-    ArrayList<Integer> list = new ArrayList<Integer>();
+    //ArrayList<Integer> list = new ArrayList<Integer>();
     HashMap<String, Integer> hmapMapTemp;
     int numTuples = 1000;
     Integer aval = 1000;
     Integer bval = 100;
 
     HashMap<String, ArrayList<Integer>> stuple = new HashMap<String, ArrayList<Integer>>();
-    //int numtuples = 100000000; // For benchmarking
-    int numtuples = 1000;
     String seed1 = "a";
     ArrayList val = new ArrayList();
     val.add(10);
     val.add(20);
     stuple.put(seed1, val);
-     if (hmapList_data.isConnected()) {
-        hmapList_data.emit(stuple);
-      }
+    if (hmapList_data.isConnected()) {
+      hmapList_data.emit(stuple);
+    }
     for (int i = 0; i < numTuples; i++) {
       hmap.clear();
       //list.clear();
@@ -67,14 +65,6 @@ public class HashMapOperator implements InputOperator
       if (hmap_data.isConnected()) {
         hmap_data.emit(hmap);
       }
-
-      //list.add(i);
-      //hmapList.put("x", list);
-      //list.add(20);
-      //hmapList.put("y", list);
-
-
-
       hmapMapTemp.put("a", aval);
       hmapMapTemp.put("b", bval);
 
