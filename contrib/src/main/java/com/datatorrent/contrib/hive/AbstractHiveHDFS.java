@@ -38,7 +38,6 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   protected transient FileSystem fs;
   private long currentWindowId;
   private long committedWindowId = Stateless.WINDOW_ID;
-
   protected long totalBytesWritten = 0;
   protected boolean append = true;
   protected int bufferSize = 0;
@@ -48,7 +47,7 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   protected Statement stmt;
 
   public AbstractHiveHDFS(){
-    this.setStore((S) new HiveMetaStore());
+    store = new HiveMetaStore();
   }
 
   public final transient DefaultInputPort<T> input = new DefaultInputPort<T>()
@@ -80,19 +79,6 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
     }
   }
 
-   protected void openFile(Path filepath) throws IOException
-  {
-    if (fs.exists(filepath)) {
-        fs.delete(filepath, true);
-        logger.debug("deleting {} ", filepath);
-      }
-    else {
-      fsOutput = fs.create(filepath);
-      logger.debug("creating {} ", filepath);
-    }
-
-  }
-
   protected void closeFile() throws IOException
   {
     if (fsOutput != null) {
@@ -110,7 +96,7 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   {
     super.setup(context);
     appId = context.getValue(DAG.APPLICATION_ID);
-    //store.setFilepath("/"+appId);
+    store.setFilepath(store.filepath+"/"+appId);
     //Minimize duplicated data in the atleast once case
     if(committedWindowId >= currentWindowId) {
       return;
@@ -228,7 +214,5 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   protected abstract byte[] getBytesForTuple(T tuple);
   @Nonnull
   protected abstract String getInsertCommand(String filepath);
-
-  protected abstract void setTableparams(T tuple);
 
 }

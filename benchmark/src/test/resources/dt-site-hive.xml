@@ -15,13 +15,13 @@
 
   <property>
     <name>dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.filepath</name>
-    <value>hdfs://localhost:9000/user/stringOutput.txt"</value>
+    <value>hdfs://localhost:9000/user/</value>
     <description>Test database connector string.</description>
   </property>
 
   <property>
     <name>dt.application.HiveMapBenchmarkApp.operator.HiveHDFSMapOutput.store.filepath</name>
-    <value>hdfs://localhost:9000/user/map.txt"</value>
+    <value>hdfs://localhost:9000/user/</value>
     <description>Test database connector string.</description>
   </property>
 

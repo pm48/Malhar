@@ -241,6 +241,7 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
       return lastWindow;
     }
     catch (SQLException ex) {
+      logger.info("Exception occurred" + ex.getMessage());
       throw new RuntimeException(ex);
     }
   }

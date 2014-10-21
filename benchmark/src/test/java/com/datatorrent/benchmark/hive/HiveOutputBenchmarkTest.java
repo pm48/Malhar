@@ -43,7 +43,9 @@ public class HiveOutputBenchmarkTest
     HiveMetaStore store = new HiveMetaStore();
     store.setDbUrl(conf.get("rootDbUrl"));
     store.setConnectionProperties(conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.connectionProperties"));
-
+    LOG.info("conf properties are" + conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.connectionProperties"));
+    LOG.info("conf dburl is" + conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.dbUrl"));
+    LOG.info("conf filepath is" + conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.filepath"));
     HiveFileBenchmarkingApp app = new HiveFileBenchmarkingApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
