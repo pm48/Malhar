@@ -44,7 +44,7 @@ public class HiveFileBenchmarkingApp implements StreamingApplication
     dag.getOperatorMeta("WordGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
 
     HiveHDFSOutput HiveHdfsOperator = dag.addOperator("HiveHdfsOperator", new HiveHDFSOutput());
-    //HiveHdfsOperator.setFilePath("hdfs://localhost:9000/user/d.txt");
+    HiveHdfsOperator.setFilename("HiveInsertString");
     HiveHdfsOperator.setAppend(false);
     dag.addStream("Generator2HDFSOutput", WordGenerator.outputString, HiveHdfsOperator.input);
   }

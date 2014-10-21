@@ -20,6 +20,7 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import com.datatorrent.lib.testbench.RandomEventGenerator;
 import org.apache.hadoop.conf.Configuration;
 
 @ApplicationAnnotation(name = "HiveMapBenchmarkApp")
@@ -29,14 +30,15 @@ public class HiveMapBenchmarkApp implements StreamingApplication
   public void populateDAG(DAG dag, Configuration conf)
   {
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
-
+    RandomEventGenerator EventGenerator = dag.addOperator("EventGenerator", RandomEventGenerator.class);
     RandomMapOutput MapGenerator = dag.addOperator("MapGenerator", RandomMapOutput.class);
 
     dag.getOperatorMeta("MapGenerator").getMeta(MapGenerator.map_data).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
     dag.getOperatorMeta("MapGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
+    dag.addStream("EventGenerator2Map", EventGenerator.integer_data, MapGenerator.input);
 
     HiveHDFSMapOutput HiveHdfsMapOperator = dag.addOperator("HiveHdfsMapOperator", new HiveHDFSMapOutput());
-    //HiveHdfsOperator.setFilePath("hdfs://localhost:9000/user/d.txt");
+    HiveHdfsMapOperator.setFilename("HiveInsertMap");
     HiveHdfsMapOperator.setAppend(false);
     dag.addStream("MapGenerator2HiveOutput", MapGenerator.map_data, HiveHdfsMapOperator.input);
   }

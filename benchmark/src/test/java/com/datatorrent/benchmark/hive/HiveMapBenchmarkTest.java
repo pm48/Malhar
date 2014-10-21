@@ -25,20 +25,25 @@ import java.sql.SQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HiveMapBenchmarkTest
 {
   @Test
   public void testMethod() throws SQLException
   {
+    Logger LOG = LoggerFactory.getLogger("HiveMapBenchmarkTest.class");
     Configuration conf = new Configuration();
     InputStream inputStream = getClass().getResourceAsStream("/dt-site-hive.xml");
     conf.addResource(inputStream);
 
     HiveMetaStore store = new HiveMetaStore();
     store.setDbUrl(conf.get("rootDbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHDFSMapOutput.store.connectionProperties"));
-
+    store.setConnectionProperties(conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.connectionProperties"));
+    LOG.info("conf properties are" + conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.connectionProperties"));
+    LOG.info("conf dburl is" + conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.dbUrl"));
+    LOG.info("conf filepath is" + conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.filepath"));
     HiveMapBenchmarkApp app = new HiveMapBenchmarkApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();

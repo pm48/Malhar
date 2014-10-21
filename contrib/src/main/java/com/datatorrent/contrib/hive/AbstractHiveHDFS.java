@@ -31,8 +31,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends AbstractStoreOutputOperator<T, HiveMetaStore>
+public abstract class AbstractHiveHDFS<T, S extends HiveMetaStore> extends AbstractStoreOutputOperator<T, HiveMetaStore>
 {
   protected transient FSDataOutputStream fsOutput;
   protected transient FileSystem fs;
@@ -44,9 +43,21 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveHDFS.class);
   private transient String appId;
   private transient int operatorId;
+  protected String filename;
+
+  public String getFilename()
+  {
+    return filename;
+  }
+
+  public void setFilename(String filename)
+  {
+    this.filename = filename;
+  }
   protected Statement stmt;
 
-  public AbstractHiveHDFS(){
+  public AbstractHiveHDFS()
+  {
     store = new HiveMetaStore();
   }
 
@@ -66,16 +77,17 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
    * @param t incoming tuple
    */
   @Override
-  public void processTuple(T tuple){
-     //Minimize duplicated data in the atleast once case
-    if(committedWindowId >= currentWindowId) {
+  public void processTuple(T tuple)
+  {
+    //Minimize duplicated data in the atleast once case
+    if (committedWindowId >= currentWindowId) {
       return;
     }
     try {
       fsOutput.write(getBytesForTuple(tuple));
     }
     catch (IOException ex) {
-      logger.debug(AbstractHiveHDFS.class.getName()+ ex);
+      logger.debug(AbstractHiveHDFS.class.getName() + ex);
     }
   }
 
@@ -96,19 +108,20 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   {
     super.setup(context);
     appId = context.getValue(DAG.APPLICATION_ID);
-    store.setFilepath(store.filepath+"/"+appId);
     //Minimize duplicated data in the atleast once case
-    if(committedWindowId >= currentWindowId) {
+    if (committedWindowId >= currentWindowId) {
       return;
     }
     try {
-      fs = FileSystem.newInstance(new Path(store.filepath).toUri(), new Configuration());
+      fs = FileSystem.newInstance(new Path(store.getFilepath()).toUri(), new Configuration());
     }
     catch (IOException ex) {
       throw new RuntimeException(ex);
     }
 
     operatorId = context.getId();
+    store.setFilepath(store.filepath + "/" + appId + "/" + operatorId);
+
     //Get the last completed window.
     committedWindowId = store.getCommittedWindowId(appId, operatorId);
     logger.debug("AppId {} OperatorId {}", appId, operatorId);
@@ -130,7 +143,6 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
     fs = null;
     append = false;
   }
-
 
   /**
    * Append to existing file. Default is true.
@@ -155,12 +167,27 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
     this.bufferSize = bufferSize;
   }
 
-   @Override
+  @Override
   public void beginWindow(long windowId)
   {
     super.beginWindow(windowId);
     try {
-      fsOutput = fs.create(new Path(store.filepath));
+      Path filepath = new Path(store.getFilepath() + "/" + filename);
+      if (fs.exists(filepath)) {
+        if (append) {
+          fsOutput = fs.append(filepath);
+          logger.debug("appending to {}", filepath);
+        }
+        else {
+          fs.delete(filepath, true);
+          fsOutput = fs.create(filepath);
+          logger.debug("creating {} ", filepath);
+        }
+      }
+      else {
+        fsOutput = fs.create(filepath);
+        logger.debug("creating {}", filepath);
+      }
     }
     catch (IOException ex) {
       logger.info(AbstractHiveHDFS.class.getName() + ex);
@@ -174,17 +201,17 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
   {
     super.endWindow();
     try {
-       if (fsOutput != null) {
-      fsOutput.close();
-      fsOutput = null;
-    }
+      if (fsOutput != null) {
+        fsOutput.close();
+        fsOutput = null;
+      }
     }
     catch (IOException ex) {
       logger.debug(AbstractHiveHDFS.class.getName() + ex);
     }
     processFile();
     //This window is done so write it to the database.
-    if(committedWindowId < currentWindowId) {
+    if (committedWindowId < currentWindowId) {
 
       store.storeCommittedWindowId(appId, operatorId, currentWindowId);
       committedWindowId = currentWindowId;
@@ -192,14 +219,13 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
 
   }
 
-
   private void processFile()
   {
-   String command = getInsertCommand(store.getFilepath());
-   try {
-   stmt = store.getConnection().createStatement();
-   stmt.execute(command);
-   }
+    String command = getInsertCommand(store.getFilepath());
+    try {
+      stmt = store.getConnection().createStatement();
+      stmt.execute(command);
+    }
     catch (SQLException ex) {
       logger.info(AbstractHiveHDFS.class.getName() + " " + ex.getMessage());
     }
@@ -208,10 +234,12 @@ public abstract class AbstractHiveHDFS<T,S extends HiveMetaStore> extends Abstra
 
   /**
    * This function returns the byte array for the given tuple.
+   *
    * @param t The tuple to convert into a byte array.
    * @return The byte array for a given tuple.
    */
   protected abstract byte[] getBytesForTuple(T tuple);
+
   @Nonnull
   protected abstract String getInsertCommand(String filepath);
 

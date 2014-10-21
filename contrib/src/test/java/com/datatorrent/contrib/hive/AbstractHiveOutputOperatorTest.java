@@ -92,6 +92,7 @@ public class AbstractHiveOutputOperatorTest
     }
     stmt.execute("drop table temp");
     stmt.execute("drop table dt_meta");
+    stmt.execute("drop table tempMap");
     stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
     stmt.execute("CREATE TABLE IF NOT EXISTS temp (col1 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
@@ -102,7 +103,7 @@ public class AbstractHiveOutputOperatorTest
             + "MAP KEYS TERMINATED BY ':'  \n"
             + "LINES TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
-    sql = "describe temp";
+    sql = "describe tempMap";
     res = stmt.executeQuery(sql);
     LOG.debug(sql);
     if (res.next()) {

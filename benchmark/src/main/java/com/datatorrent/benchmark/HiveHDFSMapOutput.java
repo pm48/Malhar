@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class HiveHDFSMapOutput extends AbstractHiveHDFS<Map, HiveMetaStore>
 {
   public static final String tableName = "tempMap";
-  private static final Logger logger = LoggerFactory.getLogger("HiveHDFSOutput.class");
+  private static final Logger logger = LoggerFactory.getLogger("HiveHDFSMapOutput.class");
 
   protected byte[] getBytesForTuple(Map tuple)
   {
