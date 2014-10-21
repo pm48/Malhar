@@ -36,7 +36,7 @@ public class HiveMapBenchmarkApp implements StreamingApplication
     dag.getOperatorMeta("MapGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
 
     HiveHDFSMapOutput HiveHdfsMapOperator = dag.addOperator("HiveHdfsMapOperator", new HiveHDFSMapOutput());
-    //HiveHdfsOperator.setFilePath("hdfs://localhost:9000/user/d.txt");
+    HiveHdfsMapOperator.setFilename("HiveInsertMap");
     HiveHdfsMapOperator.setAppend(false);
     dag.addStream("MapGenerator2HiveOutput", MapGenerator.map_data, HiveHdfsMapOperator.input);
   }
