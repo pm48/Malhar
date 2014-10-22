@@ -15,7 +15,7 @@
   <properties>
     <!-- skip tests by default as they depend on manual setup -->
     <skip.contrib.module.tests>true</skip.contrib.module.tests>
-    <skipTests>true</skipTests>
+    <skipTests>false</skipTests>
   </properties>
   <repositories>
     <repository>
@@ -414,7 +414,12 @@
       <version>0.9.0</version>
       <optional>true</optional>
     </dependency>
-
+     <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-serde</artifactId>
+      <version>0.13.1</version>
+    </dependency>
+   
 
     <dependency>
       <groupId>com.aerospike</groupId>
@@ -422,7 +427,7 @@
       <version>3.0.26</version>
       <optional>true</optional>
     </dependency>
-    
+
 
   </dependencies>
 </project>

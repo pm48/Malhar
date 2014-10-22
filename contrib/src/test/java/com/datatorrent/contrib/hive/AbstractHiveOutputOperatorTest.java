@@ -85,27 +85,53 @@ public class AbstractHiveOutputOperatorTest
             //CREATE TABLE IF NOT EXISTS testHiveDriverTable (key INT, value STRING)");
     // show tables
     String sql = "show tables";
+
     LOG.debug(sql);
     ResultSet res = stmt.executeQuery(sql);
     if (res.next()) {
       LOG.debug(res.getString(1));
     }
-    stmt.execute("drop table temp");
-    stmt.execute("drop table dt_meta");
-    stmt.execute("drop table tempMap");
-    stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
-    stmt.execute("CREATE TABLE IF NOT EXISTS temp (col1 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
-            + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
-            + "LINES TERMINATED BY '\n'  \n"
-            + "STORED AS TEXTFILE ");
-    stmt.execute("CREATE TABLE IF NOT EXISTS tempMap (col1 map<string,string>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("drop table temp4");
+    String str = "CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe' WITH SERDEPROPERTIES ( input.regex = (\"[^\"]*\"[:]((\\b[0-9]+)?\\.)?[0-9]+\\b)) stored as textfile";
+  //  stmt.execute("drop table dt_meta");
+  //  stmt.execute("drop table tempMap");
+  //  stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
+
+    /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
             + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
             + "MAP KEYS TERMINATED BY ':'  \n"
-            + "LINES TERMINATED BY '\n'  \n"
-            + "STORED AS TEXTFILE ");
-    sql = "describe tempMap";
-    res = stmt.executeQuery(sql);
+            + "LINES TERMINATED BY '\n' "
+            + "STORED AS TEXTFILE");*/
+    stmt.execute(str);
+    String filepath = "/user/README.txt";
+    String tableName = "temp4";
+    sql = "load data inpath '" + filepath + "' into table " + tableName;
+    stmt.execute(sql);
     LOG.debug(sql);
+    // select * query
+    sql = "select * from temp4";
+    System.out.println("Running: " + sql);
+    res = stmt.executeQuery(sql);
+     while (res.next()) {
+      System.out.println(res.getString(1));
+      System.out.println(res.getString(2));
+      System.out.println(res.getString(3));
+      System.out.println(res.getString(4));
+      System.out.println(res.getString(5));
+      System.out.println(res.getString(6));
+      System.out.println(res.getString(7));
+      System.out.println(res.getString(8));
+      System.out.println("Next row");
+    }
+
+    // regular hive query
+    sql = "select count(*) from " + tableName;
+    System.out.println("Running: " + sql);
+    res = stmt.executeQuery(sql);
+    while (res.next()) {
+      System.out.println(res.getString(1));
+
+    }
     if (res.next()) {
       LOG.debug(res.getString(1));
     }
@@ -121,49 +147,7 @@ public class AbstractHiveOutputOperatorTest
   public void testHiveOutputOperator() throws SQLException
   {
     cleanDatabase();
-    HiveMetaStore hiveStore = createStore(null);
 
-    Random random = new Random();
-    HiveOutputOperator outputOperator = new HiveOutputOperator();
-
-  //  outputOperator.setStore(hiveStore);
-    //   outputOperator.setBatchSize(BATCH_SIZE);
-    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
-    attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
-    attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
-    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
-    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
-
-  //  outputOperator.setup(context);
-    for (int wid = 0, total = 0;
-            wid < NUM_WINDOWS;
-            wid++) {
-      //   outputOperator.beginWindow(wid);
-
-      for (int tupleCounter = 0;
-              tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
-              tupleCounter++, total++) {
-        // outputOperator.input.put(random.nextInt());
-      }
-
-      //  outputOperator.endWindow();
-    }
-
-   // outputOperator.teardown();
-    hiveStore.connect();
-
-    int databaseSize = -1;
-
-    Statement statement = hiveStore.getConnection().createStatement();
-    ResultSet resultSet = statement.executeQuery("select count(*) from test");
-    resultSet.next();
-    databaseSize = resultSet.getInt(1);
-
-    hiveStore.disconnect();
-
-    Assert.assertEquals("Numer of tuples in database",
-                        DATABASE_SIZE,
-                        databaseSize);
   }
 
 }

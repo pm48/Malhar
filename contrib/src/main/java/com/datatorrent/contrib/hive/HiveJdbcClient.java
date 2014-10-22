@@ -23,60 +23,48 @@ public class HiveJdbcClient
       Logger.getLogger(HiveJdbcClient.class.getName()).log(Level.SEVERE, null, ex);
     }
 
-    Connection con = DriverManager.getConnection("jdbc:hive2://localhost:9000/default", "", "");
+    Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "", "");
     Statement stmt = con.createStatement();
-    String tableName = "temp";
-   //stmt.executeQuery("drop table " + tableName);
-    stmt.execute("CREATE TABLE IF NOT EXISTS temp (cities_and_size STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n" +
-"COLLECTION ITEMS TERMINATED BY '\n'  \n" +
-"MAP KEYS TERMINATED BY ':'  \n" +
-"LINES TERMINATED BY '\n'  \n" +
-"STORED AS TEXTFILE ");
-            //CREATE TABLE IF NOT EXISTS testHiveDriverTable (key INT, value STRING)");
+    String tableName = "temp4";
+    stmt.execute("drop table temp4");
+    stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3 map<string,int>,col4 map<String,int>,col5 map<string,int>) \n"
+            + "row format SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'  \n"
+           // + "WITH SERDEPROPERTIES (“input.regex” = “([^ ]*) ([^ ]*) ([^ ]*) (-|\\\\[[^\\\\]]*\\\\]) ([^ \\\"]*|\\”[^\\\"]*\\”) ”),“output.format.string”=”%1$s %2$s %3$s %4$s %5$s”)  \n"
+            + "COLLECTION ITEMS TERMINATED BY ','  \n"
+            + "MAP KEYS TERMINATED BY ':'  \n"
+            + "LINES TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
+    String filepath = "/user/README.txt";
+
+    String sql = "load data inpath '" + filepath + "' into table " + tableName;
+    stmt.execute(sql);
+
 
     // show tables
-    String sql = "show tables '" + tableName + "'";
+    sql = "show tables '" + tableName + "'";
     System.out.println("Running: " + sql);
-    stmt.execute(sql);
-   /* if (res.next()) {
+    ResultSet res = stmt.executeQuery(sql);
+    if (res.next()) {
       System.out.println(res.getString(1));
-    }*/
-    // describe table
-    sql = "describe temp";
-    System.out.println("Running: " + sql);
-    stmt.execute(sql);
-    /*while (res.next()) {
-      System.out.println(res.getString(1) + "\t" + res.getString(2));
-    }*/
+    }
 
-    // load data into table
-    // NOTE: filepath has to be local to the hive server
-    // NOTE: /tmp/a.txt is a ctrl-A separated file with two fields per line
-    String filepath = "hdfs://localhost:9000/user/b.txt";
-
-
-    System.out.println("Running: " + filepath);
-    //Map<Integer,String> insertMap = new HashMap<Integer,String>();
-    //insertMap.put(1, "prerna");
-    sql = "load data inpath '/user/wordsforproblem.txt' INTO TABLE temp";
-    stmt.execute(sql);
 
     // select * query
-    sql = "select * from temp";
+    sql = "select * from temp4";
     System.out.println("Running: " + sql);
-    stmt.execute(sql);
-     /*while (res.next()) {
+    res = stmt.executeQuery(sql);
+     while (res.next()) {
       System.out.println(res.getString(1));
-    }*/
+    }
 
     // regular hive query
-    sql = "select count(1) from " + tableName;
+    sql = "select count(*) from " + tableName;
     System.out.println("Running: " + sql);
-    stmt.execute(sql);
-   /* while (res.next()) {
+    res = stmt.executeQuery(sql);
+    while (res.next()) {
       System.out.println(res.getString(1));
 
-    }*/
+    }
   }
 
 }
