@@ -15,111 +15,47 @@
  */
 package com.datatorrent.benchmark.fs;
 
+import com.datatorrent.lib.testbench.RandomWordGenerator;
+import com.datatorrent.api.Context.OperatorContext;
+import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.DAG;
-import com.datatorrent.api.DAG.Locality;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
-import com.datatorrent.benchmark.RandomWordInputModule;
+import com.datatorrent.lib.counters.BasicCounters;
+import org.apache.commons.lang.mutable.MutableLong;
 
 
 import org.apache.hadoop.conf.Configuration;
 
 /**
- * Application used to benchmark FS output operator
+ * Application used to benchmark HDFS output operator
  * The DAG consists of random word generator operator that is
- * connected to FS output operator that writes to a file on FS.<p>
+ * connected to HDFS output operator that writes to a file on HDFS.<p>
  *
  * @since 0.9.4
  */
 
-@ApplicationAnnotation(name="FSOutputOperatorBenchmarkingApp")
-public abstract class FSOutputOperatorBenchmark
+@ApplicationAnnotation(name="HDFSOutputOperatorBenchmarkingApp")
+public class FSOutputOperatorBenchmark implements StreamingApplication
 {
-  static abstract class AbstractApplication implements StreamingApplication
+  @Override
+  public void populateDAG(DAG dag, Configuration conf)
   {
-    public static final int QUEUE_CAPACITY = 32 * 1024;
+    String filePath = "HDFSOutputOperatorBenchmarkingApp/"
+            + System.currentTimeMillis();
 
-    @Override
-    public void populateDAG(DAG dag, Configuration conf)
-    {
-      RandomWordInputModule wordGenerator = dag.addOperator("wordGenerator", RandomWordInputModule.class);
+    dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
 
-      FSByteOutputOperator hdfsOutputOperator = dag.addOperator("hdfsOutputOperator", new FSByteOutputOperator());
-      hdfsOutputOperator.setFilePath("hdfsOperatorBenchmarking" + "/%(contextId)/transactions.out.part%(partIndex)");
-      hdfsOutputOperator.setAppend(false);
+    RandomWordGenerator wordGenerator = dag.addOperator("wordGenerator", RandomWordGenerator.class);
 
-      dag.addStream("Generator2FSOutput", wordGenerator.output, hdfsOutputOperator.input).setLocality(getLocality());
-    }
+    dag.getOperatorMeta("wordGenerator").getMeta(wordGenerator.output).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
+    dag.getOperatorMeta("wordGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
 
-    public abstract Locality getLocality();
+    FSByteOutputOperator hdfsOutputOperator = dag.addOperator("hdfsOutputOperator", new FSByteOutputOperator());
+    hdfsOutputOperator.setFilePath(filePath);
+    hdfsOutputOperator.setAppend(false);
+    dag.getOperatorMeta("hdfsOutputOperator").getAttributes().put(OperatorContext.COUNTERS_AGGREGATOR, new BasicCounters.LongAggregator<MutableLong>());
 
+    dag.addStream("Generator2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input);
   }
-
-  /**
-   * Let the engine decide how to best place the 2 operators.
-   */
-  @ApplicationAnnotation(name="FSOutputOperatorBenchmarkNoLocality")
-  public static class NoLocality extends AbstractApplication
-  {
-    @Override
-    public Locality getLocality()
-    {
-      return null;
-    }
-  }
-
-  /**
-   * Place the 2 operators so that they are in the same Rack.
-   */
-  @ApplicationAnnotation(name="FSOutputOperatorBenchmarkRackLocality")
-  public static class RackLocal extends AbstractApplication
-  {
-    @Override
-    public Locality getLocality()
-    {
-      return Locality.RACK_LOCAL;
-    }
-  }
-
-  /**
-   * Place the 2 operators so that they are in the same node.
-   */
-  @ApplicationAnnotation(name="FSOutputOperatorBenchmarkNodeLocality")
-  public static class NodeLocal extends AbstractApplication
-  {
-    @Override
-    public Locality getLocality()
-    {
-      return Locality.NODE_LOCAL;
-    }
-  }
-
-  /**
-   * Place the 2 operators so that they are in the same container.
-   */
-  @ApplicationAnnotation(name="FSOutputOperatorBenchmarkContainerLocality")
-  public static class ContainerLocal extends AbstractApplication
-  {
-    @Override
-    public Locality getLocality()
-    {
-      return Locality.CONTAINER_LOCAL;
-    }
-  }
-
-  /**
-   * Place the 2 operators so that they are in the same thread.
-   */
-  @ApplicationAnnotation(name="FSOutputOperatorBenchmarkThreadLocality")
-  public static class ThreadLocal extends AbstractApplication
-  {
-    @Override
-    public Locality getLocality()
-    {
-      return Locality.THREAD_LOCAL;
-    }
-  }
-
 }
-
-

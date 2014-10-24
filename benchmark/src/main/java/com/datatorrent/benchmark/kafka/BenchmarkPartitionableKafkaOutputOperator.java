@@ -15,33 +15,30 @@
  */
 package com.datatorrent.benchmark.kafka;
 
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Properties;
-
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
-
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.InputOperator;
 import com.datatorrent.api.Operator.ActivationListener;
 import com.datatorrent.api.Partitioner;
-import com.datatorrent.contrib.kafka.KafkaMetadataUtil;
-import com.yammer.metrics.Metrics;
-
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
- * This operator keep sending constant messages(1kb each) in {@link #threadNum} threads
- * Messages are distributed evenly to partitions
- *
- * It will also be split to {@link #partitionNum} partitions
- * Please set the {@link #partitionNum} in property file to get optimized performance
+ * This operator keep sending constant messages(1kb each) in {@link #threadNum} threads.&nbsp;
+ * Messages are distributed evenly to partitions.
+ * <p></p>
+ * @displayName Benchmark Partitionable Kafka Output
+ * @category Messaging
+ * @tags output operator
  *
  * @since 0.9.3
  */
