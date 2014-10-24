@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark.Cassandra;
+package com.datatorrent.benchmark.cassandra;
 
 import org.junit.Test;
 import com.datatorrent.api.LocalMode;
+import com.datatorrent.benchmark.cassandra.CassandraOutputBenchmarkApplication;
 
 /**
  * Test the DAG declaration in local mode.
