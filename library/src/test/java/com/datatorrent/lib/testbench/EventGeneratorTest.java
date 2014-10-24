@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package com.datatorrent.lib.testbench;
 
 import com.datatorrent.api.BaseOperator;
 import com.datatorrent.api.DefaultInputPort;
-
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;

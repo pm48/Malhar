@@ -20,7 +20,6 @@ import com.datatorrent.api.Context.OperatorContext;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
-
 import java.util.Map;
 
 /**

@@ -50,11 +50,6 @@ public class DevNullCounterBenchmark implements StreamingApplication
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
-   // RandomEventGenerator rand = dag.addOperator("rand", new RandomEventGenerator());
-   // rand.setMinvalue(0);
-   // rand.setMaxvalue(999999);
-   // rand.setTuplesBlastIntervalMillis(50);
-   // dag.getMeta(rand).getMeta(rand.integer_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     IntegerOperator intInput = dag.addOperator("intInput", new IntegerOperator());
     DevNullCounter oper = dag.addOperator("oper", new DevNullCounter());
     dag.getMeta(oper).getMeta(oper.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);

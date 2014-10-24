@@ -35,11 +35,6 @@ public class StreamDuplicaterApp implements StreamingApplication
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
-   // RandomEventGenerator rand = dag.addOperator("rand", new RandomEventGenerator());
-   // rand.setMinvalue(0);
-   // rand.setMaxvalue(999999);
-   // rand.setTuplesBlastIntervalMillis(50);
-   // dag.getMeta(rand).getMeta(rand.integer_data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
     IntegerOperator intInput = dag.addOperator("intInput", new IntegerOperator());
     StreamDuplicater stream = dag.addOperator("stream", new StreamDuplicater());
     dag.getMeta(stream).getMeta(stream.data).getAttributes().put(PortContext.QUEUE_CAPACITY, QUEUE_CAPACITY);
