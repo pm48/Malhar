@@ -20,7 +20,6 @@ import com.datatorrent.api.Context.OperatorContext;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
-
 import java.util.Map;
 
 /**
@@ -33,12 +32,12 @@ import java.util.Map;
  */
 public class RubyOperator extends ScriptOperator {
 
-  public enum Type
+  public static enum Type
   {
     EVAL, INVOKE
   };
 
-  protected Type type = Type.EVAL;
+  protected transient Type type = Type.EVAL;
   protected transient Object evalResult;
   private transient ScriptingContainer sc = null;
   private transient EvalUnit unit;
