@@ -31,7 +31,7 @@ public class HashMapOperator implements InputOperator
 {
   private String keys = null;
   private static final Logger logger = LoggerFactory.getLogger(EventGenerator.class);
-  private String[] keysArray = null;
+  private String[] keysArray = {"a","b","c","d"};
   public final transient DefaultOutputPort<HashMap<String, Double>> hmap_data = new DefaultOutputPort<HashMap<String, Double>>();
   public final transient DefaultOutputPort<HashMap<String, ArrayList<Integer>>> hmapList_data = new DefaultOutputPort<HashMap<String, ArrayList<Integer>>>();
   public final transient DefaultOutputPort<HashMap<String, HashMap<String, Integer>>> hmapMap_data = new DefaultOutputPort<HashMap<String, HashMap<String, Integer>>>();
@@ -40,14 +40,16 @@ public class HashMapOperator implements InputOperator
   private String seed = "a";
   private String keysEventIncrementer = null;
 
-  public int getNumTuples()
+  public String getKeysEventIncrementer()
   {
-    return numTuples;
+    return keysEventIncrementer;
   }
 
-  public void setNumTuples(int numTuples)
+  public void setKeysEventIncrementer(String keysEventIncrementer)
   {
-    this.numTuples = numTuples;
+    logger.debug("in hash map key setter");
+    this.keysEventIncrementer = keysEventIncrementer;
+    keysArray = keysEventIncrementer.split(",");
   }
 
   public String getSeed()
@@ -79,7 +81,7 @@ public class HashMapOperator implements InputOperator
       HashMap<String, Double> hmap = new HashMap<String, Double>();
       for (int i = 0; i < numTuples; i++) {
         hmap.clear();
-        for (int j = 0; j < 4; j++) {
+        for (int j = 0; j < 2; j++) {
           hmap.put(keysArray[j], 2.0 + j * 20);
         }
         hmap_data.emit(hmap);
@@ -91,7 +93,7 @@ public class HashMapOperator implements InputOperator
       for (int i = 0; i < numTuples; i++) {
         hmapMap.clear();
         HashMap<String, Integer> hmapMapTemp = new HashMap<String, Integer>();
-        for (int j = 1; j < 4; j++) {
+        for (int j = 0; j < 2; j++) {
           hmapMapTemp.put(keysArray[j], 100 * j);
         }
         hmapMap_data.emit(hmapMap);
@@ -134,3 +136,4 @@ public class HashMapOperator implements InputOperator
   }
 
 }
+
