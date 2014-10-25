@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.datatorrent.benchmark.fs;
+package com.datatorrent.benchmark;
 
 import com.datatorrent.lib.io.fs.AbstractFSWriter;
 import java.util.Arrays;

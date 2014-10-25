@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.benchmark.fs;
+package com.datatorrent.benchmark;
 
 import com.datatorrent.lib.testbench.RandomWordGenerator;
 import com.datatorrent.api.Context.OperatorContext;
@@ -59,3 +59,5 @@ public class FSOutputOperatorBenchmark implements StreamingApplication
     dag.addStream("Generator2HDFSOutput", wordGenerator.output, hdfsOutputOperator.input);
   }
 }
+
+
