@@ -4,6 +4,30 @@
     <name>dt.application.EventClassifierApp.operator.hmapOper.keys</name>
     <value>ia,ib,ic,id</value>
   </property>
+   <property>
+    <name>dt.application.EventClassifierApp.operator.hmapOper.numKeys</name>
+    <value>2</value>
+  </property>
+  <property>
+    <name>dt.application.FilterClassifier.operator.hmapOper.keys</name>
+    <value>ia,ib,ic,id</value>
+  </property>
+   <property>
+    <name>dt.application.FilterClassifier.operator.hmapOper.numKeys</name>
+    <value>2</value>
+  </property>
+  <property>
+    <name>dt.application.FilteredEventClassifierApp.operator.hmapOper.keys</name>
+    <value>ia,ib,ic,id</value>
+  </property>
+   <property>
+    <name>dt.application.FilteredEventClassifierApp.operator.hmapOper.numKeys</name>
+    <value>2</value>
+  </property>
+  <property>
+    <name>dt.application.EventIncrementerApp.operator.hmapOper.numKeys</name>
+    <value>2</value>
+  </property>
   <property>
     <name>dt.application.EventIncrementerApp.operator.hmapOper.seed</name>
     <value>a</value>

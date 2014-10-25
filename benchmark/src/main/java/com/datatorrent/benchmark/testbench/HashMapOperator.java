@@ -37,6 +37,7 @@ public class HashMapOperator implements InputOperator
   public final transient DefaultOutputPort<HashMap<String, HashMap<String, Integer>>> hmapMap_data = new DefaultOutputPort<HashMap<String, HashMap<String, Integer>>>();
   public final transient DefaultOutputPort<HashMap<String, Integer>> hmapInt_data = new DefaultOutputPort<HashMap<String, Integer>>();
   private int numTuples = 1000;
+  private int numKeys = 2;
   private String seed = "a";
   private String keysEventIncrementer = null;
 
@@ -81,7 +82,7 @@ public class HashMapOperator implements InputOperator
       HashMap<String, Double> hmap = new HashMap<String, Double>();
       for (int i = 0; i < numTuples; i++) {
         hmap.clear();
-        for (int j = 0; j < 2; j++) {
+        for (int j = 0; j < numKeys; j++) {
           hmap.put(keysArray[j], 2.0 + j * 20);
         }
         hmap_data.emit(hmap);
@@ -93,7 +94,7 @@ public class HashMapOperator implements InputOperator
       for (int i = 0; i < numTuples; i++) {
         hmapMap.clear();
         HashMap<String, Integer> hmapMapTemp = new HashMap<String, Integer>();
-        for (int j = 0; j < 2; j++) {
+        for (int j = 0; j < numKeys; j++) {
           hmapMapTemp.put(keysArray[j], 100 * j);
         }
         hmapMap_data.emit(hmapMap);
