@@ -17,30 +17,36 @@ package com.datatorrent.benchmark;
 
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.Context.PortContext;
-import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
+import com.datatorrent.api.DAG;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
-import com.datatorrent.lib.testbench.RandomEventGenerator;
+import com.datatorrent.lib.testbench.RandomWordGenerator;
+
 import org.apache.hadoop.conf.Configuration;
 
-@ApplicationAnnotation(name = "HiveMapBenchmarkApp")
-public class HiveMapBenchmarkApp implements StreamingApplication
+/**
+ * Application used to benchmark HIVE FILE OUTPUT operator
+ * The DAG consists of random word generator operator that is
+ * connected to HDFS output operator that writes to a file on HDFS.<p>
+ *
+ */
+@ApplicationAnnotation(name = "HiveInsertBenchmarkingApp")
+public class HiveInsertBenchmarkingApp implements StreamingApplication
 {
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
-    RandomEventGenerator EventGenerator = dag.addOperator("EventGenerator", RandomEventGenerator.class);
-    RandomMapOutput MapGenerator = dag.addOperator("MapGenerator", RandomMapOutput.class);
 
-    dag.getOperatorMeta("MapGenerator").getMeta(MapGenerator.map_data).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
-    dag.getOperatorMeta("MapGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
-    dag.addStream("EventGenerator2Map", EventGenerator.integer_data, MapGenerator.input);
+    RandomWordGenerator WordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
 
-    HiveHDFSMapOutput HiveHdfsMapOperator = dag.addOperator("HiveHdfsMapOperator", new HiveHDFSMapOutput());
-    HiveHdfsMapOperator.setFilename("HiveInsertMap");
-    HiveHdfsMapOperator.setAppend(false);
-    dag.addStream("MapGenerator2HiveOutput", MapGenerator.map_data, HiveHdfsMapOperator.input);
+    dag.getOperatorMeta("WordGenerator").getMeta(WordGenerator.outputString).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
+    dag.getOperatorMeta("WordGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
+
+    HiveInsertOperator hiveInsert = dag.addOperator("HiveInsert",new HiveInsertOperator());
+    hiveInsert.setFilename("HiveInsertString");
+    hiveInsert.setAppend(false);
+    dag.addStream("Generator2HDFSOutput", WordGenerator.outputString, hiveInsert.input);
   }
 
 }

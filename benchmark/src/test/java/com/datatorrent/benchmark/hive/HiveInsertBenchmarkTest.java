@@ -17,7 +17,7 @@
 package com.datatorrent.benchmark.hive;
 
 import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.HiveFileBenchmarkingApp;
+import com.datatorrent.benchmark.HiveInsertBenchmarkingApp;
 import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
 import com.datatorrent.contrib.hive.HiveMetaStore;
@@ -29,9 +29,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HiveOutputBenchmarkTest
+public class HiveInsertBenchmarkTest
 {
-  private static final Logger LOG = LoggerFactory.getLogger(HiveOutputBenchmarkTest.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HiveInsertBenchmarkTest.class);
 
   @Test
   public void testMethod() throws SQLException
@@ -42,11 +42,11 @@ public class HiveOutputBenchmarkTest
 
     HiveMetaStore store = new HiveMetaStore();
     store.setDbUrl(conf.get("rootDbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.connectionProperties"));
-    LOG.info("conf properties are" + conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.connectionProperties"));
-    LOG.info("conf dburl is" + conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.dbUrl"));
-    LOG.info("conf filepath is" + conf.get("dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.filepath"));
-    HiveFileBenchmarkingApp app = new HiveFileBenchmarkingApp();
+    store.setConnectionProperties(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
+    LOG.info("conf properties are" + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
+    LOG.info("conf dburl is" + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
+    LOG.info("conf filepath is" + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
+    HiveInsertBenchmarkingApp app = new HiveInsertBenchmarkingApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {

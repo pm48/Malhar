@@ -24,10 +24,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HiveHDFSMapOutput extends AbstractHiveHDFS<Map, HiveMetaStore>
+public class HiveMapInsertOperator extends AbstractHiveHDFS<Map, HiveMetaStore>
 {
   public static final String tableName = "tempMap";
-  private static final Logger logger = LoggerFactory.getLogger("HiveHDFSMapOutput.class");
+  private static final Logger logger = LoggerFactory.getLogger("HiveMapInsertOperator.class");
 
   protected byte[] getBytesForTuple(Map tuple)
   {
@@ -38,14 +38,14 @@ public class HiveHDFSMapOutput extends AbstractHiveHDFS<Map, HiveMetaStore>
       out.writeObject(tuple);
     }
     catch (IOException ex) {
-      logger.info(HiveHDFSMapOutput.class.getName() + ex);
+      logger.info(HiveMapInsertOperator.class.getName() + ex);
     }
     if(out!=null)
       try {
         out.close();
     }
     catch (IOException ex) {
-      logger.info(HiveHDFSMapOutput.class.getName() + ex);
+      logger.info(HiveMapInsertOperator.class.getName() + ex);
     }
     return byteOut.toByteArray();
 

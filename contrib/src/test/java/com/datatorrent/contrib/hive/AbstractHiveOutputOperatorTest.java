@@ -15,16 +15,7 @@
  */
 package com.datatorrent.contrib.hive;
 
-import com.datatorrent.api.Attribute.AttributeMap;
-import com.datatorrent.api.Context.OperatorContext;
-import com.datatorrent.api.DAG;
-import com.datatorrent.api.Operator.ProcessingMode;
-import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.APP_ID;
-import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.OPERATOR_ID;
-import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import java.sql.*;
-import java.util.Random;
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,8 +72,6 @@ public class AbstractHiveOutputOperatorTest
      "MAP KEYS TERMINATED BY ':'  \n" +
      "LINES TERMINATED BY '\n'  \n" +
      "STORED AS TEXTFILE ");*/
-
-            //CREATE TABLE IF NOT EXISTS testHiveDriverTable (key INT, value STRING)");
     // show tables
     String sql = "show tables";
 
@@ -147,7 +136,6 @@ public class AbstractHiveOutputOperatorTest
   public void testHiveOutputOperator() throws SQLException
   {
     cleanDatabase();
-
   }
-
+  
 }

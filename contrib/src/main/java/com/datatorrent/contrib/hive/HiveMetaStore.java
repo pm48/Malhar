@@ -66,10 +66,6 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
 
   protected void closeFile() throws IOException
   {
-    /*if (bufferedOutput != null) {
-     bufferedOutput.close();
-     bufferedOutput = null;
-     }*/
     if (fsMetaOutput != null) {
       fsMetaOutput.close();
       fsMetaOutput = null;

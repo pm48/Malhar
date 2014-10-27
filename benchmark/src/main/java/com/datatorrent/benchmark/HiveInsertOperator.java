@@ -13,32 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.datatorrent.benchmark;
 
-package com.datatorrent.contrib.hive;
+import com.datatorrent.contrib.hive.AbstractHiveHDFS;
+import com.datatorrent.contrib.hive.HiveMetaStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-
-
-
-public class HiveOutputOperator extends AbstractHiveOutputOperator<HashMap,HiveStore>
+public class HiveInsertOperator extends AbstractHiveHDFS<String, HiveMetaStore>
 {
-  static String filepath = "/tmp/a.txt";
-  private static String INSERT = "load data local inpath '" + filepath + "' into table test";
-//  String str = "a=1 b=42 x=abc";
-// private static String Insert = "Insert overwrite table test select str_to_map(str,\" \",\"=\")";
-
+  public static final String tableName = "temp";
+  private static final Logger logger = LoggerFactory.getLogger("HiveInsertOperator.class");
 
   @Override
-  protected String getUpdateCommand()
+  protected byte[] getBytesForTuple(String tuple)
   {
-    return INSERT;
+    return tuple.getBytes();
   }
 
-  /*@Override
-  protected void setStatementParameters(PreparedStatement statement, Integer tuple) throws SQLException
+  @Override
+  protected String getInsertCommand(String filepath)
   {
-    statement.setInt(1, tuple);
-  }*/
+    return "load data inpath '" + filepath + "' into table " + tableName;
+  }
 
 
 }

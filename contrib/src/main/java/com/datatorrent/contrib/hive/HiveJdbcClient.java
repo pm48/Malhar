@@ -29,7 +29,7 @@ public class HiveJdbcClient
     stmt.execute("drop table temp4");
     stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3 map<string,int>,col4 map<String,int>,col5 map<string,int>) \n"
             + "row format SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'  \n"
-           // + "WITH SERDEPROPERTIES (“input.regex” = “([^ ]*) ([^ ]*) ([^ ]*) (-|\\\\[[^\\\\]]*\\\\]) ([^ \\\"]*|\\”[^\\\"]*\\”) ”),“output.format.string”=”%1$s %2$s %3$s %4$s %5$s”)  \n"
+            // + "WITH SERDEPROPERTIES (“input.regex” = “([^ ]*) ([^ ]*) ([^ ]*) (-|\\\\[[^\\\\]]*\\\\]) ([^ \\\"]*|\\”[^\\\"]*\\”) ”),“output.format.string”=”%1$s %2$s %3$s %4$s %5$s”)  \n"
             + "COLLECTION ITEMS TERMINATED BY ','  \n"
             + "MAP KEYS TERMINATED BY ':'  \n"
             + "LINES TERMINATED BY '\n'  \n"
@@ -39,7 +39,6 @@ public class HiveJdbcClient
     String sql = "load data inpath '" + filepath + "' into table " + tableName;
     stmt.execute(sql);
 
-
     // show tables
     sql = "show tables '" + tableName + "'";
     System.out.println("Running: " + sql);
@@ -48,12 +47,11 @@ public class HiveJdbcClient
       System.out.println(res.getString(1));
     }
 
-
     // select * query
     sql = "select * from temp4";
     System.out.println("Running: " + sql);
     res = stmt.executeQuery(sql);
-     while (res.next()) {
+    while (res.next()) {
       System.out.println(res.getString(1));
     }
 

@@ -12,40 +12,33 @@
     <value>jdbc:hive2://localhost:10000</value>
     <description>Root DbUrl.</description>
   </property>
-
   <property>
-    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.filepath</name>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveInsertOperator.store.filepath</name>
     <value>hdfs://localhost:9000/user/</value>
     <description>Test database connector string.</description>
   </property>
-
   <property>
-    <name>dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.filepath</name>
+    <name>dt.application.HiveMapBenchmarkApp.operator.HiveMapInsertOperator.store.filepath</name>
     <value>hdfs://localhost:9000/user/</value>
     <description>Test database connector string.</description>
   </property>
-
   <property>
-    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.dbUrl</name>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
     <description>Test database connector string.</description>
   </property>
-
   <property>
-    <name>dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.dbUrl</name>
+    <name>dt.application.HiveMapBenchmarkApp.operator.HiveInsertOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
     <description>Test database connector string.</description>
   </property>
-
-
   <property>
-    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveHdfsOperator.store.connectionProperties</name>
+    <name>dt.application.HiveFileBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties</name>
     <value>user:"",password:""</value>
     <description>The connection properties for the database.</description>
   </property>
-
   <property>
-    <name>dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.connectionProperties</name>
+    <name>dt.application.HiveMapBenchmarkApp.operator.HiveMapInsertOperator.store.connectionProperties</name>
     <value>user:"",password:""</value>
     <description>Test database connector string.</description>
   </property>

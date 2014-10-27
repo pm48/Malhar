@@ -16,7 +16,7 @@
 package com.datatorrent.benchmark.hive;
 
 import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.HiveMapBenchmarkApp;
+import com.datatorrent.benchmark.HiveMapInsertBenchmarkApp;
 import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
 import com.datatorrent.contrib.hive.HiveMetaStore;
@@ -40,11 +40,11 @@ public class HiveMapBenchmarkTest
 
     HiveMetaStore store = new HiveMetaStore();
     store.setDbUrl(conf.get("rootDbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.connectionProperties"));
-    LOG.info("conf properties are" + conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.connectionProperties"));
-    LOG.info("conf dburl is" + conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.dbUrl"));
-    LOG.info("conf filepath is" + conf.get("dt.application.HiveMapBenchmarkApp.operator.HiveHdfsMapOperator.store.filepath"));
-    HiveMapBenchmarkApp app = new HiveMapBenchmarkApp();
+    store.setConnectionProperties(conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.connectionProperties"));
+    LOG.info("conf properties are" + conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.connectionProperties"));
+    LOG.info("conf dburl is" + conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.dbUrl"));
+    LOG.info("conf filepath is" + conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.filepath"));
+    HiveMapInsertBenchmarkApp app = new HiveMapInsertBenchmarkApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {
