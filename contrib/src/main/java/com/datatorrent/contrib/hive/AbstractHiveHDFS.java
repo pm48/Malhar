@@ -244,3 +244,4 @@ public abstract class AbstractHiveHDFS<T, S extends HiveMetaStore> extends Abstr
   protected abstract String getInsertCommand(String filepath);
 
 }
+

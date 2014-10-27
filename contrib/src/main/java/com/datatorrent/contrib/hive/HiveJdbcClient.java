@@ -61,8 +61,6 @@ public class HiveJdbcClient
     res = stmt.executeQuery(sql);
     while (res.next()) {
       System.out.println(res.getString(1));
-
     }
   }
-
 }

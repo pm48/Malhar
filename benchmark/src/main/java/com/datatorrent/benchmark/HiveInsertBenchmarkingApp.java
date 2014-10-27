@@ -37,12 +37,9 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
   public void populateDAG(DAG dag, Configuration conf)
   {
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
-
     RandomWordGenerator WordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
-
     dag.getOperatorMeta("WordGenerator").getMeta(WordGenerator.outputString).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
     dag.getOperatorMeta("WordGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
-
     HiveInsertOperator hiveInsert = dag.addOperator("HiveInsert",new HiveInsertOperator());
     hiveInsert.setFilename("HiveInsertString");
     hiveInsert.setAppend(false);
