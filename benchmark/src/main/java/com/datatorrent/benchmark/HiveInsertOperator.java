@@ -15,15 +15,37 @@
  */
 package com.datatorrent.benchmark;
 
-import com.datatorrent.contrib.hive.AbstractHiveHDFS;
-import com.datatorrent.contrib.hive.HiveMetaStore;
+
+
+import javax.validation.constraints.NotNull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datatorrent.contrib.hive.AbstractHiveHDFS;
+import com.datatorrent.contrib.hive.HiveMetaStore;
+
 public class HiveInsertOperator extends AbstractHiveHDFS<String, HiveMetaStore>
 {
-  public static final String tableName = "temp";
+  @NotNull
+  public String tablename;
+
+  public String getTablename()
+  {
+    return tablename;
+  }
+
+  public void setTablename(String tablename)
+  {
+    this.tablename = tablename;
+  }
+
+
   private static final Logger logger = LoggerFactory.getLogger("HiveInsertOperator.class");
+
+  public HiveInsertOperator(){
+    this.store = new HiveMetaStore();
+  }
 
   @Override
   protected byte[] getBytesForTuple(String tuple)
@@ -34,7 +56,7 @@ public class HiveInsertOperator extends AbstractHiveHDFS<String, HiveMetaStore>
   @Override
   protected String getInsertCommand(String filepath)
   {
-    return "load data inpath '" + filepath + "' into table " + tableName;
+    return "load data inpath '" + filepath + "' into table " + tablename;
   }
 
 

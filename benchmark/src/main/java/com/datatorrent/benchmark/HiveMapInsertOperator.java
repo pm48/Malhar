@@ -15,20 +15,42 @@
  */
 package com.datatorrent.benchmark;
 
-import com.datatorrent.contrib.hive.AbstractHiveHDFS;
-import com.datatorrent.contrib.hive.HiveMetaStore;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.util.Map;
+
+import javax.validation.constraints.NotNull;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datatorrent.contrib.hive.AbstractHiveHDFS;
+import com.datatorrent.contrib.hive.HiveMetaStore;
+
 public class HiveMapInsertOperator extends AbstractHiveHDFS<Map, HiveMetaStore>
 {
-  public static final String tableName = "tempMap";
+  @NotNull
+  public String tablename;
+
+  public String getTablename()
+  {
+    return tablename;
+  }
+
+  public void setTablename(String tablename)
+  {
+    this.tablename = tablename;
+  }
+
+
   private static final Logger logger = LoggerFactory.getLogger("HiveMapInsertOperator.class");
 
+  public HiveMapInsertOperator(){
+    this.store = new HiveMetaStore();
+  }
+
+  @Override
   protected byte[] getBytesForTuple(Map tuple)
   {
     ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
@@ -54,7 +76,7 @@ public class HiveMapInsertOperator extends AbstractHiveHDFS<Map, HiveMetaStore>
   @Override
   protected String getInsertCommand(String filepath)
   {
-        return "load data inpath '" + filepath + "' into table " + tableName;
+        return "load data inpath '" + filepath + "' into table " + tablename;
 
   }
 

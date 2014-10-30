@@ -41,18 +41,20 @@ public class HiveInsertBenchmarkTest
     conf.addResource(inputStream);
 
     HiveMetaStore store = new HiveMetaStore();
-    store.setDbUrl(conf.get("rootDbUrl"));
+    store.setDbUrl(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
     store.setConnectionProperties(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
-    LOG.info("conf properties are" + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
-    LOG.info("conf dburl is" + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
-    LOG.info("conf filepath is" + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
+    store.setFilepath(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
+    LOG.info("conf properties are " + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
+    LOG.info("conf dburl is " + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
+    LOG.info("conf filepath is " + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
+    LOG.info("conf filename is " + conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.filename"));
     HiveInsertBenchmarkingApp app = new HiveInsertBenchmarkingApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {
       lm.prepareDAG(app, conf);
       LocalMode.Controller lc = lm.getController();
-      lc.run(50000);
+      lc.run(30000);
     }
     catch (Exception ex) {
       DTThrowable.rethrow(ex);

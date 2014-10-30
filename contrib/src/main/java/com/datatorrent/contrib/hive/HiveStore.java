@@ -20,6 +20,9 @@ import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/*
+ * Hive Store that extends Jdbc Store and provides its own driver name.
+ */
 public class HiveStore extends JdbcStore
 {
   private static final String driverName = "org.apache.hive.jdbc.HiveDriver";

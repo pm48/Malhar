@@ -31,6 +31,9 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/*
+ * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
+ */
 public abstract class AbstractHiveHDFS<T, S extends HiveMetaStore> extends AbstractStoreOutputOperator<T, HiveMetaStore>
 {
   protected transient FSDataOutputStream fsOutput;
@@ -55,21 +58,6 @@ public abstract class AbstractHiveHDFS<T, S extends HiveMetaStore> extends Abstr
     this.filename = filename;
   }
   protected Statement stmt;
-
-  public AbstractHiveHDFS()
-  {
-    store = new HiveMetaStore();
-  }
-
-  public final transient DefaultInputPort<T> input = new DefaultInputPort<T>()
-  {
-    @Override
-    public void process(T tuple)
-    {
-      processTuple(tuple);
-    }
-
-  };
 
   /**
    * Function to process each incoming tuple

@@ -15,18 +15,23 @@
  */
 package com.datatorrent.benchmark.hive;
 
-import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.HiveMapInsertBenchmarkApp;
-import com.datatorrent.common.util.DTThrowable;
-import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
-import com.datatorrent.contrib.hive.HiveMetaStore;
 import java.io.InputStream;
 import java.sql.SQLException;
-import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.conf.Configuration;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+
+import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
+import com.datatorrent.contrib.hive.HiveMetaStore;
+
+import com.datatorrent.api.LocalMode;
+
+import com.datatorrent.benchmark.HiveMapInsertBenchmarkingApp;
+import com.datatorrent.common.util.DTThrowable;
 
 public class HiveMapBenchmarkTest
 {
@@ -39,20 +44,23 @@ public class HiveMapBenchmarkTest
     conf.addResource(inputStream);
 
     HiveMetaStore store = new HiveMetaStore();
-    store.setDbUrl(conf.get("rootDbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.connectionProperties"));
-    LOG.info("conf properties are" + conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.connectionProperties"));
-    LOG.info("conf dburl is" + conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.dbUrl"));
-    LOG.info("conf filepath is" + conf.get("dt.application.HiveMapInsertBenchmarkApp.operator.HiveMapInsertOperator.store.filepath"));
-    HiveMapInsertBenchmarkApp app = new HiveMapInsertBenchmarkApp();
+    store.setDbUrl(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl"));
+    store.setConnectionProperties(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties"));
+    store.setFilepath(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath"));
+    LOG.info("conf properties are" + conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties"));
+    LOG.info("conf dburl is" + conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl"));
+    LOG.info("conf filepath is" + conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath"));
+    LOG.info("conf filename is " + conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.filename"));
+    HiveMapInsertBenchmarkingApp app = new HiveMapInsertBenchmarkingApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {
       lm.prepareDAG(app, conf);
       LocalMode.Controller lc = lm.getController();
-      lc.run(50000);
+      lc.run(30000);
     }
     catch (Exception ex) {
+      ex.getCause().printStackTrace();
       DTThrowable.rethrow(ex);
     }
 

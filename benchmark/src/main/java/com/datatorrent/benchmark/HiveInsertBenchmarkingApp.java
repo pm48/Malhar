@@ -15,14 +15,15 @@
  */
 package com.datatorrent.benchmark;
 
-import com.datatorrent.api.Context.OperatorContext;
-import com.datatorrent.api.Context.PortContext;
-import com.datatorrent.api.StreamingApplication;
-import com.datatorrent.api.DAG;
-import com.datatorrent.api.annotation.ApplicationAnnotation;
-import com.datatorrent.lib.testbench.RandomWordGenerator;
 
 import org.apache.hadoop.conf.Configuration;
+
+import com.datatorrent.lib.testbench.RandomWordGenerator;
+
+import com.datatorrent.api.Context.PortContext;
+import com.datatorrent.api.DAG;
+import com.datatorrent.api.StreamingApplication;
+import com.datatorrent.api.annotation.ApplicationAnnotation;
 
 /**
  * Application used to benchmark HIVE FILE OUTPUT operator
@@ -37,13 +38,10 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
   public void populateDAG(DAG dag, Configuration conf)
   {
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
-    RandomWordGenerator WordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
-    dag.getOperatorMeta("WordGenerator").getMeta(WordGenerator.outputString).getAttributes().put(PortContext.QUEUE_CAPACITY, 10000);
-    dag.getOperatorMeta("WordGenerator").getAttributes().put(OperatorContext.APPLICATION_WINDOW_COUNT, 1);
-    HiveInsertOperator hiveInsert = dag.addOperator("HiveInsert",new HiveInsertOperator());
-    hiveInsert.setFilename("HiveInsertString");
-    hiveInsert.setAppend(false);
-    dag.addStream("Generator2HDFSOutput", WordGenerator.outputString, hiveInsert.input);
+    RandomWordGenerator wordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
+    dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
+    HiveInsertOperator hiveInsert = dag.addOperator("HiveInsertOperator",new HiveInsertOperator());
+    dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
 
 }

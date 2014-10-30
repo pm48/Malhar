@@ -25,11 +25,12 @@ import com.datatorrent.api.DefaultOutputPort;
  *
  * @since 1.0.4
  */
-public class RandomMapOutput extends BaseOperator {
+public class RandomMapOutput extends BaseOperator
+{
 
   public final transient DefaultOutputPort<HashMap<String, Object>> map_data = new DefaultOutputPort<HashMap<String, Object>>();
   public final transient DefaultInputPort<Integer> input = new DefaultInputPort<Integer>()
-      {
+  {
     @Override
     public void process(Integer tuple)
     {
@@ -37,22 +38,27 @@ public class RandomMapOutput extends BaseOperator {
       map.put(key, tuple);
       RandomMapOutput.this.process(map);
     }
-      };
 
-      private String key;
+  };
 
-      public String getKey() {
-        return key;
-      }
+  private String key;
 
-      public void setKey(String key) {
-        this.key = key;
-      }
+  public String getKey()
+  {
+    return key;
+  }
 
-      public void process(HashMap<String, Object> tuple) {
+  public void setKey(String key)
+  {
+    this.key = key;
+  }
 
-        if (map_data.isConnected()) {
-          map_data.emit(tuple);
-        }
-      }
+  public void process(HashMap<String, Object> tuple)
+  {
+
+    if (map_data.isConnected()) {
+      map_data.emit(tuple);
+    }
+  }
+
 }

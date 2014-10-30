@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.datatorrent.lib.testbench;
 
 import com.datatorrent.api.Context.OperatorContext;
@@ -84,17 +83,20 @@ public class RandomWordGenerator implements InputOperator
   @Override
   public void emitTuples()
   {
-    String emitString = "hive";
-    for(;
-        tupleCounter < tuplesPerWindow;
-        tupleCounter++)
-    {
-      byte[] bytes = new byte[tupleByteSize];
-      random.nextBytes(bytes);
-      output.emit(bytes);
-      outputString.emit(emitString);
+    if (output.isConnected()) {
+      for (;
+              tupleCounter < tuplesPerWindow;
+              tupleCounter++) {
+        byte[] bytes = new byte[tupleByteSize];
+        random.nextBytes(bytes);
+        output.emit(bytes);
+      }
     }
-
+    if (outputString.isConnected()) {
+      for(int i = 0;i<100;i++){
+        outputString.emit(("hive" + random.nextInt(100) + ""));
+      }
+    }
 
   }
 
@@ -110,6 +112,7 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Sets the number of tuples emitted per application window.
+   *
    * @param tuplesPerWindow The number of tuples emitted per application window.
    */
   public void setTuplesPerWindow(int tuplesPerWindow)
@@ -119,6 +122,7 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Gets the number of tuples emitted per application window.
+   *
    * @return The number of tuples emitted per application window.
    */
   public int getTuplesPerWindow()
@@ -128,6 +132,7 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Sets the number of bytes in the emitted byte array tuples.
+   *
    * @param tupleByteSize The number of bytes in the emitted byte array tuples.
    */
   public void setTupleByteSize(int tupleByteSize)
@@ -137,10 +142,12 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Gets the number of bytes in the emitted byte array tuples.
+   *
    * @return The number of bytes in the emitted byte array tuples.
    */
   public int getTupleByteSize()
   {
     return tupleByteSize;
   }
+
 }

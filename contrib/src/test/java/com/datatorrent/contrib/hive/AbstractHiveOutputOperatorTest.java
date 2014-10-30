@@ -80,50 +80,25 @@ public class AbstractHiveOutputOperatorTest
     if (res.next()) {
       LOG.debug(res.getString(1));
     }
-    stmt.execute("drop table temp4");
-    String str = "CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe' WITH SERDEPROPERTIES ( input.regex = (\"[^\"]*\"[:]((\\b[0-9]+)?\\.)?[0-9]+\\b)) stored as textfile";
-  //  stmt.execute("drop table dt_meta");
-  //  stmt.execute("drop table tempMap");
-  //  stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
-
-    /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
+    stmt.execute("drop table dt_meta");
+    stmt.execute("drop table tempMap");
+    stmt.execute("drop table temp");
+    stmt.execute("Create table  IF NOT EXISTS dt_meta (dt_window int,dt_app_id String,dt_operator_id int) stored as TEXTFILE");
+    stmt.execute("CREATE TABLE IF NOT EXISTS tempMap (col1 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
             + "MAP KEYS TERMINATED BY ':'  \n"
-            + "LINES TERMINATED BY '\n' "
-            + "STORED AS TEXTFILE");*/
-    stmt.execute(str);
-    String filepath = "/user/README.txt";
-    String tableName = "temp4";
-    sql = "load data inpath '" + filepath + "' into table " + tableName;
-    stmt.execute(sql);
-    LOG.debug(sql);
-    // select * query
-    sql = "select * from temp4";
-    System.out.println("Running: " + sql);
-    res = stmt.executeQuery(sql);
-     while (res.next()) {
-      System.out.println(res.getString(1));
-      System.out.println(res.getString(2));
-      System.out.println(res.getString(3));
-      System.out.println(res.getString(4));
-      System.out.println(res.getString(5));
-      System.out.println(res.getString(6));
-      System.out.println(res.getString(7));
-      System.out.println(res.getString(8));
-      System.out.println("Next row");
-    }
+            + "LINES TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
+    stmt.execute("CREATE TABLE IF NOT EXISTS temp (col1 string) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+            + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
+            + "LINES TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
+    /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
+     + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
+     + "MAP KEYS TERMINATED BY ':'  \n"
+     + "LINES TERMINATED BY '\n' "
+     + "STORED AS TEXTFILE");*/
 
-    // regular hive query
-    sql = "select count(*) from " + tableName;
-    System.out.println("Running: " + sql);
-    res = stmt.executeQuery(sql);
-    while (res.next()) {
-      System.out.println(res.getString(1));
-
-    }
-    if (res.next()) {
-      LOG.debug(res.getString(1));
-    }
     hiveStore.disconnect();
   }
 
@@ -137,5 +112,5 @@ public class AbstractHiveOutputOperatorTest
   {
     cleanDatabase();
   }
-  
+
 }

@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.datatorrent</groupId>
     <artifactId>malhar-all</artifactId>
-    <version>1.0.5-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>malhar-benchmark</artifactId>
@@ -209,26 +209,31 @@
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-exec</artifactId>
       <version>0.13.1</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-jdbc</artifactId>
       <version>0.13.1</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-service</artifactId>
       <version>0.13.1</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libfb303</artifactId>
       <version>0.9.0</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
       <version>1.0.4</version>
+      <optional>true</optional>
     </dependency>
    <dependency>
       <groupId>org.apache.thrift</groupId>

@@ -28,6 +28,9 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/*
+ * Hive Meta Store which provides Transactional properties in Hive Store.
+ */
 public class HiveMetaStore extends HiveStore implements TransactionableStore
 {
   private static transient final Logger logger = LoggerFactory.getLogger(HiveMetaStore.class);
@@ -173,11 +176,6 @@ public class HiveMetaStore extends HiveStore implements TransactionableStore
     try {
       stmtMetaInsert = getConnection().createStatement();
       stmtMetaInsert.execute("load data inpath '" + metaFilePath + "' into table " + metaTable);
-      ResultSet res = stmtMetaInsert.executeQuery("select * from temp");
-      while (res.next()) {
-        logger.info("got result" + res.getString(1));
-      }
-
     }
     catch (SQLException ex) {
       logger.info(HiveMetaStore.class.getName() + ex.getCause());
