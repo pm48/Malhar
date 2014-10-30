@@ -14,7 +14,7 @@
 
   <properties>
     <maven.deploy.skip>false</maven.deploy.skip>
-    <skipTests>false</skipTests>
+    <skipTests>true</skipTests>
   </properties>
 	<build>
 		<plugins>
@@ -207,12 +207,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
-      <artifactId>hive-exec</artifactId>
-      <version>0.13.1</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hive</groupId>
       <artifactId>hive-jdbc</artifactId>
       <version>0.13.1</version>
       <optional>true</optional>
@@ -240,6 +234,6 @@
       <artifactId>libthrift</artifactId>
       <version>0.9.0</version>
       <optional>true</optional>
-    </dependency>
+   </dependency>
   </dependencies>
 </project>
