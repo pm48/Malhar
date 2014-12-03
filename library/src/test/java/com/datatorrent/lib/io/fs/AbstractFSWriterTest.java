@@ -16,30 +16,31 @@
 
 package com.datatorrent.lib.io.fs;
 
-import com.datatorrent.api.*;
-import com.datatorrent.api.Attribute.AttributeMap;
-import com.datatorrent.api.Context.OperatorContext;
-import com.datatorrent.api.Operator.ProcessingMode;
-import com.datatorrent.common.util.DTThrowable;
-import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.APP_ID;
-import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.OPERATOR_ID;
-import com.datatorrent.lib.helper.OperatorContextTestHelper;
-import com.datatorrent.lib.testbench.RandomWordGenerator;
-import com.datatorrent.lib.util.TestUtils.TestInfo;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
-import com.google.common.collect.Maps;
 import java.io.*;
+
 import javax.validation.ConstraintViolationException;
+
+import com.google.common.collect.Maps;
+
+import org.junit.*;
+import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.*;
-import org.junit.runner.Description;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.datatorrent.lib.helper.OperatorContextTestHelper;
+import com.datatorrent.lib.testbench.RandomWordGenerator;
+import com.datatorrent.lib.util.TestUtils.TestInfo;
+
+import com.datatorrent.api.*;
+import com.datatorrent.api.Operator.ProcessingMode;
+
+import com.datatorrent.common.util.DTThrowable;
 
 public class AbstractFSWriterTest
 {
@@ -2244,64 +2245,4 @@ public class AbstractFSWriterTest
     Assert.assertEquals("Max length validation not thrown with -1 max length", true, error);
   }
 
-  @Test
-  public void testHiveInsertOperator()
-  {
-    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
-    attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
-    attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
-    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
-    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
-    HiveInsertOperator outputOperator = new HiveInsertOperator();
-    HiveInsertOperator newOp = new HiveInsertOperator();
-    outputOperator.setFilepath("/tmp");
-   // ArrayOutOfBounds Exception seen if hdfs path is passed here.
-   // outputOperator.setFilepath("hdfs://localhost:9000/user/hive");
-
-    outputOperator.setup(context);
-    for (int wid = 0, total = 0;
-            wid < 10;
-            wid++) {
-      outputOperator.beginWindow(wid);
-       /*if (wid == 5) {
-         outputOperator.committed(wid - 2);
-        //outputOperator.checkpointed(wid - 3);
-      }*/
-      for (int tupleCounter = 0;
-              tupleCounter < 10 && total < 100;
-              tupleCounter++, total++) {
-        outputOperator.processTuple(111+"");
-      }
-
-      if(wid == 4)
-      {
-        Kryo kryo = new Kryo();
-        FieldSerializer<HiveInsertOperator> f1 = (FieldSerializer<HiveInsertOperator>)kryo.getSerializer(HiveInsertOperator.class);
-        FieldSerializer<HDFSRollingOutputOperator> f2 = (FieldSerializer<HDFSRollingOutputOperator>)kryo.getSerializer(HDFSRollingOutputOperator.class);
-        f1.setCopyTransient(false);
-        f2.setCopyTransient(false);
-
-        newOp = kryo.copy(outputOperator);
-      }
-
-        if (wid == 6) {
-        outputOperator.checkpointed(wid - 2);
-        outputOperator.teardown();
-        newOp.setup(context);
-        newOp.beginWindow(4);
-        for (int i = 271; i < 300; i++) {
-          newOp.processTuple(111 +"");
-          }
-          newOp.endWindow();
-          newOp.teardown();
-          break;
-      }
-      outputOperator.endWindow();
-
-    }
-
-
-  }
-
-
-  }
+}

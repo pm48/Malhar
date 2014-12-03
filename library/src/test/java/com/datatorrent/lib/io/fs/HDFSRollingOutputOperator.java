@@ -35,12 +35,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     @Override
     protected void rotateHook(String finishedFile)
     {
-      //logger.info("finished file is" + finishedFile);
-     // logger.info("window in which the part finished" + windowId);
-    //  hive.processHiveFile(finishedFile);
-      //logger.info("windowIdofFinishedFile is" + windowId);
       hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
-     // logger.info("files in queue {}" , hive.filenames.keySet());
     }
 
 
