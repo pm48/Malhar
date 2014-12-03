@@ -22,11 +22,10 @@ import com.datatorrent.contrib.hive.HiveStore;
 /**
  * Hive Insert Operator which implements inserting data of primitive data type into Hive tables which
  * have column of primitive data type from files written in hdfs.
+ * @param <T>
  */
-public class HiveInsertOperator<T> extends AbstractHiveHDFS<T, HiveStore>
+public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 {
- //private transient final Logger logger = LoggerFactory.getLogger(HiveInsertOperator.class);
-
   public HiveInsertOperator()
   {
     this.store = new HiveStore();

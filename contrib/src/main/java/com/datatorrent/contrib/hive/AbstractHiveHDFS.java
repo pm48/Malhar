@@ -35,13 +35,12 @@ import com.datatorrent.common.util.DTThrowable;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
-import org.apache.hadoop.fs.FileSystem;
 
 /*
  * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractHiveHDFS<T, S extends HiveStore> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener
+public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener
 {
   protected long committedWindowId = Stateless.WINDOW_ID;
   //This variable can be used for debugging purposes
@@ -59,21 +58,21 @@ public abstract class AbstractHiveHDFS<T, S extends HiveStore> extends AbstractS
   @Nonnull
   protected String tablename;
 
-  public HDFSRollingOutputOperator hdfsOp;
+  public HDFSRollingOutputOperator<T> hdfsOp;
 
-  public HDFSRollingOutputOperator getHdfsOp()
+  public HDFSRollingOutputOperator<T> getHdfsOp()
   {
     return hdfsOp;
   }
 
-  public void setHdfsOp(HDFSRollingOutputOperator hdfsOp)
+  public void setHdfsOp(HDFSRollingOutputOperator<T> hdfsOp)
   {
     this.hdfsOp = hdfsOp;
   }
 
   public AbstractHiveHDFS()
   {
-    hdfsOp = new HDFSRollingOutputOperator();
+    hdfsOp = new HDFSRollingOutputOperator<T>();
     filenames = new HashMap<String, Long>();
     hdfsOp.hive = this;
     countEmptyWindow = 0;
@@ -155,20 +154,20 @@ public abstract class AbstractHiveHDFS<T, S extends HiveStore> extends AbstractS
     if (isEmptyWindow) {
       countEmptyWindow++;
     }
+    hdfsOp.getHDFSRollingparameters();
     if (countEmptyWindow >= maxWindowsWithNoData) {
       File f = new File(store.operatorpath + "/" + hdfsOp.lastFile);
       if (f.exists()) {
-        logger.info("last file not moved");
-        processHiveFile(hdfsOp.lastFile);
+        logger.debug("last file not moved");
+        hdfsOp.rotateCall(hdfsOp.lastFile);
       }
-      hdfsOp.partNumber.increment();
-      hdfsOp.updatePartNumber();
     }
+    countEmptyWindow = 0;
   }
 
   public void processHiveFile(String fileMoved)
   {
-    logger.info("processing {} file", fileMoved);
+    logger.debug("processing {} file", fileMoved);
     String command = getInsertCommand(store.getOperatorpath() + "/" + fileMoved);
     Statement stmt;
     try {
@@ -187,14 +186,14 @@ public abstract class AbstractHiveHDFS<T, S extends HiveStore> extends AbstractS
 
   protected String getInsertCommand(String filepath)
   {
-    String command = null;
+    String command;
     if (!hdfsOp.isHDFSLocation()) {
-      command = "load data inpath '" + filepath + "'OVERWRITE into table " + tablename;
-    }
-    else {
       command = "load data local inpath '" + filepath + "'OVERWRITE into table " + tablename;
     }
-    logger.info("command is {}" , command);
+    else {
+      command = "load data inpath '" + filepath + "'OVERWRITE into table " + tablename;
+    }
+    logger.debug("command is {}" , command);
 
     return command;
 

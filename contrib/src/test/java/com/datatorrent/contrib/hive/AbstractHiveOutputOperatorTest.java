@@ -15,15 +15,8 @@
  */
 package com.datatorrent.contrib.hive;
 
-import java.io.ByteArrayOutputStream;
 import java.sql.*;
 import java.util.HashMap;
-import java.util.Random;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,12 +27,20 @@ import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.APP_ID;
 import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.OPERATOR_ID;
 
-import com.datatorrent.contrib.hds.AbstractSinglePortHDSWriter;
 
 import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.Operator.ProcessingMode;
+import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.*;
+import com.datatorrent.lib.util.TestUtils.TestInfo;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.serializers.FieldSerializer;
+import java.io.File;
+import java.util.Map;
+import org.apache.commons.io.FileUtils;
+import org.junit.Rule;
+import org.junit.runner.Description;
 
 public class AbstractHiveOutputOperatorTest
 {
@@ -54,6 +55,25 @@ public class AbstractHiveOutputOperatorTest
   public static final String tablename = "temp";
   public static final String tablemap = "tempmap";
   public static String delimiterMap = ":";
+
+  @Rule public TestInfo testMeta = new HiveTestWatcher();
+
+  public static class HiveTestWatcher extends TestInfo
+  {
+    @Override
+    protected void starting(Description description)
+    {
+      super.starting(description);
+      new File(getDir()).mkdir();
+    }
+
+    @Override
+    protected void finished(Description description)
+    {
+      super.finished(description);
+      FileUtils.deleteQuietly(new File(getDir()));
+    }
+  }
 
   public static HiveStore createStore(HiveStore hiveStore)
   {
@@ -126,8 +146,8 @@ public class AbstractHiveOutputOperatorTest
   {
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
-    hiveStore.setFilepath("/tmp");
-    HiveInsertOperator outputOperator = new HiveInsertOperator();
+    hiveStore.setFilepath(testMeta.getDir());
+    HiveInsertOperator<String> outputOperator = new HiveInsertOperator<String>();
     outputOperator.setStore(hiveStore);
     outputOperator.setTablename(tablename);
     outputOperator.hdfsOp.setFilePermission(0777);
@@ -177,8 +197,8 @@ public class AbstractHiveOutputOperatorTest
   {
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
-    hiveStore.setFilepath("/tmp");
-    HiveMapInsertOperator outputOperator = new HiveMapInsertOperator();
+    hiveStore.setFilepath(testMeta.getDir());
+    HiveMapInsertOperator<Map<String,Integer>> outputOperator = new HiveMapInsertOperator<Map<String,Integer>>();
     outputOperator.setStore(hiveStore);
     outputOperator.hdfsOp.setFilePermission(0777);
 
@@ -204,7 +224,7 @@ public class AbstractHiveOutputOperatorTest
       for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE;
               tupleCounter++) {
-        map.put(tupleCounter + wid + "", new Integer((tupleCounter + 1) * (wid + 1)));
+        map.put(tupleCounter + wid + "", (tupleCounter + 1) * (wid + 1));
         outputOperator.input.put(map);
         outputOperator.committed(wid);
 
@@ -231,4 +251,64 @@ public class AbstractHiveOutputOperatorTest
                         databaseSize);
   }
 
+  @Test
+  public void HDFSRollingOperatorTest() throws SQLException
+  {
+    hiveInitializeDatabase(createStore(null));
+    HiveStore hiveStore = createStore(null);
+    hiveStore.setFilepath(testMeta.getDir());
+
+    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
+    attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
+    attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
+    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
+    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
+    HiveInsertOperator<String> outputOperator = new HiveInsertOperator<String>();
+    HiveInsertOperator<String> newOp = new HiveInsertOperator<String>();
+    outputOperator.setStore(hiveStore);
+    outputOperator.hdfsOp.setFilePermission(0777);
+   // ArrayOutOfBounds Exception seen if hdfs path is passed here.
+    // outputOperator.setFilepath("hdfs://localhost:9000/user/hive");
+
+    outputOperator.setup(context);
+    for (int wid = 0, total = 0;
+            wid < 10;
+            wid++) {
+      outputOperator.beginWindow(wid);
+      /*if (wid == 5) {
+       outputOperator.committed(wid - 2);
+       //outputOperator.checkpointed(wid - 3);
+       }*/
+      for (int tupleCounter = 0;
+              tupleCounter < 10 && total < 100;
+              tupleCounter++, total++) {
+        outputOperator.processTuple(111 + "");
+      }
+
+      if (wid == 4) {
+        Kryo kryo = new Kryo();
+        FieldSerializer<HiveInsertOperator> f1 = (FieldSerializer<HiveInsertOperator>)kryo.getSerializer(HiveInsertOperator.class);
+        FieldSerializer<HDFSRollingOutputOperator> f2 = (FieldSerializer<HDFSRollingOutputOperator>)kryo.getSerializer(HDFSRollingOutputOperator.class);
+        f1.setCopyTransient(false);
+        f2.setCopyTransient(false);
+
+        newOp = kryo.copy(outputOperator);
+      }
+
+      if (wid == 6) {
+        outputOperator.checkpointed(wid - 2);
+        outputOperator.teardown();
+        newOp.setup(context);
+        newOp.beginWindow(4);
+        for (int i = 271; i < 300; i++) {
+          newOp.processTuple(111 + "");
+        }
+        newOp.endWindow();
+        newOp.teardown();
+        break;
+      }
+
+    }
+
+}
 }

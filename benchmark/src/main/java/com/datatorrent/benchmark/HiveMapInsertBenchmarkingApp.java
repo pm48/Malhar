@@ -24,6 +24,7 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import java.util.Map;
 
 /**
  * Application used to benchmark HIVE Map Insert operator
@@ -46,7 +47,7 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(eventGenerator, PortContext.QUEUE_CAPACITY, 10000);
     dag.setAttribute(mapGenerator, PortContext.QUEUE_CAPACITY, 10000);
     dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
-    HiveMapInsertOperator hiveMapInsert = dag.addOperator("HiveMapInsertOperator", new HiveMapInsertOperator());
+    HiveMapInsertOperator<Map<String,Object>> hiveMapInsert = dag.addOperator("HiveMapInsertOperator", new HiveMapInsertOperator<Map<String,Object>>());
     dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveMapInsert.input);
   }
 }

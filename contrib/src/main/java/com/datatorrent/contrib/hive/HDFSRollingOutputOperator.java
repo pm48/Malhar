@@ -24,6 +24,9 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import com.datatorrent.lib.io.fs.AbstractFSWriter;
 
 import com.datatorrent.api.Context.OperatorContext;
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,12 +39,14 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     private transient String outputFileName;
     protected MutableInt partNumber;
     protected String lastFile;
-    protected AbstractHiveHDFS hive;
+    protected AbstractHiveHDFS<T> hive;
+    // This can be set as a property by user also.
+    private static final int MAX_LENGTH = 128;
     private static final Logger logger = LoggerFactory.getLogger(HDFSRollingOutputOperator.class);
 
     public HDFSRollingOutputOperator()
     {
-      setMaxLength(128);
+      setMaxLength(MAX_LENGTH);
     }
 
      public void getHDFSRollingparameters(){
@@ -63,7 +68,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     public void setup(OperatorContext context)
     {
       outputFileName = File.separator + "transactions.out.part";
-      logger.info("outputfilename is" + outputFileName);
+      logger.debug("outputfilename is" + outputFileName);
       super.setup(context);
     }
 
@@ -88,8 +93,19 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
       return hiveTuple.getBytes();
     }
 
-    protected void updatePartNumber(){
-      this.openPart.put(lastFile, partNumber);
+    protected void rotateCall(String lastFile){
+      try {
+        this.rotate(lastFile);
+      }
+      catch (IllegalArgumentException ex) {
+        logger.debug(ex.getMessage());
+      }
+      catch (IOException ex) {
+        logger.debug(ex.getMessage());
+      }
+      catch (ExecutionException ex) {
+        logger.debug(ex.getMessage());
+      }
     }
 
   }
