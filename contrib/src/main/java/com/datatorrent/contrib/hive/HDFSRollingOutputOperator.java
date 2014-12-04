@@ -77,7 +77,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     @Override
     protected void rotateHook(String finishedFile)
     {
-      hive.filenames.put(finishedFile, hive.committedWindowId);
+      hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
     }
 
 

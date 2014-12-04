@@ -43,8 +43,6 @@ import java.util.Iterator;
 public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener
 {
   protected long committedWindowId = Stateless.WINDOW_ID;
-  //This variable can be used for debugging purposes
-  private long checkpointedWindowId = Stateless.WINDOW_ID;
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveHDFS.class);
   private transient String appId;
   private transient int operatorId;
@@ -53,7 +51,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   private transient long maxWindowsWithNoData = 100;
   private int countEmptyWindow;
   private transient boolean isEmptyWindow;
-  private long windowIDOfCompletedPart = Stateless.WINDOW_ID;
+  protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
 
   @Nonnull
   protected String tablename;
@@ -114,7 +112,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public void checkpointed(long windowId)
   {
-    checkpointedWindowId = windowId;
   }
 
   public String getTablename()
