@@ -33,9 +33,6 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
       setMaxLength(128);
     }
 
-
-
-
     @Override
     public void setup(OperatorContext context)
     {
@@ -60,7 +57,6 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     protected byte[] getBytesForTuple(T tuple)
     {
       String hiveTuple = hive.getHiveTuple(tuple);
-      //logger.info("hiveTuple is" + hiveTuple);
       return hiveTuple.getBytes();
     }
   }

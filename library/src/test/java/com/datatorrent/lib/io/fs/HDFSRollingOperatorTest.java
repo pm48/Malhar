@@ -48,10 +48,10 @@ public class HDFSRollingOperatorTest
             wid < 10;
             wid++) {
       outputOperator.beginWindow(wid);
-      /*if (wid == 5) {
+      if (wid == 5) {
        outputOperator.committed(wid - 2);
-       //outputOperator.checkpointed(wid - 3);
-       }*/
+       outputOperator.checkpointed(wid - 3);
+       }
       for (int tupleCounter = 0;
               tupleCounter < 10 && total < 100;
               tupleCounter++, total++) {
@@ -69,7 +69,6 @@ public class HDFSRollingOperatorTest
       }
 
       if (wid == 6) {
-        outputOperator.checkpointed(wid - 2);
         outputOperator.teardown();
         newOp.setup(context);
         newOp.beginWindow(4);
