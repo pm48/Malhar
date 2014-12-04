@@ -18,7 +18,6 @@ package com.datatorrent.contrib.hive;
 import java.io.File;
 import java.util.Iterator;
 
-import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import com.datatorrent.lib.io.fs.AbstractFSWriter;
@@ -26,7 +25,7 @@ import com.datatorrent.lib.io.fs.AbstractFSWriter;
 import com.datatorrent.api.Context.OperatorContext;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,17 +57,20 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     }
 
     public boolean isHDFSLocation(){
-      if(fs instanceof RawLocalFileSystem){
+      if((fs instanceof LocalFileSystem)||(fs instanceof RawLocalFileSystem)){
+      return false;
+      }
+      else if(fs.getScheme().equalsIgnoreCase("hdfs")){
       return true;
       }
-      return false;
+      throw new UnsupportedOperationException("This operation is not supported");
     }
 
     @Override
     public void setup(OperatorContext context)
     {
       outputFileName = File.separator + "transactions.out.part";
-      logger.debug("outputfilename is" + outputFileName);
+      logger.debug("outputfilename is {}" , outputFileName);
       super.setup(context);
     }
 
