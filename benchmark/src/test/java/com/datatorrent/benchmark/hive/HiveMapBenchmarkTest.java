@@ -54,8 +54,9 @@ public class HiveMapBenchmarkTest
     LOG.info("delimiterMap is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.delimiter"));
     LOG.info("permission is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.hdfsOp.filePermission"));
     LOG.info("maximum length is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.hdfsOp.maxLength"));
+    LOG.info("tablename is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.tablename"));
     HiveMapInsertBenchmarkingApp app = new HiveMapInsertBenchmarkingApp();
-    AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
+    AbstractHiveOutputOperatorTest.hiveInitializeMapDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {
       lm.prepareDAG(app, conf);

@@ -49,6 +49,7 @@ public class HiveInsertBenchmarkTest
     LOG.info("conf filepath is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
     LOG.info("permission is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.hdfsOp.filePermission"));
     LOG.info("maximum length is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.hdfsOp.maxLength"));
+    LOG.info("tablename is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename"));
     HiveInsertBenchmarkingApp app = new HiveInsertBenchmarkingApp();
     AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();

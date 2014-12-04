@@ -24,7 +24,13 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import com.datatorrent.contrib.hive.HiveStore;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * Application used to benchmark HIVE Map Insert operator
@@ -38,9 +44,21 @@ import java.util.Map;
 @ApplicationAnnotation(name = "HiveMapInsertBenchmarkingApp")
 public class HiveMapInsertBenchmarkingApp implements StreamingApplication
 {
+  Logger LOG = LoggerFactory.getLogger(HiveInsertBenchmarkingApp.class);
+
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
+    HiveStore store = new HiveStore();
+    store.setDbUrl(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl"));
+    store.setConnectionProperties(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties"));
+    store.setFilepath(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath"));
+    try {
+      hiveInitializeMapDatabase(store,conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.tablename"),conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.delimiter"));
+    }
+    catch (SQLException ex) {
+      LOG.debug(ex.getMessage());
+    }
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
     RandomEventGenerator eventGenerator = dag.addOperator("EventGenerator", RandomEventGenerator.class);
     RandomMapOutput mapGenerator = dag.addOperator("MapGenerator", RandomMapOutput.class);
@@ -49,5 +67,16 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
     HiveMapInsertOperator<Map<String,Object>> hiveMapInsert = dag.addOperator("HiveMapInsertOperator", new HiveMapInsertOperator<Map<String,Object>>());
     dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveMapInsert.input);
+  }
+
+  public static void hiveInitializeMapDatabase(HiveStore hiveStore,String tablename,String delimiterMap) throws SQLException
+  {
+    hiveStore.connect();
+    Statement stmt = hiveStore.getConnection().createStatement();
+    stmt.execute("drop table " + tablename);
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+            + "MAP KEYS TERMINATED BY '" + delimiterMap + "' \n"
+            + "STORED AS TEXTFILE ");
+    hiveStore.disconnect();
   }
 }

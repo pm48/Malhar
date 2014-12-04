@@ -23,8 +23,6 @@ package com.datatorrent.contrib.hive;
  */
 public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 {
- //private transient final Logger logger = LoggerFactory.getLogger(HiveInsertOperator.class);
-
   public HiveInsertOperator()
   {
     this.store = new HiveStore();

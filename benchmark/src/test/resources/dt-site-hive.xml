@@ -13,6 +13,11 @@
     <description>Filepath</description>
   </property>
   <property>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename</name>
+    <value>temp</value>
+    <description>tablename for insert string</description>
+  </property>
+  <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.operatorpath</name>
     <value>/tmp</value>
     <description>OperatorPath</description>
@@ -36,6 +41,11 @@
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath</name>
     <value>/tmp</value>
     <description>Filepath</description>
+  </property>
+  <property>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.tablename</name>
+    <value>tempMap</value>
+    <description>tablename for insert map</description>
   </property>
   <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl</name>

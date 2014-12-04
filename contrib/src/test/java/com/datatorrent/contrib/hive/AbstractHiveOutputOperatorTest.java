@@ -131,14 +131,41 @@ public class AbstractHiveOutputOperatorTest
       LOG.debug(res.getString(1));
     }
 
-    //stmt.execute("drop table " + tablemeta);
-    stmt.execute("drop table " + tablemap);
     stmt.execute("drop table " + tablename);
+    //stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemeta + " (dt_window bigint,dt_app_id String,dt_operator_id int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n' stored as TEXTFILE");
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
+    /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
+     + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
+     + "MAP KEYS TERMINATED BY ':'  \n"
+     + "LINES TERMINATED BY '\n' "
+     + "STORED AS TEXTFILE");*/
+
+    hiveStore.disconnect();
+  }
+
+  public static void hiveInitializeMapDatabase(HiveStore hiveStore) throws SQLException
+  {
+    hiveStore.connect();
+    Statement stmt = hiveStore.getConnection().createStatement();
+    /* ResultSet res = stmt.executeQuery("CREATE TABLE test (cities_and_size MAP<INT, STRING>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n" +
+     "COLLECTION ITEMS TERMINATED BY '\n'  \n" +
+     "MAP KEYS TERMINATED BY ':'  \n" +
+     "LINES TERMINATED BY '\n'  \n" +
+     "STORED AS TEXTFILE ");*/
+    // show tables
+    String sql = "show tables";
+
+    LOG.debug(sql);
+    ResultSet res = stmt.executeQuery(sql);
+    if (res.next()) {
+      LOG.debug(res.getString(1));
+    }
+
+    stmt.execute("drop table " + tablemap);
     //stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemeta + " (dt_window bigint,dt_app_id String,dt_operator_id int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n' stored as TEXTFILE");
     stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemap + " (col1 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "MAP KEYS TERMINATED BY '" + delimiterMap + "' \n"
-            + "STORED AS TEXTFILE ");
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
     /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
      + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
@@ -203,7 +230,7 @@ public class AbstractHiveOutputOperatorTest
   @Test
   public void testHiveInsertMapOperator() throws SQLException
   {
-    hiveInitializeDatabase(createStore(null));
+    hiveInitializeMapDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
     HiveMapInsertOperator<Map<String, Integer>> outputOperator = new HiveMapInsertOperator<Map<String, Integer>>();
@@ -232,10 +259,8 @@ public class AbstractHiveOutputOperatorTest
       for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE;
               tupleCounter++) {
-        map.put(tupleCounter + wid + "", (tupleCounter + 1) * (wid + 1));
+        map.put(111 + "", 111);
         outputOperator.input.put(map);
-        outputOperator.committed(wid);
-
         map.clear();
       }
       outputOperator.endWindow();
@@ -255,7 +280,7 @@ public class AbstractHiveOutputOperatorTest
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
-                        100,
+                        51,
                         databaseSize);
   }
 

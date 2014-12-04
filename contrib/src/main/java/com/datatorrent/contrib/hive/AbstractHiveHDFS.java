@@ -102,6 +102,8 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     while (iter.hasNext()) {
       String fileMoved = iter.next();
       long window = filenames.get(fileMoved);
+      logger.debug("filemoved is {}" , fileMoved);
+      logger.debug("window is {}" , window);
       if (committedWindowId >= window) {
         processHiveFile(fileMoved);
         iter.remove();

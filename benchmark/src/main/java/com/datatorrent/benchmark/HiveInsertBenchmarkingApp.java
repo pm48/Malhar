@@ -24,6 +24,12 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import com.datatorrent.contrib.hive.HiveStore;
+import java.sql.SQLException;
+import java.sql.Statement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * Application used to benchmark HIVE Insert operator
@@ -36,9 +42,21 @@ import com.datatorrent.api.annotation.ApplicationAnnotation;
 @ApplicationAnnotation(name = "HiveInsertBenchmarkingApp")
 public class HiveInsertBenchmarkingApp implements StreamingApplication
 {
+  Logger LOG = LoggerFactory.getLogger(HiveInsertBenchmarkingApp.class);
   @Override
   public void populateDAG(DAG dag, Configuration conf)
   {
+    HiveStore store = new HiveStore();
+    store.setDbUrl(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
+    store.setConnectionProperties(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
+    store.setFilepath(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
+    try {
+      hiveInitializeDatabase(store,conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename"));
+    }
+    catch (SQLException ex) {
+     LOG.debug(ex.getMessage());
+    }
+
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
     RandomWordGenerator wordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
@@ -46,4 +64,13 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
 
+  public static void hiveInitializeDatabase(HiveStore hiveStore,String tablename) throws SQLException
+  {
+    hiveStore.connect();
+    Statement stmt = hiveStore.getConnection().createStatement();
+    stmt.execute("drop table " + tablename);
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
+    hiveStore.disconnect();
+  }
 }

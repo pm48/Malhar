@@ -70,7 +70,6 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     public void setup(OperatorContext context)
     {
       outputFileName = File.separator + "transactions.out.part";
-      logger.debug("outputfilename is {}" , outputFileName);
       super.setup(context);
     }
 
@@ -78,6 +77,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     protected void rotateHook(String finishedFile)
     {
       hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
+      logger.debug("finished files are {} , window of finished file is {} " , finishedFile , hive.windowIDOfCompletedPart);
     }
 
 
