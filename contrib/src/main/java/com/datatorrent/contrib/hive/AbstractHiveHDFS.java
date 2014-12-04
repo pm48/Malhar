@@ -49,6 +49,17 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   protected HashMap<String, Long> filenames;
   //This variable is user configurable
   private transient long maxWindowsWithNoData = 100;
+
+  public long getMaxWindowsWithNoData()
+  {
+    return maxWindowsWithNoData;
+  }
+
+  public void setMaxWindowsWithNoData(long maxWindowsWithNoData)
+  {
+    this.maxWindowsWithNoData = maxWindowsWithNoData;
+  }
+
   private int countEmptyWindow;
   private transient boolean isEmptyWindow;
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
@@ -95,16 +106,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
         processHiveFile(fileMoved);
         iter.remove();
       }
-    }
-    if (countEmptyWindow >= maxWindowsWithNoData) {
-      logger.debug("empty window count is max.");
-      hdfsOp.getHDFSRollingparameters();
-      File f = new File(store.operatorpath + "/" + hdfsOp.lastFile);
-      if (f.exists()) {
-        logger.debug("last file not moved");
-        hdfsOp.rotateCall(hdfsOp.lastFile);
-      }
-      countEmptyWindow = 0;
     }
   }
 
@@ -162,6 +163,16 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     if (isEmptyWindow) {
       countEmptyWindow++;
     }
+    if (countEmptyWindow >= maxWindowsWithNoData) {
+      logger.debug("empty window count is max.");
+      hdfsOp.getHDFSRollingparameters();
+      File f = new File(store.operatorpath + "/" + hdfsOp.lastFile);
+      if (f.exists()) {
+        logger.debug("last file not moved");
+        hdfsOp.rotateCall(hdfsOp.lastFile);
+      }
+      countEmptyWindow = 0;
+    }
   }
 
   public void processHiveFile(String fileMoved)
@@ -192,7 +203,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     else {
       command = "load data inpath '" + filepath + "' into table " + tablename;
     }
-    logger.debug("command is {}" , command);
+    logger.debug("command is {}", command);
 
     return command;
 

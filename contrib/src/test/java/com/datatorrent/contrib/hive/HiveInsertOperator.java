@@ -19,6 +19,7 @@ package com.datatorrent.contrib.hive;
 /**
  * Hive Insert Operator which implements inserting data of primitive data type into Hive tables which
  * have column of primitive data type from files written in hdfs.
+ * @param <T>
  */
 public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 {

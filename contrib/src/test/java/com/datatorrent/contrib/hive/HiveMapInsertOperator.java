@@ -15,8 +15,6 @@
  */
 package com.datatorrent.contrib.hive;
 
-import com.datatorrent.contrib.hive.AbstractHiveHDFS;
-import com.datatorrent.contrib.hive.HiveStore;
 import java.util.Iterator;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -28,7 +26,7 @@ import javax.validation.constraints.NotNull;
  * column of map data type from files written in hdfs.
  * @param <T>
  */
-public class HiveMapInsertOperator<T  extends Map> extends AbstractHiveHDFS<T>
+public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS<T>
 {
   @NotNull
   public String delimiter;
@@ -48,6 +46,7 @@ public class HiveMapInsertOperator<T  extends Map> extends AbstractHiveHDFS<T>
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public String getHiveTuple(T tuple)
   {
     Iterator keyIter = tuple.keySet().iterator();
