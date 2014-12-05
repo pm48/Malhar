@@ -43,10 +43,10 @@ public class HiveMapBenchmarkTest
     InputStream inputStream = getClass().getResourceAsStream("/dt-site-hive.xml");
     conf.addResource(inputStream);
 
-    HiveStore store = new HiveStore();
-    store.setDbUrl(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties"));
-    store.setFilepath(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath"));
+    //HiveStore store = new HiveStore();
+    //store.setDbUrl(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl"));
+    //store.setConnectionProperties(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties"));
+    //store.setFilepath(conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath"));
     LOG.info("conf properties are {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties"));
     LOG.info("conf dburl is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl"));
     LOG.info("conf filepath is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath"));
@@ -56,7 +56,7 @@ public class HiveMapBenchmarkTest
     LOG.info("maximum length is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.hdfsOp.maxLength"));
     LOG.info("tablename is {}" , conf.get("dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.tablename"));
     HiveMapInsertBenchmarkingApp app = new HiveMapInsertBenchmarkingApp();
-    AbstractHiveOutputOperatorTest.hiveInitializeMapDatabase(store);
+    //AbstractHiveOutputOperatorTest.hiveInitializeMapDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {
       lm.prepareDAG(app, conf);

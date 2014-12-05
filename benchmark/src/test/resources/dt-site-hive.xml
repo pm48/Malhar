@@ -9,11 +9,11 @@
   </property>
   <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath</name>
-    <value>/tmp</value>
+    <value>file:///user/hive</value>
     <description>Filepath</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.maxWindowsWithNoData</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.maxWindowsWithNoData</name>
     <value>100</value>
     <description>Max windows with no data</description>
   </property>
@@ -23,32 +23,27 @@
     <description>tablename for insert string</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.operatorpath</name>
-    <value>/tmp</value>
-    <description>OperatorPath</description>
-  </property>
-  <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.filePermission</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.hdfsOp.filePermission</name>
     <value>0777</value>
     <description>Permission</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.maxLength</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.hdfsOp.maxLength</name>
     <value>100</value>
     <description>Max Length</description>
   </property>
   <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties</name>
-    <value>user:"",password:""</value>
+    <value>user:hive,password:""</value>
     <description>The connection properties for the database.</description>
   </property>
   <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath</name>
-    <value>/tmp</value>
+    <value>/user/hive</value>
     <description>Filepath</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.maxWindowsWithNoData</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.maxWindowsWithNoData</name>
     <value>100</value>
     <description>Max Windows with no data</description>
   </property>
@@ -72,23 +67,14 @@
     <value>:</value>
     <description>Delimiter for map</description>
   </property>
-  <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.operatorpath</name>
-    <value>/tmp</value>
-    <description>OperatorPath</description>
-  </property>
-  <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.tablename</name>
-    <value>tempMap</value>
-    <description>Tablename for map operator</description>
-  </property>
+
   <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
     <description>Test database connector string.</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.filePermission</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.hdfsOp.filePermission</name>
     <value>0777</value>
     <description>Permission</description>
   </property>
@@ -98,7 +84,7 @@
     <description>Test database connector string.</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.maxLength</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.hdfsOp.maxLength</name>
     <value>100</value>
     <description>Max Length</description>
   </property>
