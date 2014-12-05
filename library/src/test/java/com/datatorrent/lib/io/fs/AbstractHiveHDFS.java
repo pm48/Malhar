@@ -71,6 +71,7 @@ public abstract class AbstractHiveHDFS<T> implements CheckpointListener
 
   public void beginWindow(long windowId)
   {
+    hdfsOp.beginWindow(windowId);
     windowIDOfCompletedPart = windowId;
   }
 

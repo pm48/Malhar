@@ -39,9 +39,9 @@ public class HDFSRollingOperatorTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
     HiveInsertOperator<String> outputOperator = new HiveInsertOperator<String>();
     HiveInsertOperator newOp = new HiveInsertOperator();
-    outputOperator.setFilepath("/tmp");
+    //outputOperator.setFilepath("file:///user/hive");
    // ArrayOutOfBounds Exception seen if hdfs path is passed here.
-    // outputOperator.setFilepath("hdfs://localhost:9000/user/hive");
+     outputOperator.setFilepath("hdfs://localhost:9000/user/hive");
 
     outputOperator.setup(context);
     for (int wid = 0, total = 0;
@@ -50,7 +50,7 @@ public class HDFSRollingOperatorTest
       outputOperator.beginWindow(wid);
       if (wid == 5) {
        outputOperator.committed(wid - 2);
-       outputOperator.checkpointed(wid - 3);
+       outputOperator.checkpointed(wid - 1);
        }
       for (int tupleCounter = 0;
               tupleCounter < 10 && total < 100;
