@@ -23,6 +23,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import com.datatorrent.lib.io.fs.AbstractFSWriter;
 
 import com.datatorrent.api.Context.OperatorContext;
+import com.datatorrent.common.util.DTThrowable;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -34,80 +35,89 @@ import org.slf4j.LoggerFactory;
  * An implementation of FS Writer that writes text files to hdfs which are inserted into hive.
  */
 public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
+{
+  private transient String outputFileName;
+  protected MutableInt partNumber;
+  protected String lastFile;
+  protected AbstractHiveHDFS<T> hive;
+  // This can be set as a property by user also.
+  private static final int MAX_LENGTH = 66060288;
+  private static final Logger logger = LoggerFactory.getLogger(HDFSRollingOutputOperator.class);
+
+  public HDFSRollingOutputOperator()
   {
-    private transient String outputFileName;
-    protected MutableInt partNumber;
-    protected String lastFile;
-    protected AbstractHiveHDFS<T> hive;
-    // This can be set as a property by user also.
-    private static final int MAX_LENGTH = 128;
-    private static final Logger logger = LoggerFactory.getLogger(HDFSRollingOutputOperator.class);
-
-    public HDFSRollingOutputOperator()
-    {
-      setMaxLength(MAX_LENGTH);
-    }
-
-     public void getHDFSRollingparameters(){
-      Iterator<String> iterFileNames = this.openPart.keySet().iterator();
-      if (iterFileNames.hasNext()) {
-        lastFile = iterFileNames.next();
-        partNumber = this.openPart.get(lastFile);
-      }
-    }
-
-    public boolean isHDFSLocation(){
-      if((fs instanceof LocalFileSystem)||(fs instanceof RawLocalFileSystem)){
-      return false;
-      }
-      else if(fs.getScheme().equalsIgnoreCase("hdfs")){
-      return true;
-      }
-      throw new UnsupportedOperationException("This operation is not supported");
-    }
-
-    @Override
-    public void setup(OperatorContext context)
-    {
-      outputFileName = File.separator + "transactions.out.part";
-      super.setup(context);
-    }
-
-    @Override
-    protected void rotateHook(String finishedFile)
-    {
-      hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
-      logger.debug("finished files are {} , window of finished file is {} " , finishedFile , hive.windowIDOfCompletedPart);
-    }
-
-
-    @Override
-    protected String getFileName(T tuple)
-    {
-      return outputFileName;
-    }
-
-    //implement this function according to tuple you want to pass in Hive
-    @Override
-    protected byte[] getBytesForTuple(T tuple)
-    {
-      String hiveTuple = hive.getHiveTuple(tuple);
-      return hiveTuple.getBytes();
-    }
-
-    protected void rotateCall(String lastFile){
-      try {
-        this.rotate(lastFile);
-      }
-      catch (IllegalArgumentException ex) {
-        logger.debug(ex.getMessage());
-      }
-      catch (IOException ex) {
-        logger.debug(ex.getMessage());
-      }
-      catch (ExecutionException ex) {
-        logger.debug(ex.getMessage());
-      }
-    }
-
+    setMaxLength(MAX_LENGTH);
   }
+
+  public String getHDFSRollingLastFile()
+  {
+    Iterator<String> iterFileNames = this.openPart.keySet().iterator();
+    if (iterFileNames.hasNext()) {
+      lastFile = iterFileNames.next();
+      partNumber = this.openPart.get(lastFile);
+    }
+    return getPartFileName(lastFile,
+                           partNumber.intValue());
+  }
+
+  public boolean isHDFSLocation()
+  {
+    if ((fs instanceof LocalFileSystem) || (fs instanceof RawLocalFileSystem)) {
+      return false;
+    }
+    else if (fs.getScheme().equalsIgnoreCase("hdfs")) {
+      return true;
+    }
+    throw new UnsupportedOperationException("This operation is not supported");
+  }
+
+  @Override
+  public void setup(OperatorContext context)
+  {
+    outputFileName = File.separator + "transactions.out.part";
+    super.setup(context);
+  }
+
+  @Override
+  protected void rotateHook(String finishedFile)
+  {
+    hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
+    logger.debug("finished files are {} , window of finished file is {} ", finishedFile, hive.windowIDOfCompletedPart);
+  }
+
+  @Override
+  protected String getFileName(T tuple)
+  {
+    return outputFileName;
+  }
+
+  /*
+   *Implement this function according to tuple you want to pass in Hive.
+   */
+  @Override
+  protected byte[] getBytesForTuple(T tuple)
+  {
+    String hiveTuple = hive.getHiveTuple(tuple);
+    return hiveTuple.getBytes();
+  }
+
+  protected void rotateCall(String lastFile)
+  {
+    try {
+      this.rotate(lastFile);
+    }
+    catch (IllegalArgumentException ex) {
+      logger.debug(ex.getMessage());
+      DTThrowable.rethrow(ex);
+    }
+    catch (IOException ex) {
+      logger.debug(ex.getMessage());
+      DTThrowable.rethrow(ex);
+    }
+    catch (ExecutionException ex) {
+      logger.debug(ex.getMessage());
+      DTThrowable.rethrow(ex);
+    }
+  }
+
+}

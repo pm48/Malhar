@@ -64,7 +64,6 @@ public class HiveMapBenchmarkTest
       lc.run(30000);
     }
     catch (Exception ex) {
-      ex.getCause().printStackTrace();
       DTThrowable.rethrow(ex);
     }
 

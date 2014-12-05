@@ -612,7 +612,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
    */
    protected  void rotateHook(String finishedFile)
    {
-     LOG.info("finished file is {}" , finishedFile);
+     LOG.debug("finished file is {}" , finishedFile);
    }
 
 

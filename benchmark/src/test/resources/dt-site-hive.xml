@@ -13,6 +13,11 @@
     <description>Filepath</description>
   </property>
   <property>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.maxWindowsWithNoData</name>
+    <value>100</value>
+    <description>Max windows with no data</description>
+  </property>
+  <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename</name>
     <value>temp</value>
     <description>tablename for insert string</description>
@@ -41,6 +46,11 @@
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath</name>
     <value>/tmp</value>
     <description>Filepath</description>
+  </property>
+  <property>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.maxWindowsWithNoData</name>
+    <value>100</value>
+    <description>Max Windows with no data</description>
   </property>
   <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.tablename</name>

@@ -186,6 +186,7 @@ public class AbstractHiveOutputOperatorTest
     outputOperator.setStore(hiveStore);
     outputOperator.setTablename(tablename);
     outputOperator.hdfsOp.setFilePermission(0777);
+    outputOperator.hdfsOp.setMaxLength(128);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -236,7 +237,7 @@ public class AbstractHiveOutputOperatorTest
     HiveMapInsertOperator<Map<String, Integer>> outputOperator = new HiveMapInsertOperator<Map<String, Integer>>();
     outputOperator.setStore(hiveStore);
     outputOperator.hdfsOp.setFilePermission(0777);
-
+    outputOperator.hdfsOp.setMaxLength(128);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -280,7 +281,7 @@ public class AbstractHiveOutputOperatorTest
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
-                        51,
+                        34,
                         databaseSize);
   }
 
@@ -295,6 +296,7 @@ public class AbstractHiveOutputOperatorTest
 
     outputOperator.setStore(hiveStore);
     outputOperator.hdfsOp.setFilePermission(0777);
+    outputOperator.hdfsOp.setMaxLength(128);
     outputOperator.setTablename(tablename);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
@@ -374,6 +376,7 @@ public class AbstractHiveOutputOperatorTest
 
     outputOperator.setStore(hiveStore);
     outputOperator.hdfsOp.setFilePermission(0777);
+    outputOperator.hdfsOp.setMaxLength(128);
     outputOperator.setTablename(tablename);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
@@ -427,7 +430,7 @@ public class AbstractHiveOutputOperatorTest
     databaseSize = resultSet.getInt(1);
     LOG.info("database size is" + databaseSize);
     Assert.assertEquals("Numer of tuples in database",
-                        99,
+                        100,
                         databaseSize);
   }
 

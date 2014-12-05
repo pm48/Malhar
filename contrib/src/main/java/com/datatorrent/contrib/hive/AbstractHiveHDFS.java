@@ -35,6 +35,7 @@ import com.datatorrent.common.util.DTThrowable;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Iterator;
+import javax.validation.constraints.Min;
 
 /*
  * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
@@ -48,6 +49,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   private transient int operatorId;
   protected HashMap<String, Long> filenames;
   //This variable is user configurable
+  @Min(0)
   private transient long maxWindowsWithNoData = 100;
 
   public long getMaxWindowsWithNoData()
@@ -111,7 +113,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     }
   }
 
-  //This method can be used for debugging purposes.
+  /*
+   *This method can be used for debugging purposes.
+   */
   @Override
   public void checkpointed(long windowId)
   {
@@ -167,8 +171,8 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     }
     if (countEmptyWindow >= maxWindowsWithNoData) {
       logger.debug("empty window count is max.");
-      hdfsOp.getHDFSRollingparameters();
-      File f = new File(store.operatorpath + "/" + hdfsOp.lastFile);
+      String lastFile = hdfsOp.getHDFSRollingLastFile();
+      File f = new File(store.operatorpath + "/" + lastFile);
       if (f.exists()) {
         logger.debug("last file not moved");
         hdfsOp.rotateCall(hdfsOp.lastFile);
