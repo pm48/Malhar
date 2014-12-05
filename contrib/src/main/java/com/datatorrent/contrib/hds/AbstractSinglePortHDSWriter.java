@@ -15,6 +15,18 @@
  */
 package com.datatorrent.contrib.hds;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+import javax.validation.constraints.Min;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultPartition;
@@ -25,15 +37,6 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.google.common.collect.Lists;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import javax.validation.constraints.Min;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Operator that receives data on port and writes it to the data store.
@@ -136,7 +139,7 @@ public abstract class AbstractSinglePortHDSWriter<EVENT> extends HDSWriter imple
   }
 
   @Override
-  public Collection<Partition<AbstractSinglePortHDSWriter<EVENT>>> definePartitions(Collection<Partition<AbstractSinglePortHDSWriter<EVENT>>> partitions, int partitionCnt)
+  public Collection<Partition<AbstractSinglePortHDSWriter<EVENT>>> definePartitions(Collection<Partition<AbstractSinglePortHDSWriter<EVENT>>> partitions, int incrementalCapacity)
   {
     boolean isInitialPartition = partitions.iterator().next().getStats() == null;
 
@@ -149,8 +152,8 @@ public abstract class AbstractSinglePortHDSWriter<EVENT> extends HDSWriter imple
     int totalCount;
 
     //Get the size of the partition for parallel partitioning
-    if(partitionCnt != 0) {
-      totalCount = partitionCnt;
+    if(incrementalCapacity != 0) {
+      totalCount = incrementalCapacity;
     }
     //Do normal partitioning
     else {
