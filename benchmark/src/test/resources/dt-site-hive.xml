@@ -80,7 +80,7 @@
   </property>
   <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties</name>
-    <value>user:"",password:""</value>
+    <value>user:hive,password:""</value>
     <description>Test database connector string.</description>
   </property>
   <property>
