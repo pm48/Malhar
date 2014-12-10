@@ -15,6 +15,7 @@
  */
 package com.datatorrent.contrib.hive;
 
+import com.datatorrent.api.*;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -26,23 +27,78 @@ import org.slf4j.LoggerFactory;
 import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 
 import com.datatorrent.api.Context.OperatorContext;
-import com.datatorrent.api.DAG;
 import com.datatorrent.api.Operator.CheckpointListener;
 import com.datatorrent.api.annotation.OperatorAnnotation;
 import com.datatorrent.api.annotation.Stateless;
 
 import com.datatorrent.common.util.DTThrowable;
-import java.io.File;
+import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+
 import javax.validation.constraints.Min;
+import org.apache.hadoop.fs.Path;
+import com.datatorrent.lib.codec.KryoSerializableStreamCodec;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import java.io.Serializable;
+import java.util.Map;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 /*
  * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener
+public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>
 {
+  protected transient boolean isPartitioned = false;
+
+  public final transient DefaultInputPort<T> in = new DefaultInputPort<T>()
+  {
+    @Override
+    public void process(T tuple)
+    {
+      processTuple(tuple);
+    }
+
+    @Override
+    public StreamCodec<T> getStreamCodec()
+    {
+      return new HiveStreamCodec();
+    }
+
+  };
+
+  @Override
+  public Collection<Partition<AbstractHiveHDFS<T>>> definePartitions(Collection<Partition<AbstractHiveHDFS<T>>> partitions, int incrementalCapacity)
+  {
+    int totalCount = partitions.size() + incrementalCapacity;
+    Collection<Partition<AbstractHiveHDFS<T>>> newPartitions = Lists.newArrayListWithExpectedSize(totalCount);
+    Kryo kryo = new Kryo();
+    for (int i = 0; i < totalCount; i++) {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      Output output = new Output(bos);
+      kryo.writeObject(output, this);
+      output.close();
+      Input lInput = new Input(bos.toByteArray());
+      @SuppressWarnings("unchecked")
+      AbstractHiveHDFS<T> oper = kryo.readObject(lInput, this.getClass());
+      // oper.setStore(this.store);
+      newPartitions.add(new DefaultPartition<AbstractHiveHDFS<T>>(oper));
+    }
+
+    return newPartitions;
+
+  }
+
+  @Override
+  public void partitioned(Map<Integer, Partition<AbstractHiveHDFS<T>>> partitions)
+  {
+  }
+
   protected long committedWindowId = Stateless.WINDOW_ID;
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveHDFS.class);
   private transient String appId;
@@ -70,6 +126,22 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   protected String tablename;
 
   public HDFSRollingOutputOperator<T> hdfsOp;
+
+  public class HiveStreamCodec extends KryoSerializableStreamCodec<T> implements Serializable
+  {
+    public HiveStreamCodec()
+    {
+      super();
+    }
+
+    @Override
+    public int getPartition(T tuple)
+    {
+      return getHivePartition().hashCode();
+    }
+
+    private static final long serialVersionUID = 201411031403L;
+  }
 
   public HDFSRollingOutputOperator<T> getHdfsOp()
   {
@@ -104,12 +176,21 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     while (iter.hasNext()) {
       String fileMoved = iter.next();
       long window = filenames.get(fileMoved);
-      logger.debug("filemoved is {}" , fileMoved);
-      logger.debug("window is {}" , window);
+      logger.debug("filemoved is {}", fileMoved);
+      logger.debug("window is {}", window);
       if (committedWindowId >= window) {
-        processHiveFile(fileMoved);
+        try {
+          logger.debug("path in committed window is" + store.getOperatorpath() + "/" + fileMoved);
+          if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + fileMoved))) {
+            processHiveFile(fileMoved);
+          }
+        }
+        catch (IOException ex) {
+          logger.debug(ex.getMessage());
+        }
         iter.remove();
       }
+
     }
   }
 
@@ -150,6 +231,8 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     operatorId = context.getId();
     hdfsOp.setFilePath(store.filepath + "/" + appId + "/" + operatorId);
     store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
+    if(getHivePartition()!=null)
+      isPartitioned = true;
     super.setup(context);
     hdfsOp.setup(context);
     isEmptyWindow = true;
@@ -172,10 +255,15 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     if (countEmptyWindow >= maxWindowsWithNoData) {
       logger.debug("empty window count is max.");
       String lastFile = hdfsOp.getHDFSRollingLastFile();
-      File f = new File(store.operatorpath + "/" + lastFile);
-      if (f.exists()) {
-        logger.debug("last file not moved");
-        hdfsOp.rotateCall(hdfsOp.lastFile);
+      try {
+        logger.debug("path in end window is" + store.getOperatorpath() + "/" + lastFile);
+        if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + lastFile))) {
+          logger.debug("last file not moved");
+          hdfsOp.rotateCall(hdfsOp.lastFile);
+        }
+      }
+      catch (IOException ex) {
+        logger.debug(ex.getMessage());
       }
       countEmptyWindow = 0;
     }
@@ -200,14 +288,29 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     return tuple.toString() + "\n";
   }
 
+  /*
+   * To be implemented by the user
+   */
+  public abstract String getHivePartition();
+
   protected String getInsertCommand(String filepath)
   {
     String command;
-    if (!hdfsOp.isHDFSLocation()) {
-      command = "load data local inpath '" + filepath + "' into table " + tablename;
+    if (isPartitioned) {
+      if (!hdfsOp.isHDFSLocation()) {
+        command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + getHivePartition() + ")";
+      }
+      else {
+        command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + getHivePartition() + ")";
+      }
     }
     else {
-      command = "load data inpath '" + filepath + "' into table " + tablename;
+      if (!hdfsOp.isHDFSLocation()) {
+        command = "load data local inpath '" + filepath + "' into table " + tablename;
+      }
+      else {
+        command = "load data inpath '" + filepath + "' into table " + tablename;
+      }
     }
     logger.debug("command is {}", command);
 

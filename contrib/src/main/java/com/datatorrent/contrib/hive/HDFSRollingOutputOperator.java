@@ -26,6 +26,7 @@ import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.slf4j.Logger;
@@ -58,6 +59,10 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     }
     return getPartFileName(lastFile,
                            partNumber.intValue());
+  }
+
+  public FileSystem getFileSystem(){
+   return fs;
   }
 
   public boolean isHDFSLocation()

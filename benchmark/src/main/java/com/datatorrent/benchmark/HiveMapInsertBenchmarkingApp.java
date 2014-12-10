@@ -73,7 +73,7 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
   {
     hiveStore.connect();
     Statement stmt = hiveStore.getConnection().createStatement();
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 map<string,int>) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "MAP KEYS TERMINATED BY '" + delimiterMap + "' \n"
             + "STORED AS TEXTFILE ");
     hiveStore.disconnect();

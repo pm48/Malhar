@@ -23,8 +23,17 @@ package com.datatorrent.contrib.hive;
  */
 public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 {
+  private String hivePartition = "dt='2008-06-08'";
   public HiveInsertOperator()
   {
     this.store = new HiveStore();
+  }
+
+  @Override
+  public String getHivePartition()
+  {
+    if(hivePartition!=null)
+    isPartitioned = true;
+    return hivePartition;
   }
 }

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.datatorrent.lib.testbench;
 
 import com.datatorrent.api.Context.OperatorContext;
@@ -36,7 +35,7 @@ public class RandomWordGenerator implements InputOperator
   /**
    * The default number of tuples emitted per window.
    */
-  public static final int MAX_TUPLES_PER_WINDOW = 200000;
+  public static final int MAX_TUPLES_PER_WINDOW = 10000;
 
   /**
    * The size of tuples in bytes.
@@ -94,11 +93,16 @@ public class RandomWordGenerator implements InputOperator
       }
     }
     if (outputString.isConnected()) {
-      for(int i = 0;i<100;i++){
-        outputString.emit(("hive" + random.nextInt(100) + ""));
+     StringBuilder output = new StringBuilder();
+     for (int j = 0; j < 1000; j++) {
+        output.append('h');
       }
+      for (;
+              tupleCounter < tuplesPerWindow;
+              tupleCounter++) {
+      outputString.emit(output.toString());
     }
-
+    }
   }
 
   @Override

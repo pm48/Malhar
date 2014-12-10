@@ -30,6 +30,7 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
 {
   @NotNull
   public String delimiter;
+  private String hivePartition = "dt='2008-06-08'";
 
   public String getDelimiter()
   {
@@ -58,6 +59,14 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
      writeToHive.append(key).append(delimiter).append(obj).append("\n");
     }
     return writeToHive.toString();
+  }
+
+  @Override
+  public String getHivePartition()
+  {
+    if(hivePartition!=null)
+    isPartitioned = true;
+    return hivePartition;
   }
 
 }

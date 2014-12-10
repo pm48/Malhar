@@ -17,6 +17,7 @@ package com.datatorrent.benchmark;
 
 import com.datatorrent.contrib.hive.AbstractHiveHDFS;
 import com.datatorrent.contrib.hive.HiveStore;
+import java.util.Map;
 
 
 /**
@@ -26,8 +27,17 @@ import com.datatorrent.contrib.hive.HiveStore;
  */
 public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 {
+  private String hivePartition = "dt='2008-06-08'";
   public HiveInsertOperator()
   {
     this.store = new HiveStore();
+  }
+
+ @Override
+  public String getHivePartition()
+  {
+    if(hivePartition!=null)
+    isPartitioned = true;
+    return hivePartition;
   }
 }
