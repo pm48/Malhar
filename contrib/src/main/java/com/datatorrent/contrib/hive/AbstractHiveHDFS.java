@@ -32,6 +32,7 @@ import com.datatorrent.api.annotation.OperatorAnnotation;
 import com.datatorrent.api.annotation.Stateless;
 
 import com.datatorrent.common.util.DTThrowable;
+import com.datatorrent.common.util.Slice;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.Collection;
@@ -54,7 +55,19 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
 public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>
 {
-  protected transient boolean isPartitioned = false;
+  protected boolean isPartitioned = false;
+  protected transient int numPartitions = 3;
+  protected String partition;
+
+  public int getNumPartitions()
+  {
+    return numPartitions;
+  }
+
+  public void setNumPartitions(int numPartitions)
+  {
+    this.numPartitions = numPartitions;
+  }
 
   public final transient DefaultInputPort<T> in = new DefaultInputPort<T>()
   {
@@ -75,7 +88,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public Collection<Partition<AbstractHiveHDFS<T>>> definePartitions(Collection<Partition<AbstractHiveHDFS<T>>> partitions, int incrementalCapacity)
   {
-    int totalCount = partitions.size() + incrementalCapacity;
+    int totalCount = numPartitions;
     Collection<Partition<AbstractHiveHDFS<T>>> newPartitions = Lists.newArrayListWithExpectedSize(totalCount);
     Kryo kryo = new Kryo();
     for (int i = 0; i < totalCount; i++) {
@@ -95,10 +108,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   }
 
   @Override
-  public void partitioned(Map<Integer, Partition<AbstractHiveHDFS<T>>> partitions)
-  {
-  }
-
+   public void partitioned(Map<Integer, Partition<AbstractHiveHDFS<T>>> partitions)
+   {
+   }
   protected long committedWindowId = Stateless.WINDOW_ID;
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveHDFS.class);
   private transient String appId;
@@ -119,7 +131,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   }
 
   private int countEmptyWindow;
-  private transient boolean isEmptyWindow;
+  private boolean isEmptyWindow;
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
 
   @Nonnull
@@ -137,7 +149,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     @Override
     public int getPartition(T tuple)
     {
-      return getHivePartition().hashCode();
+      return getHivePartition(tuple).hashCode();
     }
 
     private static final long serialVersionUID = 201411031403L;
@@ -222,6 +234,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   {
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
+    if (isPartitioned) {
+      partition = getHivePartition(tuple);
+    }
   }
 
   @Override
@@ -231,8 +246,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     operatorId = context.getId();
     hdfsOp.setFilePath(store.filepath + "/" + appId + "/" + operatorId);
     store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
-    if(getHivePartition()!=null)
-      isPartitioned = true;
     super.setup(context);
     hdfsOp.setup(context);
     isEmptyWindow = true;
@@ -287,21 +300,21 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   {
     return tuple.toString() + "\n";
   }
-
+ 
   /*
    * To be implemented by the user
    */
-  public abstract String getHivePartition();
+  public abstract String getHivePartition(T tuple);
 
   protected String getInsertCommand(String filepath)
   {
     String command;
     if (isPartitioned) {
       if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + getHivePartition() + ")";
+        command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + partition + ")";
       }
       else {
-        command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + getHivePartition() + ")";
+        command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + partition + ")";
       }
     }
     else {

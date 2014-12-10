@@ -18,6 +18,16 @@
     <description>Max windows with no data</description>
   </property>
   <property>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.numPartions</name>
+    <value>3</value>
+    <description>Partitions in Insert Operator</description>
+  </property>
+  <property>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveMapInsertOperator.numPartions</name>
+    <value>3</value>
+    <description>Partitions in Map Insert Operator</description>
+  </property>
+  <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename</name>
     <value>temp</value>
     <description>tablename for insert string</description>

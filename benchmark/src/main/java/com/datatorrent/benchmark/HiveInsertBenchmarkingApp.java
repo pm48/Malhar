@@ -61,7 +61,8 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     RandomWordGenerator wordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
     HiveInsertOperator<String> hiveInsert = dag.addOperator("HiveInsertOperator",new HiveInsertOperator<String>());
-    dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
+    hiveInsert.addPartition("dt='2008-08-09'");
+    dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.in);
   }
 
   public static void hiveInitializeDatabase(HiveStore hiveStore,String tablename) throws SQLException

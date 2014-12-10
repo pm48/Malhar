@@ -15,6 +15,8 @@
  */
 package com.datatorrent.contrib.hive;
 
+import java.util.ArrayList;
+
 
 /**
  * Hive Insert Operator which implements inserting data of primitive data type into Hive tables which
@@ -23,17 +25,30 @@ package com.datatorrent.contrib.hive;
  */
 public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 {
-  private String hivePartition = "dt='2008-06-08'";
+  private ArrayList<String> hivePartitions = new ArrayList<String>();
+
   public HiveInsertOperator()
   {
     this.store = new HiveStore();
   }
 
-  @Override
-  public String getHivePartition()
+  public void addPartition(String partition)
   {
-    if(hivePartition!=null)
-    isPartitioned = true;
-    return hivePartition;
+    hivePartitions.add("dt='2008-04-08'");
+    hivePartitions.add("dt='2008-04-09'");
+    hivePartitions.add("dt='2008-04-10'");
+    hivePartitions.add("dt='2008-04-11'");
+  }
+
+
+  @Override
+  public String getHivePartition(T tuple)
+  {
+    if(hivePartitions.isEmpty()){
+    isPartitioned = false;
+    return null;
+    }
+    int index = tuple.hashCode()%(hivePartitions.size()) ;
+    return hivePartitions.get(index);
   }
 }
