@@ -45,7 +45,7 @@ import com.datatorrent.lib.codec.KryoSerializableStreamCodec;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import java.io.Serializable;
+import java.io.*;
 import java.util.Map;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
@@ -53,9 +53,10 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
  * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>
+public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>,StreamCodec<T>,Serializable
 {
-  protected boolean isPartitioned = false;
+  private static final long serialVersionUID = 1L;
+  protected boolean isPartitioned = true;
   protected transient int numPartitions = 3;
   protected String partition;
 
@@ -69,7 +70,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     this.numPartitions = numPartitions;
   }
 
-  public final transient DefaultInputPort<T> in = new DefaultInputPort<T>()
+ /* public final transient DefaultInputPort<T> in = new DefaultInputPort<T>()
   {
     @Override
     public void process(T tuple)
@@ -77,13 +78,28 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       processTuple(tuple);
     }
 
-    @Override
-    public StreamCodec<T> getStreamCodec()
-    {
-      return new HiveStreamCodec();
-    }
+  };*/
 
-  };
+  protected KryoSerializableStreamCodec<T> codec;
+
+  @Override
+  public Object fromByteArray(Slice fragment)
+	{
+		return codec.fromByteArray(fragment);
+	}
+
+	@Override
+  @SuppressWarnings("unchecked")
+	public Slice toByteArray(T object)
+	{
+		return codec.toByteArray(object);
+	}
+
+  @Override
+  public int getPartition(T o)
+  {
+    return getHivePartition(o).hashCode();
+  }
 
   @Override
   public Collection<Partition<AbstractHiveHDFS<T>>> definePartitions(Collection<Partition<AbstractHiveHDFS<T>>> partitions, int incrementalCapacity)
@@ -99,6 +115,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       Input lInput = new Input(bos.toByteArray());
       @SuppressWarnings("unchecked")
       AbstractHiveHDFS<T> oper = kryo.readObject(lInput, this.getClass());
+      //oper.setHdfsOp(new HDFSRollingOutputOperator<T>());
       // oper.setStore(this.store);
       newPartitions.add(new DefaultPartition<AbstractHiveHDFS<T>>(oper));
     }
@@ -139,21 +156,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
   public HDFSRollingOutputOperator<T> hdfsOp;
 
-  public class HiveStreamCodec extends KryoSerializableStreamCodec<T> implements Serializable
-  {
-    public HiveStreamCodec()
-    {
-      super();
-    }
 
-    @Override
-    public int getPartition(T tuple)
-    {
-      return getHivePartition(tuple).hashCode();
-    }
-
-    private static final long serialVersionUID = 201411031403L;
-  }
 
   public HDFSRollingOutputOperator<T> getHdfsOp()
   {
@@ -300,7 +303,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   {
     return tuple.toString() + "\n";
   }
- 
+
   /*
    * To be implemented by the user
    */

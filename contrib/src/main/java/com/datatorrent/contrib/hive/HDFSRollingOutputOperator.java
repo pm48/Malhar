@@ -23,6 +23,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import com.datatorrent.lib.io.fs.AbstractFSWriter;
 
 import com.datatorrent.api.Context.OperatorContext;
+import com.datatorrent.api.DAG;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -79,7 +80,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
   @Override
   public void setup(OperatorContext context)
   {
-    outputFileName = File.separator + "transactions.out.part";
+    outputFileName = File.separator + context.getValue(DAG.APPLICATION_ID) + context.getId()+ "transactions.out.part";
     super.setup(context);
   }
 

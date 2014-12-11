@@ -62,7 +62,7 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
     HiveInsertOperator<String> hiveInsert = dag.addOperator("HiveInsertOperator",new HiveInsertOperator<String>());
     hiveInsert.addPartition("dt='2008-08-09'");
-    dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.in);
+    dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
 
   public static void hiveInitializeDatabase(HiveStore hiveStore,String tablename) throws SQLException
