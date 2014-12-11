@@ -133,7 +133,7 @@ public class AbstractHiveOutputOperatorTest
 
     stmt.execute("drop table " + tablename);
     //stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemeta + " (dt_window bigint,dt_app_id String,dt_operator_id int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n' stored as TEXTFILE");
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("CREATE EXTERNAL TABLE IF NOT EXISTS " + tablename + " (col1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
     /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
      + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
