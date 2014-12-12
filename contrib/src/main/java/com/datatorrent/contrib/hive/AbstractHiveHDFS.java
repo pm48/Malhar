@@ -72,6 +72,23 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
   protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
 
+  public final transient DefaultInputPort<T> data = new DefaultInputPort<T>()
+	{
+
+		@Override
+		public void process(T tuple)
+		{
+			   processTuple(tuple);
+		}
+
+		@Override
+		public StreamCodec<T> getStreamCodec()
+		{
+      return AbstractHiveHDFS.this;
+		}
+	};
+
+
   @Override
   public Object fromByteArray(Slice fragment)
   {
