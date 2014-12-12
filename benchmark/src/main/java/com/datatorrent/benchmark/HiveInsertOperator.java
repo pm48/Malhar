@@ -36,10 +36,11 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 
   public void addPartition(String partition)
   {
-    hivePartitions.add("ts='2014-12-11'");
-    hivePartitions.add("ts='2014-12-11'");
-    hivePartitions.add("ts='2014-12-11'");
-    hivePartitions.add("ts='2014-12-11'");
+    hivePartitions.add("dt='2014-12-12'");
+    hivePartitions.add("dt='2014-12-13'");
+    hivePartitions.add(partition);
+    //hivePartitions.add("ts='2014-12-11'");
+    //hivePartitions.add("ts='2014-12-11'");
   }
 
 
@@ -50,7 +51,7 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
     isPartitioned = false;
     return null;
     }
-    int index = tuple.hashCode()%(hivePartitions.size()) ;
+    int index = tuple.hashCode() %(hivePartitions.size()) ;
     return hivePartitions.get(index);
   }
 }

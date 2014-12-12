@@ -15,6 +15,8 @@
  */
 package com.datatorrent.contrib.hive;
 
+import com.datatorrent.contrib.hive.AbstractHiveHDFS;
+import com.datatorrent.contrib.hive.HiveStore;
 import java.util.ArrayList;
 
 
@@ -34,11 +36,11 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 
   public void addPartition(String partition)
   {
-    hivePartitions.add("dt='2008-04-08'");
-    hivePartitions.add("dt='2008-04-09'");
-    hivePartitions.add("dt='2008-04-10'");
-    hivePartitions.add("dt='2008-04-11'");
-    isPartitioned = true;
+    hivePartitions.add("dt='2014-12-12'");
+    hivePartitions.add("dt='2014-12-13'");
+    hivePartitions.add(partition);
+    //hivePartitions.add("ts='2014-12-11'");
+    //hivePartitions.add("ts='2014-12-11'");
   }
 
 
@@ -49,7 +51,7 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
     isPartitioned = false;
     return null;
     }
-    int index = tuple.hashCode()%(hivePartitions.size()) ;
+    int index = tuple.hashCode() %(hivePartitions.size()) ;
     return hivePartitions.get(index);
   }
 }

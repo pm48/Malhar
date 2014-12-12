@@ -53,7 +53,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
  * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>,StreamCodec<T>,Serializable
+public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>, StreamCodec<T>, Serializable
 {
   private static final long serialVersionUID = 1L;
   protected boolean isPartitioned = true;
@@ -70,34 +70,26 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     this.numPartitions = numPartitions;
   }
 
- /* public final transient DefaultInputPort<T> in = new DefaultInputPort<T>()
-  {
-    @Override
-    public void process(T tuple)
-    {
-      processTuple(tuple);
-    }
-
-  };*/
-
   protected KryoSerializableStreamCodec<T> codec;
 
   @Override
   public Object fromByteArray(Slice fragment)
-	{
-		return codec.fromByteArray(fragment);
-	}
+  {
+    return codec.fromByteArray(fragment);
+  }
 
-	@Override
+  @Override
   @SuppressWarnings("unchecked")
-	public Slice toByteArray(T object)
-	{
-		return codec.toByteArray(object);
-	}
+  public Slice toByteArray(T object)
+  {
+    return codec.toByteArray(object);
+  }
 
   @Override
   public int getPartition(T o)
   {
+    partition = getHivePartition(o);
+    logger.debug("partition is {} ", partition);
     return getHivePartition(o).hashCode();
   }
 
@@ -115,8 +107,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       Input lInput = new Input(bos.toByteArray());
       @SuppressWarnings("unchecked")
       AbstractHiveHDFS<T> oper = kryo.readObject(lInput, this.getClass());
-      //oper.setHdfsOp(new HDFSRollingOutputOperator<T>());
-      // oper.setStore(this.store);
       newPartitions.add(new DefaultPartition<AbstractHiveHDFS<T>>(oper));
     }
 
@@ -125,9 +115,10 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   }
 
   @Override
-   public void partitioned(Map<Integer, Partition<AbstractHiveHDFS<T>>> partitions)
-   {
-   }
+  public void partitioned(Map<Integer, Partition<AbstractHiveHDFS<T>>> partitions)
+  {
+  }
+
   protected long committedWindowId = Stateless.WINDOW_ID;
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveHDFS.class);
   private transient String appId;
@@ -155,8 +146,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   protected String tablename;
 
   public HDFSRollingOutputOperator<T> hdfsOp;
-
-
 
   public HDFSRollingOutputOperator<T> getHdfsOp()
   {
@@ -196,7 +185,10 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       if (committedWindowId >= window) {
         try {
           logger.debug("path in committed window is" + store.getOperatorpath() + "/" + fileMoved);
-          //comments to be added.
+          /*
+           * Check if file was not moved to hive because of operator crash or any other failure.
+           * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
+           */
           if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + fileMoved))) {
             logger.debug("partition is" + partition);
             processHiveFile(fileMoved);
@@ -237,9 +229,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public void processTuple(T tuple)
   {
-     if (isPartitioned) {
-      partition = getHivePartition(tuple);
-    }
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
   }
@@ -294,9 +283,10 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     Statement stmt;
     try {
       stmt = store.getConnection().createStatement();
-      if(!stmt.execute(command))
-        //either throw exception or log error.
+      if (!stmt.execute(command)) //either throw exception or log error.
+      {
         logger.error("Moving file into hive failed");
+      }
     }
     catch (SQLException ex) {
       DTThrowable.rethrow(ex);
