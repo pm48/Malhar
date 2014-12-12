@@ -70,7 +70,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     this.numPartitions = numPartitions;
   }
 
-  protected KryoSerializableStreamCodec<T> codec;
+  protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
 
   @Override
   public Object fromByteArray(Slice fragment)

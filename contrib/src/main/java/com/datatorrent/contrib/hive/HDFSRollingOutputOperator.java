@@ -80,7 +80,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
   @Override
   public void setup(OperatorContext context)
   {
-    outputFileName = File.separator + context.getValue(DAG.APPLICATION_ID) + context.getId()+ "transactions.out.part";
+    outputFileName = File.separator + context.getValue(DAG.APPLICATION_ID) + "-" + context.getId()+ "-" + "transactions.out.part";
     super.setup(context);
   }
 
