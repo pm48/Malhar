@@ -42,7 +42,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
   protected MutableInt partNumber;
   protected String lastFile;
   protected AbstractHiveHDFS<T> hive;
-  // This can be set as a property by user also.
+  // This can be set as a property by user also, hdfs block size.
   private static final int MAX_LENGTH = 66060288;
   private static final Logger logger = LoggerFactory.getLogger(HDFSRollingOutputOperator.class);
 
