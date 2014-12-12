@@ -36,10 +36,10 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 
   public void addPartition(String partition)
   {
-    hivePartitions.add("dt='2008-04-08'");
-    hivePartitions.add("dt='2008-04-09'");
-    hivePartitions.add("dt='2008-04-10'");
-    hivePartitions.add("dt='2008-04-11'");
+    hivePartitions.add("ts='2014-12-11 04:55:01.0111111'");
+    hivePartitions.add("ts='2014-12-11 04:57:01.0111111'");
+    hivePartitions.add("dt='2014-12-11 04:59:01.0111111'");
+    hivePartitions.add("dt='2014-12-11 05:01:01.0111111'");
   }
 
 

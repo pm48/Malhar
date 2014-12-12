@@ -38,6 +38,7 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
     hivePartitions.add("dt='2008-04-09'");
     hivePartitions.add("dt='2008-04-10'");
     hivePartitions.add("dt='2008-04-11'");
+    isPartitioned = true;
   }
 
 

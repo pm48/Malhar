@@ -38,18 +38,18 @@ public class HiveJdbcClient
       LOG.debug(ex.getMessage());
     }
 
-    Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "", "");
+    Connection con = DriverManager.getConnection("jdbc:hive2://localhost:10000/default", "prerna", "");
     Statement stmt = con.createStatement();
     String tableName = "temp4";
     stmt.execute("drop table temp4");
-    stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3 map<string,int>,col4 map<String,int>,col5 map<string,int>) \n"
-            + "row format SERDE 'org.apache.hadoop.hive.contrib.serde2.RegexSerDe'  \n"
+    stmt.execute("CREATE TABLE IF NOT EXISTS temp4  (col1 string)  \n"  //(col1 map<string,int>,col2 map<string,int>,col3 map<string,int>,col4 map<String,int>,col5 map<string,int>)
+            + "row format SERDE 'org.apache.hadoop.hive.serde2.columnar.ColumnarSerDe'  \n"
             // + "WITH SERDEPROPERTIES (“input.regex” = “([^ ]*) ([^ ]*) ([^ ]*) (-|\\\\[[^\\\\]]*\\\\]) ([^ \\\"]*|\\”[^\\\"]*\\”) ”),“output.format.string”=”%1$s %2$s %3$s %4$s %5$s”)  \n"
-            + "COLLECTION ITEMS TERMINATED BY ','  \n"
-            + "MAP KEYS TERMINATED BY ':'  \n"
-            + "LINES TERMINATED BY '\n'  \n"
+            //+ "COLLECTION ITEMS TERMINATED BY ','  \n"
+            //+ "MAP KEYS TERMINATED BY ':'  \n"
+            //+ "LINES TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
-    String filepath = "/user/README.txt";
+    String filepath = "/tmp/a.txt";
 
     String sql = "load data inpath '" + filepath + "' into table " + tableName;
     stmt.execute(sql);

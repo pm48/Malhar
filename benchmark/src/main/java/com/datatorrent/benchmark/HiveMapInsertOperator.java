@@ -64,7 +64,7 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
   }
 
   @Override
-  public String getHivePartition()
+  public String getHivePartition(T tuple)
   {
     if(hivePartition!=null)
     isPartitioned = true;

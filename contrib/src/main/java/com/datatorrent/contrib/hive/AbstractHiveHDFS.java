@@ -196,7 +196,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       if (committedWindowId >= window) {
         try {
           logger.debug("path in committed window is" + store.getOperatorpath() + "/" + fileMoved);
+          //comments to be added.
           if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + fileMoved))) {
+            logger.debug("partition is" + partition);
             processHiveFile(fileMoved);
           }
         }
@@ -235,11 +237,11 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public void processTuple(T tuple)
   {
-    isEmptyWindow = false;
-    hdfsOp.input.process(tuple);
-    if (isPartitioned) {
+     if (isPartitioned) {
       partition = getHivePartition(tuple);
     }
+    isEmptyWindow = false;
+    hdfsOp.input.process(tuple);
   }
 
   @Override
@@ -292,7 +294,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     Statement stmt;
     try {
       stmt = store.getConnection().createStatement();
-      stmt.execute(command);
+      if(!stmt.execute(command))
+        //either throw exception or log error.
+        logger.error("Moving file into hive failed");
     }
     catch (SQLException ex) {
       DTThrowable.rethrow(ex);

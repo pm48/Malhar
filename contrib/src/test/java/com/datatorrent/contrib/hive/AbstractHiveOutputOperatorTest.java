@@ -133,7 +133,7 @@ public class AbstractHiveOutputOperatorTest
 
     stmt.execute("drop table " + tablename);
     //stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemeta + " (dt_window bigint,dt_app_id String,dt_operator_id int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n' stored as TEXTFILE");
-    stmt.execute("CREATE EXTERNAL TABLE IF NOT EXISTS " + tablename + " (col1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 string) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
     /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
      + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
@@ -187,6 +187,7 @@ public class AbstractHiveOutputOperatorTest
     outputOperator.setTablename(tablename);
     outputOperator.hdfsOp.setFilePermission(0777);
     outputOperator.hdfsOp.setMaxLength(128);
+    outputOperator.addPartition("");
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -202,7 +203,7 @@ public class AbstractHiveOutputOperatorTest
       if (wid == 5) {
         outputOperator.committed(wid - 2);
       }
-      for (int tupleCounter = 0;
+         for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
               tupleCounter++, total++) {
         outputOperator.input.put(111 + "");
