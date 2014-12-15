@@ -60,6 +60,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   protected transient int numPartitions = 3;
   protected String partition;
 
+
   public int getNumPartitions()
   {
     return numPartitions;
@@ -238,10 +239,12 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   {
     appId = context.getValue(DAG.APPLICATION_ID);
     operatorId = context.getId();
+    logger.info("filepath in setup is" + store.filepath.toString());
     hdfsOp.setFilePath(store.filepath + "/" + appId + "/" + operatorId);
     store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
     super.setup(context);
     hdfsOp.setup(context);
+    logger.info("partition in setup is" + partition);
     isEmptyWindow = true;
   }
 

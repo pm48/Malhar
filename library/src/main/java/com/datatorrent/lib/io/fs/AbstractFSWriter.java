@@ -356,7 +356,8 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
               LOG.info("file corrupted {} {} {}", seenFileNamePart, offset, status.getLen());
               byte[] buffer = new byte[COPY_BUFFER_SIZE];
 
-              Path tmpFilePath = new Path(filePath, seenFileNamePart + TMP_EXTENSION);
+              Path tmpFilePath = new Path(filePath + File.separator + seenFileNamePart + TMP_EXTENSION);
+              LOG.debug("temp file path {}, rolling file path {}", tmpFilePath.toString(), status.getPath().toString());
               FSDataOutputStream fsOutput = fs.create(tmpFilePath, (short) replication);
               while (inputStream.getPos() < offset) {
                 long remainingBytes = offset - inputStream.getPos();
@@ -369,7 +370,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
               fsOutput.close();
 
               FileContext fileContext = FileContext.getFileContext(fs.getUri());
-              LOG.debug("temp file path {}, rolling file path {}", tmpFilePath.toString(), status.getPath().toString());
+             // LOG.debug("temp file path {}, rolling file path {}", tmpFilePath.toString(), status.getPath().toString());
               fileContext.rename(tmpFilePath, status.getPath(), Options.Rename.OVERWRITE);
             }
             inputStream.close();
