@@ -26,6 +26,7 @@ import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -36,8 +37,9 @@ import org.slf4j.LoggerFactory;
 /*
  * An implementation of FS Writer that writes text files to hdfs which are inserted into hive.
  */
-public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
+public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements Serializable
 {
+  private static final long serialVersionUID = 201412121603L;
   private transient String outputFileName;
   protected MutableInt partNumber;
   protected String lastFile;
@@ -125,5 +127,6 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
       DTThrowable.rethrow(ex);
     }
   }
+
 
 }

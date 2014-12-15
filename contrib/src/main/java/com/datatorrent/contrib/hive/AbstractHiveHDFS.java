@@ -55,7 +55,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
 public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>, StreamCodec<T>, Serializable
 {
-  private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 201412121604L;
   protected boolean isPartitioned = true;
   protected transient int numPartitions = 3;
   protected String partition;
