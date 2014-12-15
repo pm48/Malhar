@@ -72,23 +72,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
   protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
 
-  public final transient DefaultInputPort<T> data = new DefaultInputPort<T>()
-	{
-
-		@Override
-		public void process(T tuple)
-		{
-			   processTuple(tuple);
-		}
-
-		@Override
-		public StreamCodec<T> getStreamCodec()
-		{
-      return AbstractHiveHDFS.this;
-		}
-	};
-
-
   @Override
   public Object fromByteArray(Slice fragment)
   {
@@ -106,8 +89,8 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public int getPartition(T o)
   {
     partition = getHivePartition(o);
-    logger.debug("partition is {} ", partition);
-    return getHivePartition(o).hashCode();
+    logger.info("partition is {} ", partition);
+    return partition.hashCode();
   }
 
   @Override
@@ -207,7 +190,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
            * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
            */
           if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + fileMoved))) {
-            logger.debug("partition is" + partition);
+            logger.info("partition is {} ", partition);
             processHiveFile(fileMoved);
           }
         }
