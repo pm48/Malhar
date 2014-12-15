@@ -190,7 +190,6 @@ public class AbstractFSWriterTest
   {
     private final File testDir;
     private final Long maxLength;
-    @SuppressWarnings("rawtypes")
     private final AbstractFSWriter<byte[]> fsWriter;
 
     public ValidationTestApp(File testDir,
@@ -203,7 +202,6 @@ public class AbstractFSWriterTest
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void populateDAG(DAG dag, Configuration conf)
     {
       RandomWordGenerator randomWordGenerator = new RandomWordGenerator();
@@ -311,7 +309,6 @@ public class AbstractFSWriterTest
     writer.rollingFile = checkPointWriter.rollingFile;
   }
 
-  @SuppressWarnings("deprecation")
   public static void checkOutput(int fileCount,
                                  String baseFilePath,
                                  String expectedOutput)
