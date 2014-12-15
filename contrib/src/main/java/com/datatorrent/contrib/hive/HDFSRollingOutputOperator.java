@@ -60,6 +60,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
       lastFile = iterFileNames.next();
       partNumber = this.openPart.get(lastFile);
     }
+    logger.info("last file is {}" ,lastFile);
     return getPartFileName(lastFile,
                            partNumber.intValue());
   }
@@ -82,20 +83,22 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
   @Override
   public void setup(OperatorContext context)
   {
-    outputFileName = File.separator + context.getValue(DAG.APPLICATION_ID) + "-" + context.getId()+ "-" + "transactions.out.part";
+    outputFileName = File.separator + context.getId() + "-" + "transactions.out.part";
     super.setup(context);
   }
 
   @Override
   protected void rotateHook(String finishedFile)
   {
+    logger.info("finished files are {} , window of finished file is {} ", finishedFile, hive.windowIDOfCompletedPart);
     hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
-    logger.debug("finished files are {} , window of finished file is {} ", finishedFile, hive.windowIDOfCompletedPart);
   }
 
   @Override
   protected String getFileName(T tuple)
   {
+    outputFileName = File.separator + "partition" + hive.partition + outputFileName;
+    logger.info("outputfilename is {}" , outputFileName);
     return outputFileName;
   }
 

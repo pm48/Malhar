@@ -53,13 +53,12 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
  * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>, StreamCodec<T>, Serializable
+public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>> //, StreamCodec<T>, Serializable
 {
   private static final long serialVersionUID = 201412121604L;
   protected boolean isPartitioned = true;
   protected transient int numPartitions = 3;
   protected String partition;
-
 
   public int getNumPartitions()
   {
@@ -71,9 +70,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     this.numPartitions = numPartitions;
   }
 
-  protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
+ // protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
 
-  @Override
+  /*@Override
   public Object fromByteArray(Slice fragment)
   {
     return codec.fromByteArray(fragment);
@@ -92,7 +91,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     partition = getHivePartition(o);
     logger.info("partition is {} ", partition);
     return partition.hashCode();
-  }
+  }*/
 
   @Override
   public Collection<Partition<AbstractHiveHDFS<T>>> definePartitions(Collection<Partition<AbstractHiveHDFS<T>>> partitions, int incrementalCapacity)
@@ -181,11 +180,11 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     while (iter.hasNext()) {
       String fileMoved = iter.next();
       long window = filenames.get(fileMoved);
-      logger.debug("filemoved is {}", fileMoved);
-      logger.debug("window is {}", window);
+      logger.info("filemoved is {}", fileMoved);
+      logger.info("window is {}", window);
       if (committedWindowId >= window) {
         try {
-          logger.debug("path in committed window is" + store.getOperatorpath() + "/" + fileMoved);
+          logger.info("path in committed window is" + store.getOperatorpath() + "/" + fileMoved);
           /*
            * Check if file was not moved to hive because of operator crash or any other failure.
            * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
@@ -230,6 +229,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public void processTuple(T tuple)
   {
+    partition = getHivePartition(tuple);
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
   }
@@ -244,7 +244,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
     super.setup(context);
     hdfsOp.setup(context);
-    logger.info("partition in setup is" + partition);
     isEmptyWindow = true;
   }
 
@@ -281,7 +280,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
   public void processHiveFile(String fileMoved)
   {
-    logger.debug("processing {} file", fileMoved);
+    logger.info("processing {} file", fileMoved);
     String command = getInsertCommand(store.getOperatorpath() + "/" + fileMoved);
     Statement stmt;
     try {

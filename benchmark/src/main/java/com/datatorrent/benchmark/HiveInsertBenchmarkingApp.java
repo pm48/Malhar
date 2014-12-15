@@ -62,7 +62,7 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     RandomWordGenerator wordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
     HiveInsertOperator<String> hiveInsert = dag.addOperator("HiveInsertOperator",new HiveInsertOperator<String>());
-    dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, hiveInsert);
+    //dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, hiveInsert);
     hiveInsert.addPartition("dt='2014-12-14'");
     dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
