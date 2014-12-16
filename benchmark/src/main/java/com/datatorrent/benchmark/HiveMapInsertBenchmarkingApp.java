@@ -24,6 +24,7 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
+import com.datatorrent.contrib.hive.HiveMapInsertOperator;
 import com.datatorrent.contrib.hive.HiveStore;
 import java.sql.SQLException;
 import java.sql.Statement;

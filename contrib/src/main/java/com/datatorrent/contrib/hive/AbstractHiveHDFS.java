@@ -55,7 +55,6 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
 public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>> //, StreamCodec<T>, Serializable
 {
-  private static final long serialVersionUID = 201412121604L;
   protected boolean isHivePartitioned = true;
   protected transient int numPartitions = 3;
   protected ArrayList<String> hivePartitions = new ArrayList<String>();
@@ -234,6 +233,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     }
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
+    String partFile = hdfsOp.getFileName(hdfsOp.getFileName(tuple));
+    logger.info("partfile in processtuple is" + partFile);
+    mapFilePartition.put(partFile,partition);
   }
 
   @Override
@@ -241,7 +243,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   {
     appId = context.getValue(DAG.APPLICATION_ID);
     operatorId = context.getId();
-    logger.info("filepath in setup is" + store.filepath.toString());
     hdfsOp.setFilePath(store.filepath + "/" + appId + "/" + operatorId);
     store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
     super.setup(context);
@@ -286,9 +287,10 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     String hivePartition = null;
     if (isHivePartitioned) {
       hivePartition = mapFilePartition.get(fileMoved);
-    }
-    if (!hivePartitions.contains(partition)) {
-      hivePartitions.add(partition);
+      logger.info("hivepartition is {}", hivePartition);
+      if (!hivePartitions.contains(hivePartition)) {
+        hivePartitions.add(hivePartition);
+      }
     }
     String command = getInsertCommand(store.getOperatorpath() + fileMoved, hivePartition);
     Statement stmt;
@@ -315,17 +317,17 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public abstract String getHivePartition(T tuple);
 
   /*
-   * To be implemented by the user, giving a default implementation for one partition here.
+   * To be implemented by the user, giving a default implementation for one partition column here.
    */
   protected String getInsertCommand(String filepath, String partition)
   {
     String command;
     if (isHivePartitioned) {
       if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + partition + ")";
+        command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION " + "( " + partition + " )";
       }
       else {
-        command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + partition + ")";
+        command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION " + "( " + partition + " )";
       }
     }
     else {
@@ -336,17 +338,15 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
         command = "load data inpath '" + filepath + "' into table " + tablename;
       }
     }
-    logger.debug("command is {}", command);
+    logger.info("command is {}", command);
 
     return command;
 
   }
 
-
   public void addPartition(String partition)
   {
-    hivePartitions.add("dt=2014-12-12");
-    hivePartitions.add("dt=2014-12-13");
+    hivePartitions.add("dt='2014-12-18'");
     hivePartitions.add(partition);
   }
 

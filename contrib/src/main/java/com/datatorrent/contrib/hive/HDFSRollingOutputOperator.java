@@ -24,6 +24,7 @@ import com.datatorrent.lib.io.fs.AbstractFSWriter;
 
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DAG;
+import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -80,6 +81,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
     throw new UnsupportedOperationException("This operation is not supported");
   }
 
+
   @Override
   public void setup(OperatorContext context)
   {
@@ -95,19 +97,26 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
   }
 
   /*
-   * To be implemented by the user, giving a default implementation for one partition here.
+   * To be implemented by the user, giving a default implementation for one partition column here.
    */
   @Override
   protected String getFileName(T tuple)
   {
+    hive.partition = hive.partition.replace("'", "\"");
     String output = File.separator + hive.partition + outputFileName;
-    hive.mapFilePartition.put(output, hive.partition);
     logger.info("outputfilename is {}" , output);
     return output;
   }
 
+  protected String getFileName(String fileName)
+  {
+   partNumber = this.openPart.get(fileName);
+   logger.info("file part number {}", partNumber);
+   return getPartFileName(fileName,partNumber.intValue());
+  }
+
   /*
-   *Implement this function according to tuple you want to pass in Hive.
+   * Implement this function according to tuple you want to pass in Hive.
    */
   @Override
   protected byte[] getBytesForTuple(T tuple)

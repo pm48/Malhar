@@ -536,7 +536,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
       currentOffset.add(tupleBytes.length);
 
       if (rollingFile && currentOffset.longValue() > maxLength) {
-        LOG.debug("Rotating file {} {}", fileName, currentOffset.longValue());
+        LOG.info("Rotating file {} {}", fileName, currentOffset.longValue());
         rotate(fileName);
       }
 
