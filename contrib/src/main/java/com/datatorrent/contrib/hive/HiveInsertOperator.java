@@ -27,31 +27,20 @@ import java.util.ArrayList;
  */
 public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
 {
-  private ArrayList<String> hivePartitions = new ArrayList<String>();
-
   public HiveInsertOperator()
   {
     this.store = new HiveStore();
   }
 
-  public void addPartition(String partition)
-  {
-    hivePartitions.add("dt='2014-12-12'");
-    hivePartitions.add("dt='2014-12-13'");
-    hivePartitions.add(partition);
-    //hivePartitions.add("ts='2014-12-11'");
-    //hivePartitions.add("ts='2014-12-11'");
-  }
-
-
   @Override
   public String getHivePartition(T tuple)
   {
     if(hivePartitions.isEmpty()){
-    isPartitioned = false;
+    isHivePartitioned = false;
     return null;
     }
     int index = tuple.hashCode() %(hivePartitions.size()) ;
     return hivePartitions.get(index);
   }
+
 }

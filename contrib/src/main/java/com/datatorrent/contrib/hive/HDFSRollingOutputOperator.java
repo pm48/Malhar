@@ -94,12 +94,16 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
     hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
   }
 
+  /*
+   * To be implemented by the user, giving a default implementation for one partition here.
+   */
   @Override
   protected String getFileName(T tuple)
   {
-    outputFileName = File.separator + "partition" + hive.partition + outputFileName;
-    logger.info("outputfilename is {}" , outputFileName);
-    return outputFileName;
+    String output = File.separator + hive.partition + outputFileName;
+    hive.mapFilePartition.put(output, hive.partition);
+    logger.info("outputfilename is {}" , output);
+    return output;
   }
 
   /*

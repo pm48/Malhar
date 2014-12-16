@@ -46,7 +46,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import java.io.*;
-import java.util.Map;
+import java.util.*;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 /*
@@ -56,8 +56,10 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>> //, StreamCodec<T>, Serializable
 {
   private static final long serialVersionUID = 201412121604L;
-  protected boolean isPartitioned = true;
+  protected boolean isHivePartitioned = true;
   protected transient int numPartitions = 3;
+  protected ArrayList<String> hivePartitions = new ArrayList<String>();
+  protected HashMap<String, String> mapFilePartition = new HashMap<String, String>();
   protected String partition;
 
   public int getNumPartitions()
@@ -70,29 +72,28 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     this.numPartitions = numPartitions;
   }
 
- // protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
+  // protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
 
   /*@Override
-  public Object fromByteArray(Slice fragment)
-  {
-    return codec.fromByteArray(fragment);
-  }
+   public Object fromByteArray(Slice fragment)
+   {
+   return codec.fromByteArray(fragment);
+   }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public Slice toByteArray(T object)
-  {
-    return codec.toByteArray(object);
-  }
+   @Override
+   @SuppressWarnings("unchecked")
+   public Slice toByteArray(T object)
+   {
+   return codec.toByteArray(object);
+   }
 
-  @Override
-  public int getPartition(T o)
-  {
-    partition = getHivePartition(o);
-    logger.info("partition is {} ", partition);
-    return partition.hashCode();
-  }*/
-
+   @Override
+   public int getPartition(T o)
+   {
+   partition = getHivePartition(o);
+   logger.info("partition is {} ", partition);
+   return partition.hashCode();
+   }*/
   @Override
   public Collection<Partition<AbstractHiveHDFS<T>>> definePartitions(Collection<Partition<AbstractHiveHDFS<T>>> partitions, int incrementalCapacity)
   {
@@ -184,13 +185,12 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       logger.info("window is {}", window);
       if (committedWindowId >= window) {
         try {
-          logger.info("path in committed window is" + store.getOperatorpath() + "/" + fileMoved);
+          logger.info("path in committed window is" + store.getOperatorpath() + fileMoved);
           /*
            * Check if file was not moved to hive because of operator crash or any other failure.
            * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
            */
-          if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + fileMoved))) {
-            logger.info("partition is {} ", partition);
+          if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + fileMoved))) {
             processHiveFile(fileMoved);
           }
         }
@@ -229,7 +229,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public void processTuple(T tuple)
   {
-    partition = getHivePartition(tuple);
+    if (isHivePartitioned) {
+      partition = getHivePartition(tuple);
+    }
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
   }
@@ -281,7 +283,14 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public void processHiveFile(String fileMoved)
   {
     logger.info("processing {} file", fileMoved);
-    String command = getInsertCommand(store.getOperatorpath() + "/" + fileMoved);
+    String hivePartition = null;
+    if (isHivePartitioned) {
+      hivePartition = mapFilePartition.get(fileMoved);
+    }
+    if (!hivePartitions.contains(partition)) {
+      hivePartitions.add(partition);
+    }
+    String command = getInsertCommand(store.getOperatorpath() + fileMoved, hivePartition);
     Statement stmt;
     try {
       stmt = store.getConnection().createStatement();
@@ -305,10 +314,13 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
    */
   public abstract String getHivePartition(T tuple);
 
-  protected String getInsertCommand(String filepath)
+  /*
+   * To be implemented by the user, giving a default implementation for one partition here.
+   */
+  protected String getInsertCommand(String filepath, String partition)
   {
     String command;
-    if (isPartitioned) {
+    if (isHivePartitioned) {
       if (!hdfsOp.isHDFSLocation()) {
         command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION " + "(" + partition + ")";
       }
@@ -328,6 +340,14 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
     return command;
 
+  }
+
+
+  public void addPartition(String partition)
+  {
+    hivePartitions.add("dt=2014-12-12");
+    hivePartitions.add("dt=2014-12-13");
+    hivePartitions.add(partition);
   }
 
 }
