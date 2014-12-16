@@ -38,9 +38,8 @@ import org.slf4j.LoggerFactory;
 /*
  * An implementation of FS Writer that writes text files to hdfs which are inserted into hive.
  */
-public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements Serializable
+public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
 {
-  private static final long serialVersionUID = 201412121603L;
   private transient String outputFileName;
   protected MutableInt partNumber;
   protected String lastFile;

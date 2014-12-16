@@ -18,16 +18,25 @@ package com.datatorrent.contrib.hive;
 import com.datatorrent.api.StreamCodec;
 import com.datatorrent.common.util.Slice;
 import com.datatorrent.lib.codec.KryoSerializableStreamCodec;
-import java.io.Serializable;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 
-
-public class HiveStreamCodec<T> implements StreamCodec<T>,Serializable
+public class HiveStreamCodec<T> implements StreamCodec<T>, Externalizable
 {
   private static final long serialVersionUID = 201412121604L;
 
   protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
   protected HiveInsertOperator<T> hiveOperator = new HiveInsertOperator<T>();
 
+  /*
+   * mandatory public no-arg constructor
+   */
+  public HiveStreamCodec()
+  {
+    super();
+  }
 
   public void setHiveOperator(HiveInsertOperator<T> hiveOperator)
   {
@@ -35,21 +44,34 @@ public class HiveStreamCodec<T> implements StreamCodec<T>,Serializable
   }
 
   @Override
-   public Object fromByteArray(Slice fragment)
-   {
-   return codec.fromByteArray(fragment);
-   }
+  public Object fromByteArray(Slice fragment)
+  {
+    return codec.fromByteArray(fragment);
+  }
 
-   @Override
-   @SuppressWarnings("unchecked")
-   public Slice toByteArray(T object)
-   {
-   return codec.toByteArray(object);
-   }
+  @Override
+  @SuppressWarnings("unchecked")
+  public Slice toByteArray(T object)
+  {
+    return codec.toByteArray(object);
+  }
 
-   @Override
-   public int getPartition(T o)
-   {
-     return hiveOperator.getHivePartition(o).hashCode();
-   }
+  @Override
+  public int getPartition(T o)
+  {
+    return hiveOperator.getHivePartition(o).hashCode();
+  }
+
+  @Override
+  public void writeExternal(ObjectOutput out) throws IOException
+  {
+    out.writeObject(hiveOperator);
+  }
+
+  @Override
+  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
+  {
+    hiveOperator = (HiveInsertOperator<T>)in.readObject();
+  }
+
 }
