@@ -15,19 +15,15 @@
  */
 package com.datatorrent.contrib.hive;
 
-import com.datatorrent.api.StreamCodec;
-import com.datatorrent.common.util.Slice;
 import com.datatorrent.lib.codec.KryoSerializableStreamCodec;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import java.io.*;
 
-public class HiveStreamCodec<T> implements StreamCodec<T>, Externalizable
+public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implements Externalizable
 {
   private static final long serialVersionUID = 201412121604L;
 
-  protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
   protected HiveInsertOperator<T> hiveOperator = new HiveInsertOperator<T>();
 
   /*
@@ -43,18 +39,6 @@ public class HiveStreamCodec<T> implements StreamCodec<T>, Externalizable
     this.hiveOperator = hiveOperator;
   }
 
-  @Override
-  public Object fromByteArray(Slice fragment)
-  {
-    return codec.fromByteArray(fragment);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public Slice toByteArray(T object)
-  {
-    return codec.toByteArray(object);
-  }
 
   @Override
   public int getPartition(T o)
@@ -65,13 +49,17 @@ public class HiveStreamCodec<T> implements StreamCodec<T>, Externalizable
   @Override
   public void writeExternal(ObjectOutput out) throws IOException
   {
-    out.writeObject(hiveOperator);
+    //ByteArrayOutputStream os = new ByteArrayOutputStream();
+    //Output output = new Output(os);
+    kryo.writeClassAndObject((Output)out, hiveOperator);
+    out.flush();
   }
 
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
   {
-    hiveOperator = (HiveInsertOperator<T>)in.readObject();
+    hiveOperator = (HiveInsertOperator<T>)kryo.readClassAndObject((Input)in);
   }
+
 
 }

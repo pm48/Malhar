@@ -55,11 +55,18 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
 public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>> //, StreamCodec<T>, Serializable
 {
-  protected boolean isHivePartitioned = true;
+  protected transient boolean isHivePartitioned = true;
   protected transient int numPartitions = 3;
   protected ArrayList<String> hivePartitions = new ArrayList<String>();
   protected HashMap<String, String> mapFilePartition = new HashMap<String, String>();
   protected String partition;
+   @Nonnull
+  protected String tablename;
+
+  public HDFSRollingOutputOperator<T> hdfsOp;
+  //This variable is user configurable
+  @Min(0)
+  private transient long maxWindowsWithNoData = 100;
 
   public int getNumPartitions()
   {
@@ -71,28 +78,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     this.numPartitions = numPartitions;
   }
 
-  // protected KryoSerializableStreamCodec<T> codec = new KryoSerializableStreamCodec<T>();
-
-  /*@Override
-   public Object fromByteArray(Slice fragment)
-   {
-   return codec.fromByteArray(fragment);
-   }
-
-   @Override
-   @SuppressWarnings("unchecked")
-   public Slice toByteArray(T object)
-   {
-   return codec.toByteArray(object);
-   }
-
-   @Override
-   public int getPartition(T o)
-   {
-   partition = getHivePartition(o);
-   logger.info("partition is {} ", partition);
-   return partition.hashCode();
-   }*/
   @Override
   public Collection<Partition<AbstractHiveHDFS<T>>> definePartitions(Collection<Partition<AbstractHiveHDFS<T>>> partitions, int incrementalCapacity)
   {
@@ -124,9 +109,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   private transient String appId;
   private transient int operatorId;
   protected HashMap<String, Long> filenames;
-  //This variable is user configurable
-  @Min(0)
-  private transient long maxWindowsWithNoData = 100;
+
 
   public long getMaxWindowsWithNoData()
   {
@@ -141,11 +124,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   private int countEmptyWindow;
   private boolean isEmptyWindow;
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
-
-  @Nonnull
-  protected String tablename;
-
-  public HDFSRollingOutputOperator<T> hdfsOp;
 
   public HDFSRollingOutputOperator<T> getHdfsOp()
   {
