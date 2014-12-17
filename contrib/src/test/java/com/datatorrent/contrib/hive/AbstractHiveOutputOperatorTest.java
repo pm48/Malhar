@@ -187,7 +187,7 @@ public class AbstractHiveOutputOperatorTest
     outputOperator.setTablename(tablename);
     outputOperator.hdfsOp.setFilePermission(0777);
     outputOperator.hdfsOp.setMaxLength(128);
-    outputOperator.addPartition("");
+    outputOperator.addPartition("dt='2014-12-19'");
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -246,7 +246,6 @@ public class AbstractHiveOutputOperatorTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     outputOperator.setup(context);
-//    outputOperator.setFilename("HiveInsertMap");
     outputOperator.setTablename(tablemap);
     outputOperator.setDelimiter(":");
     HashMap<String, Integer> map = new HashMap<String, Integer>();
@@ -257,7 +256,7 @@ public class AbstractHiveOutputOperatorTest
       if (wid == 5) {
         outputOperator.committed(wid - 2);
       }
-      //map.clear();
+
       for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE;
               tupleCounter++) {
@@ -304,10 +303,6 @@ public class AbstractHiveOutputOperatorTest
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
-//    outputOperator.setFilename("HiveInsertMap");
-
-    // ArrayOutOfBounds Exception seen if hdfs path is passed here.
-    // outputOperator.setFilepath("hdfs://localhost:9000/user/hive");
     outputOperator.setup(context);
     for (int wid = 0, total = 0;
             wid < 10;
@@ -384,10 +379,6 @@ public class AbstractHiveOutputOperatorTest
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
-//    outputOperator.setFilename("HiveInsertMap");
-
-    // ArrayOutOfBounds Exception seen if hdfs path is passed here.
-    // outputOperator.setFilepath("hdfs://localhost:9000/user/hive");
     outputOperator.setup(context);
     for (int wid = 0, total = 0;
             wid < 10;
