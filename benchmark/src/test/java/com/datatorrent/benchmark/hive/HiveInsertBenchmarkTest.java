@@ -19,8 +19,6 @@ package com.datatorrent.benchmark.hive;
 import com.datatorrent.api.LocalMode;
 import com.datatorrent.benchmark.HiveInsertBenchmarkingApp;
 import com.datatorrent.common.util.DTThrowable;
-import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
-import com.datatorrent.contrib.hive.HiveStore;
 import java.io.InputStream;
 import java.sql.SQLException;
 import org.apache.commons.io.IOUtils;

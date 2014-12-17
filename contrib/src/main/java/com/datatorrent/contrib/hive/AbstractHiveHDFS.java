@@ -278,7 +278,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       }
     }
     catch (SQLException ex) {
-      DTThrowable.rethrow(ex);
+      logger.error("Moving file into hive failed" + ex.getMessage());
     }
   }
 

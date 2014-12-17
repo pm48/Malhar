@@ -71,6 +71,9 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveMapInsert.input);
   }
 
+  /*
+   * User can create table and specify data columns and partition columns in this function.
+   */
   public static void hiveInitializeMapDatabase(HiveStore hiveStore,String tablename,String delimiterMap) throws SQLException
   {
     hiveStore.connect();

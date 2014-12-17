@@ -71,6 +71,9 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
 
+  /*
+   * User can create table and specify data columns and partition columns in this function.
+   */
   public static void hiveInitializeDatabase(HiveStore hiveStore,String tablename) throws SQLException
   {
     hiveStore.connect();

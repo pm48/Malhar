@@ -25,8 +25,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 
-import com.datatorrent.contrib.hive.AbstractHiveOutputOperatorTest;
-import com.datatorrent.contrib.hive.HiveStore;
 
 import com.datatorrent.api.LocalMode;
 
