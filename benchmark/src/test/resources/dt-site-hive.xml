@@ -68,16 +68,10 @@
     <description>Test database connector string.</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename</name>
-    <value>temp</value>
-    <description>Tablename for string operator</description>
-  </property>
-  <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.delimiter</name>
     <value>:</value>
     <description>Delimiter for map</description>
   </property>
-
   <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
