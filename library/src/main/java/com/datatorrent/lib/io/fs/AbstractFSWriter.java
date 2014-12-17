@@ -16,7 +16,6 @@
 
 package com.datatorrent.lib.io.fs;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -268,7 +267,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
       public FSDataOutputStream load(String filename)
       {
         String partFileName = getPartFileNamePri(filename);
-        Path lfilepath = new Path(filePath + File.separator + partFileName);
+        Path lfilepath = new Path(filePath + Path.SEPARATOR + partFileName);
 
         FSDataOutputStream fsOutput;
 
@@ -297,8 +296,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
                 int part = 0;
 
                 while (true) {
-                  Path seenPartFilePath = new Path(filePath + "/"
-                          + getPartFileName(filename, part));
+                  Path seenPartFilePath = new Path(filePath + Path.SEPARATOR + getPartFileName(filename, part));
                   if (!fs.exists(seenPartFilePath)) {
                     break;
                   }
@@ -345,7 +343,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
         for (String seenFileName: endOffsets.keySet()) {
           String seenFileNamePart = getPartFileNamePri(seenFileName);
           LOG.debug("seenFileNamePart: {}", seenFileNamePart);
-          Path seenPartFilePath = new Path(filePath + File.separator + seenFileNamePart);
+          Path seenPartFilePath = new Path(filePath + Path.SEPARATOR + seenFileNamePart);
           if (fs.exists(seenPartFilePath)) {
             LOG.debug("file exists {}", seenFileNamePart);
             long offset = endOffsets.get(seenFileName).longValue();
@@ -356,9 +354,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
               LOG.info("file corrupted {} {} {}", seenFileNamePart, offset, status.getLen());
               byte[] buffer = new byte[COPY_BUFFER_SIZE];
 
-              Path tmpFilePath = new Path(filePath + File.separator+ seenFileNamePart + TMP_EXTENSION);
-              LOG.debug("temp file path {}, rolling file path {}", tmpFilePath.toString(), status.getPath().toString());
-
+              Path tmpFilePath = new Path(filePath + Path.SEPARATOR + seenFileNamePart + TMP_EXTENSION);
               FSDataOutputStream fsOutput = fs.create(tmpFilePath, (short) replication);
               while (inputStream.getPos() < offset) {
                 long remainingBytes = offset - inputStream.getPos();
@@ -372,7 +368,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
               inputStream.close();
 
               FileContext fileContext = FileContext.getFileContext(fs.getUri());
-             // LOG.debug("temp file path {}, rolling file path {}", tmpFilePath.toString(), status.getPath().toString());
+              LOG.debug("temp file path {}, rolling file path {}", tmpFilePath.toString(), status.getPath().toString());
               fileContext.rename(tmpFilePath, status.getPath(), Options.Rename.OVERWRITE);
             }
             else {
@@ -390,8 +386,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
             Integer part = openPart.get(seenFileName).getValue() + 1;
 
             while (true) {
-              Path seenPartFilePath = new Path(filePath + "/"
-                      + getPartFileName(seenFileName, part));
+              Path seenPartFilePath = new Path(filePath + Path.SEPARATOR + getPartFileName(seenFileName, part));
               if (!fs.exists(seenPartFilePath)) {
                 break;
               }
@@ -400,8 +395,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
               part = part + 1;
             }
 
-            Path seenPartFilePath = new Path(filePath + "/"
-                    + getPartFileName(seenFileName,
+            Path seenPartFilePath = new Path(filePath + Path.SEPARATOR + getPartFileName(seenFileName,
                                       openPart.get(seenFileName).intValue()));
 
             //Handle the case when restoring to a checkpoint where the current rolling file
@@ -536,7 +530,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
       currentOffset.add(tupleBytes.length);
 
       if (rollingFile && currentOffset.longValue() > maxLength) {
-        LOG.info("Rotating file {} {}", fileName, currentOffset.longValue());
+        LOG.debug("Rotating file {} {}", fileName, currentOffset.longValue());
         rotate(fileName);
       }
 
@@ -579,6 +573,16 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
   }
 
   /**
+   * This hook is called after a rolling file part has filled up and is closed. The hook is passed
+   * the name of the file part that has just completed closed.
+   * @param finishedFile The name of the file part that has just completed and closed.
+   */
+  protected void rotateHook(String finishedFile)
+  {
+    //Do nothing by default
+  }
+
+  /**
    * This method will close a file.<br/>
    *
    * The child operator should not call this method on rolling files.
@@ -595,18 +599,6 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
   }
 
    /**
-   * This hook is called after a rolling file part has filled up and is closed. The hook is passed
-   * the name of the file part that has just completed closed.
-   * @param finishedFile The name of the file part that has just completed and closed.
-   */
-   protected  void rotateHook(String finishedFile)
-   {
-     LOG.debug("finished file is {}" , finishedFile);
-   }
-
-
-
-  /**
    * This method is used to force buffers to be flushed at the end of the window.
    * flush must be used on a local file system, so an if statement checks to
    * make sure that hflush is used on local file systems.
@@ -758,6 +750,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
 
   /**
    * Get the permission on the file which is being written.
+   * @return filePermission
    */
   public int getFilePermission()
   {
@@ -766,6 +759,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
 
   /**
    * Set the permission on the file which is being written.
+   * @param filePermission
    */
   public void setFilePermission(int filePermission)
   {

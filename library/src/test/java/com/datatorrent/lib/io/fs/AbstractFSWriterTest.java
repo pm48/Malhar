@@ -16,31 +16,24 @@
 
 package com.datatorrent.lib.io.fs;
 
-import java.io.*;
-
-import javax.validation.ConstraintViolationException;
-
+import com.datatorrent.api.*;
+import com.datatorrent.api.Operator.ProcessingMode;
+import com.datatorrent.common.util.DTThrowable;
+import com.datatorrent.lib.helper.OperatorContextTestHelper;
+import com.datatorrent.lib.testbench.RandomWordGenerator;
+import com.datatorrent.lib.util.TestUtils.TestInfo;
 import com.google.common.collect.Maps;
-
-import org.junit.*;
-import org.junit.runner.Description;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.*;
+import javax.validation.ConstraintViolationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-
-import com.datatorrent.lib.helper.OperatorContextTestHelper;
-import com.datatorrent.lib.testbench.RandomWordGenerator;
-import com.datatorrent.lib.util.TestUtils.TestInfo;
-
-import com.datatorrent.api.*;
-import com.datatorrent.api.Operator.ProcessingMode;
-
-import com.datatorrent.common.util.DTThrowable;
+import org.junit.*;
+import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AbstractFSWriterTest
 {
@@ -287,7 +280,6 @@ public class AbstractFSWriterTest
 
     return checkPointWriter;
   }
-
 
   /**
    * Restores the checkpointed writer.
@@ -1638,5 +1630,4 @@ public class AbstractFSWriterTest
 
     Assert.assertEquals("Max length validation not thrown with -1 max length", true, error);
   }
-
 }
