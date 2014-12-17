@@ -32,7 +32,6 @@ import com.datatorrent.api.annotation.OperatorAnnotation;
 import com.datatorrent.api.annotation.Stateless;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.datatorrent.common.util.Slice;
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.Collection;
@@ -41,26 +40,24 @@ import java.util.Iterator;
 
 import javax.validation.constraints.Min;
 import org.apache.hadoop.fs.Path;
-import com.datatorrent.lib.codec.KryoSerializableStreamCodec;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import java.io.*;
 import java.util.*;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 /*
- * An abstract Hive operator which can insert data in ORC/TEXT tables from a file written in hdfs location.
+ * An abstract Hive operator which can insert data in txt format in tables/partitions from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>> //, StreamCodec<T>, Serializable
+public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>
 {
   protected transient boolean isHivePartitioned = true;
-  protected transient int numPartitions = 3;
+  protected transient int numPartitions = 2;
   protected ArrayList<String> hivePartitions = new ArrayList<String>();
   protected HashMap<String, String> mapFilePartition = new HashMap<String, String>();
   protected String partition;
-   @Nonnull
+  @Nonnull
   protected String tablename;
 
   public HDFSRollingOutputOperator<T> hdfsOp;
@@ -108,8 +105,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveHDFS.class);
   private transient String appId;
   private transient int operatorId;
-  protected HashMap<String, Long> filenames;
-
+  protected HashMap<String, Long> mapFilenames;
 
   public long getMaxWindowsWithNoData()
   {
@@ -138,7 +134,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public AbstractHiveHDFS()
   {
     hdfsOp = new HDFSRollingOutputOperator<T>();
-    filenames = new HashMap<String, Long>();
+    mapFilenames = new HashMap<String, Long>();
     hdfsOp.hive = this;
     countEmptyWindow = 0;
   }
@@ -150,14 +146,19 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     windowIDOfCompletedPart = windowId;
   }
 
+  /*
+   * Moving completed files into hive on committed window callback.
+   * Criteria for moving them is that the windowId in which they completed
+   * should be less than committed window.
+   */
   @Override
   public void committed(long windowId)
   {
     committedWindowId = windowId;
-    Iterator<String> iter = filenames.keySet().iterator();
+    Iterator<String> iter = mapFilenames.keySet().iterator();
     while (iter.hasNext()) {
       String fileMoved = iter.next();
-      long window = filenames.get(fileMoved);
+      long window = mapFilenames.get(fileMoved);
       logger.info("filemoved is {}", fileMoved);
       logger.info("window is {}", window);
       if (committedWindowId >= window) {
@@ -211,9 +212,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     }
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
-    String partFile = hdfsOp.getFileName(hdfsOp.getFileName(tuple));
-    logger.info("partfile in processtuple is" + partFile);
-    mapFilePartition.put(partFile,partition);
   }
 
   @Override
@@ -265,7 +263,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     String hivePartition = null;
     if (isHivePartitioned) {
       hivePartition = mapFilePartition.get(fileMoved);
-      logger.info("hivepartition is {}", hivePartition);
       if (!hivePartitions.contains(hivePartition)) {
         hivePartitions.add(hivePartition);
       }
@@ -274,8 +271,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     Statement stmt;
     try {
       stmt = store.getConnection().createStatement();
-      if (!stmt.execute(command)) //either throw exception or log error.
-      {
+      //Either throw exception or log error.
+      boolean result = stmt.execute(command);
+      if (!result) {
         logger.error("Moving file into hive failed");
       }
     }
@@ -302,18 +300,18 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     String command;
     if (isHivePartitioned) {
       if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION " + "( " + partition + " )";
+        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
       }
       else {
-        command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION " + "( " + partition + " )";
+        command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
       }
     }
     else {
       if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' into table " + tablename;
+        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
       }
       else {
-        command = "load data inpath '" + filepath + "' into table " + tablename;
+        command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
       }
     }
     logger.info("command is {}", command);

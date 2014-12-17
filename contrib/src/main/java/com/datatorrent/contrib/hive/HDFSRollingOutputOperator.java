@@ -23,11 +23,8 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import com.datatorrent.lib.io.fs.AbstractFSWriter;
 
 import com.datatorrent.api.Context.OperatorContext;
-import com.datatorrent.api.DAG;
-import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -36,7 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /*
- * An implementation of FS Writer that writes text files to hdfs which are inserted into hive.
+ * An implementation of FS Writer that writes text files to hdfs which are inserted
+ * into hive on committed window callback.
  */
 public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
 {
@@ -44,7 +42,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
   protected MutableInt partNumber;
   protected String lastFile;
   protected AbstractHiveHDFS<T> hive;
-  // This can be set as a property by user also, hdfs block size.
+  // Hdfs block size which can be set as a property by user.
   private static final int MAX_LENGTH = 66060288;
   private static final Logger logger = LoggerFactory.getLogger(HDFSRollingOutputOperator.class);
 
@@ -60,13 +58,13 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
       lastFile = iterFileNames.next();
       partNumber = this.openPart.get(lastFile);
     }
-    logger.info("last file is {}" ,lastFile);
     return getPartFileName(lastFile,
                            partNumber.intValue());
   }
 
-  public FileSystem getFileSystem(){
-   return fs;
+  public FileSystem getFileSystem()
+  {
+    return fs;
   }
 
   public boolean isHDFSLocation()
@@ -80,7 +78,6 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     throw new UnsupportedOperationException("This operation is not supported");
   }
 
-
   @Override
   public void setup(OperatorContext context)
   {
@@ -88,11 +85,24 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
     super.setup(context);
   }
 
+  /*
+   * To be implemented by the user, giving a default implementation for one partition column here.
+   * Partitions array will get all hive partitions in it.
+   * MapFilenames has mapping from completed file to windowId in which it got completed.
+   * MapFilePartition stores mapping from completed files to their corresponding hive partitions.
+   */
   @Override
   protected void rotateHook(String finishedFile)
   {
-    logger.info("finished files are {} , window of finished file is {} ", finishedFile, hive.windowIDOfCompletedPart);
-    hive.filenames.put(finishedFile, hive.windowIDOfCompletedPart);
+    hive.mapFilenames.put(finishedFile, hive.windowIDOfCompletedPart);
+    String[] partitions = finishedFile.split("/");
+
+    for (int i = 0; i < partitions.length - 1; i++) {
+      logger.info("partitions are {}", partitions[i]);
+    }
+
+    hive.partition = partitions[1].replace("\"", "'");
+    hive.mapFilePartition.put(finishedFile, hive.partition);
   }
 
   /*
@@ -101,17 +111,9 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
   @Override
   protected String getFileName(T tuple)
   {
-    hive.partition = hive.partition.replace("'", "\"");
-    String output = File.separator + hive.partition + outputFileName;
-    logger.info("outputfilename is {}" , output);
+    String temp = hive.partition.replace("'", "\"");
+    String output = File.separator + temp + outputFileName;
     return output;
-  }
-
-  protected String getFileName(String fileName)
-  {
-   partNumber = this.openPart.get(fileName);
-   logger.info("file part number {}", partNumber);
-   return getPartFileName(fileName,partNumber.intValue());
   }
 
   /*
@@ -142,6 +144,5 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T>
       DTThrowable.rethrow(ex);
     }
   }
-
 
 }

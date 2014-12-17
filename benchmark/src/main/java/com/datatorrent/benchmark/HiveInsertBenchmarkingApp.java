@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Application used to benchmark HIVE Insert operator
  * The DAG consists of random word generator operator that is
- * connected to Hive output operator that writes to a Hive table using file written in hdfs.&nbsp;
- * The file contents are written by the word generator.
+ * connected to Hive output operator that writes to a Hive table partition using file written in HDFS.&nbsp;
+ * The file contents are being written by the word generator.
  * <p>
  *
  */
@@ -64,10 +64,10 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     RandomWordGenerator wordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
     HiveInsertOperator<String> hiveInsert = dag.addOperator("HiveInsertOperator",new HiveInsertOperator<String>());
+    hiveInsert.addPartition("dt='2014-12-17'");
     HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
     streamCodec.setHiveOperator(hiveInsert);
     dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, streamCodec);
-    hiveInsert.addPartition("dt='2014-12-17'");
     dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
 

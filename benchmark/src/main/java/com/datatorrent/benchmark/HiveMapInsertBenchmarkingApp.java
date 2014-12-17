@@ -36,9 +36,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Application used to benchmark HIVE Map Insert operator
  * The DAG consists of random Event generator operator that is
- * connected to random map output operator that writes to a file in hdfs.&nbsp;
+ * connected to random map output operator that writes to a file in HDFS.&nbsp;
  * The map output operator is connected to hive Map Insert output operator which writes
- * the contents of hdfs file to hive tables.
+ * the contents of HDFS file to hive tables.
  * <p>
  *
  */
@@ -67,6 +67,7 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(mapGenerator, PortContext.QUEUE_CAPACITY, 10000);
     dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
     HiveMapInsertOperator<Map<String,Object>> hiveMapInsert = dag.addOperator("HiveMapInsertOperator", new HiveMapInsertOperator<Map<String,Object>>());
+    hiveMapInsert.addPartition("dt='2014-12-17'");
     dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveMapInsert.input);
   }
 

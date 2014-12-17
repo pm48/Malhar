@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.datatorrent.lib.testbench;
 
 import com.datatorrent.api.Context.OperatorContext;
@@ -35,7 +36,7 @@ public class RandomWordGenerator implements InputOperator
   /**
    * The default number of tuples emitted per window.
    */
-  public static final int MAX_TUPLES_PER_WINDOW = 20000;
+  public static final int MAX_TUPLES_PER_WINDOW = 200000;
 
   /**
    * The size of tuples in bytes.
@@ -118,7 +119,6 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Sets the number of tuples emitted per application window.
-   *
    * @param tuplesPerWindow The number of tuples emitted per application window.
    */
   public void setTuplesPerWindow(int tuplesPerWindow)
@@ -128,7 +128,6 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Gets the number of tuples emitted per application window.
-   *
    * @return The number of tuples emitted per application window.
    */
   public int getTuplesPerWindow()
@@ -138,7 +137,6 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Sets the number of bytes in the emitted byte array tuples.
-   *
    * @param tupleByteSize The number of bytes in the emitted byte array tuples.
    */
   public void setTupleByteSize(int tupleByteSize)
@@ -148,12 +146,10 @@ public class RandomWordGenerator implements InputOperator
 
   /**
    * Gets the number of bytes in the emitted byte array tuples.
-   *
    * @return The number of bytes in the emitted byte array tuples.
    */
   public int getTupleByteSize()
   {
     return tupleByteSize;
   }
-
 }

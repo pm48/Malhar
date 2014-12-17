@@ -19,12 +19,19 @@ import com.datatorrent.lib.codec.KryoSerializableStreamCodec;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import java.io.*;
+import org.apache.commons.codec.binary.Hex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/*
+ * An optional stream codec which implements Externalizable interface.
+ * This was done so that user can implement their own serialization/deserialization functions.
+ */
 public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implements Externalizable
 {
   private static final long serialVersionUID = 201412121604L;
-
-  protected HiveInsertOperator<T> hiveOperator = new HiveInsertOperator<T>();
+  private static final Logger logger = LoggerFactory.getLogger(HiveStreamCodec.class);
+  protected HiveInsertOperator<T> hiveOperator;
 
   /*
    * mandatory public no-arg constructor
@@ -39,7 +46,6 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
     this.hiveOperator = hiveOperator;
   }
 
-
   @Override
   public int getPartition(T o)
   {
@@ -49,17 +55,30 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
   @Override
   public void writeExternal(ObjectOutput out) throws IOException
   {
-    //ByteArrayOutputStream os = new ByteArrayOutputStream();
-    //Output output = new Output(os);
-    kryo.writeClassAndObject((Output)out, hiveOperator);
+    ByteArrayOutputStream os = new ByteArrayOutputStream();
+    ObjectOutputStream obj = new ObjectOutputStream(os);
+    Output output = new Output(obj);
+    kryo.writeClassAndObject(output, hiveOperator);
+    byte[] outBytes = output.toBytes();
+    String hex = Hex.encodeHexString(outBytes);
+    out.writeInt(outBytes.length);
+    out.write(outBytes,0,outBytes.length);
     out.flush();
   }
 
   @Override
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
   {
-    hiveOperator = (HiveInsertOperator<T>)kryo.readClassAndObject((Input)in);
+    int size = in.readInt();
+    logger.info("size is" + size);
+    byte[] data = new byte[size];
+    in.readFully(data);
+    String hex = Hex.encodeHexString(data);
+    logger.info("data is {}", hex);
+    Input input = new Input(data);
+    input.setBuffer(data);
+    hex = Hex.encodeHexString(input.getBuffer());
+    hiveOperator = (HiveInsertOperator<T>)kryo.readClassAndObject(input);
   }
-
 
 }

@@ -22,15 +22,14 @@ import javax.validation.constraints.NotNull;
 
 
 /**
- * Hive Insert Map Operator which implements inserting data of type map into Hive tables having
- * column of map data type from files written in hdfs.
+ * Hive Insert Map Operator which implements inserting data of type map into Hive table partitions
+ * having column of map data type from files written in HDFS.
  * @param <T>
  */
 public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS<T>
 {
   @NotNull
   public String delimiter;
-  private String hivePartition = "dt='2008-06-08'";
 
   public String getDelimiter()
   {
@@ -64,9 +63,12 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
   @Override
   public String getHivePartition(T tuple)
   {
-    if(hivePartition!=null)
-    isHivePartitioned = true;
-    return hivePartition;
+    if(hivePartitions.isEmpty()){
+    isHivePartitioned = false;
+    return null;
+    }
+    int index = tuple.hashCode() %(hivePartitions.size()) ;
+    return hivePartitions.get(index);
   }
 
 }

@@ -15,14 +15,10 @@
  */
 package com.datatorrent.contrib.hive;
 
-import com.datatorrent.contrib.hive.AbstractHiveHDFS;
-import com.datatorrent.contrib.hive.HiveStore;
-import java.util.ArrayList;
-
 
 /**
- * Hive Insert Operator which implements inserting data of primitive data type into Hive tables which
- * have column of primitive data type from files written in hdfs.
+ * Hive Insert Operator which implements inserting data of primitive data type into Hive table partitions
+ * which have column of primitive data type from files written in HDFS.
  * @param <T>
  */
 public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
