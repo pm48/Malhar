@@ -28,12 +28,18 @@ import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DAG;
+import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Operator.ProcessingMode;
+import com.datatorrent.api.Partitioner.Partition;
 import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.*;
+import com.datatorrent.lib.testbench.RandomWordGenerator;
 import com.datatorrent.lib.util.TestUtils.TestInfo;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
+import com.google.common.collect.Lists;
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.junit.Rule;
@@ -52,6 +58,7 @@ public class AbstractHiveOutputOperatorTest
   public static final String tablename = "temp";
   public static final String tablemap = "tempmap";
   public static String delimiterMap = ":";
+  private static int OPERATOR_ID = 0;
 
   @Rule
   public TestInfo testMeta = new HiveTestWatcher();
@@ -78,7 +85,7 @@ public class AbstractHiveOutputOperatorTest
     protected void finished(Description description)
     {
       super.finished(description);
-      FileUtils.deleteQuietly(new File(getDir()));
+      // FileUtils.deleteQuietly(new File(getDir()));
     }
 
   }
@@ -203,7 +210,7 @@ public class AbstractHiveOutputOperatorTest
       if (wid == 5) {
         outputOperator.committed(wid - 2);
       }
-         for (int tupleCounter = 0;
+      for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
               tupleCounter++, total++) {
         outputOperator.input.put(111 + "");
@@ -282,6 +289,84 @@ public class AbstractHiveOutputOperatorTest
 
     Assert.assertEquals("Numer of tuples in database",
                         34,
+                        databaseSize);
+  }
+
+  @Test
+  public void testHivePartitions() throws SQLException
+  {
+    hiveInitializeDatabase(createStore(null));
+    HiveStore hiveStore = createStore(null);
+    hiveStore.setFilepath(testMeta.getDir());
+    HiveInsertOperator<String> outputOperator = new HiveInsertOperator<String>();
+    //RandomWordGenerator randomGenerator = new RandomWordGenerator();
+    outputOperator.setStore(hiveStore);
+    outputOperator.setTablename(tablename);
+    outputOperator.hdfsOp.setFilePermission(0777);
+    outputOperator.hdfsOp.setMaxLength(128);
+    outputOperator.addPartition("dt='2014-12-19'");
+    outputOperator.addPartition("dt ='2014-12-20'");
+    outputOperator.setNumPartitions(2);
+    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
+    attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
+    attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
+    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
+    List<Partition<AbstractHiveHDFS<String>>> partitions = Lists.newArrayList();
+
+    partitions.add(new DefaultPartition<AbstractHiveHDFS<String>>(outputOperator));
+
+    Collection<Partition<AbstractHiveHDFS<String>>> newPartitions = outputOperator.definePartitions(partitions, 1);
+    LOG.info("newpartitions size is {}", newPartitions.size());
+
+    for (Partition<AbstractHiveHDFS<String>> p: newPartitions) {
+      Assert.assertNotSame(outputOperator, p.getPartitionedInstance());
+
+      Assert.assertNotSame(outputOperator.getHdfsOp(), p.getPartitionedInstance().getHdfsOp());
+    }
+    /* Collect all operators in a list */
+    List<AbstractHiveHDFS<String>> opers = Lists.newArrayList();
+    for (Partition<AbstractHiveHDFS<String>> p: newPartitions) {
+      HiveInsertOperator<String> oi = (HiveInsertOperator<String>)p.getPartitionedInstance();
+      OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
+      oi.setup(context);
+      //oi.setTablename(tablename);
+      //oi.setHdfsOp(outputOperator.hdfsOp);
+      opers.add(oi);
+      OPERATOR_ID++;
+    }
+
+    int wid = 0;
+    for (int i = 0; i < 10; i++) {
+      int j = 1;
+
+      for (AbstractHiveHDFS<String> o: opers) {
+        String tuple = "abc" + j + i;
+        o.beginWindow(wid);
+        o.processTuple(tuple);
+        o.endWindow();
+        j++;
+      }
+      wid++;
+    }
+
+    wid = 6;
+    for (AbstractHiveHDFS<String> o: opers) {
+      o.committed(wid);
+      wid = 7;
+    }
+
+    hiveStore.connect();
+
+    int databaseSize = -1;
+    Statement statement = hiveStore.getConnection().createStatement();
+    ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
+    resultSet.next();
+    databaseSize = resultSet.getInt(1);
+    LOG.info("database size is" + databaseSize);
+    hiveStore.disconnect();
+
+    Assert.assertEquals("Numer of tuples in database",
+                        33,
                         databaseSize);
   }
 
@@ -392,11 +477,10 @@ public class AbstractHiveOutputOperatorTest
               tupleCounter++, total++) {
         outputOperator.processTuple(111 + "");
       }
-     outputOperator.endWindow();
+      outputOperator.endWindow();
     }
 
-    for(int wid = 10; wid < 111; wid++)
-    {
+    for (int wid = 10; wid < 111; wid++) {
       outputOperator.beginWindow(wid);
       outputOperator.endWindow();
     }
@@ -407,8 +491,8 @@ public class AbstractHiveOutputOperatorTest
       if (wid == 115) {
         outputOperator.committed(wid - 1);
       }
-        outputOperator.processTuple("abc");
-     outputOperator.endWindow();
+      outputOperator.processTuple("abc");
+      outputOperator.endWindow();
     }
     outputOperator.teardown();
 

@@ -71,4 +71,48 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
     return hivePartitions.get(index);
   }
 
+  @Override
+  public void addPartition(String partition)
+  {
+    hivePartitions.add("dt='2014-12-18'");
+    hivePartitions.add(partition);
+  }
+
+  @Override
+  protected void dropPartition(String partition)
+  {
+    hivePartitions.remove(partition);
+  }
+
+  /*
+   * User can specify multiple partitions here, giving a default implementation for one partition column here.
+   */
+  @Override
+  protected String getInsertCommand(String filepath, String partition)
+  {
+    String command;
+    if (isHivePartitioned) {
+      if (!hdfsOp.isHDFSLocation()) {
+        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
+      }
+      else {
+        command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
+      }
+      if (!hivePartitions.contains(partition)) {
+        hivePartitions.add(partition);
+      }
+    }
+    else {
+      if (!hdfsOp.isHDFSLocation()) {
+        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
+      }
+      else {
+        command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
+      }
+    }
+
+    return command;
+
+  }
+
 }

@@ -49,6 +49,8 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
   @Override
   public int getPartition(T o)
   {
+    logger.info("hivePartition in stream codec is" + hiveOperator.hivePartitions.toString());
+    logger.info("hiveOperator used is" + hiveOperator.getName());
     return hiveOperator.getHivePartition(o).hashCode();
   }
 
@@ -60,24 +62,21 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
     Output output = new Output(obj);
     kryo.writeClassAndObject(output, hiveOperator);
     byte[] outBytes = output.toBytes();
-    String hex = Hex.encodeHexString(outBytes);
     out.writeInt(outBytes.length);
     out.write(outBytes,0,outBytes.length);
     out.flush();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
   {
     int size = in.readInt();
-    logger.info("size is" + size);
     byte[] data = new byte[size];
     in.readFully(data);
     String hex = Hex.encodeHexString(data);
-    logger.info("data is {}", hex);
-    Input input = new Input(data);
+    Input input = new Input(data,0,size);
     input.setBuffer(data);
-    hex = Hex.encodeHexString(input.getBuffer());
     hiveOperator = (HiveInsertOperator<T>)kryo.readClassAndObject(input);
   }
 

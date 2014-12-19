@@ -91,6 +91,8 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       AbstractHiveHDFS<T> oper = kryo.readObject(lInput, this.getClass());
       newPartitions.add(new DefaultPartition<AbstractHiveHDFS<T>>(oper));
     }
+    // assign the partition keys
+    DefaultPartition.assignPartitionKeys(newPartitions, input);
 
     return newPartitions;
 
@@ -148,7 +150,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
   /*
    * Moving completed files into hive on committed window callback.
-   * Criteria for moving them is that the windowId in which they completed
+   * Criteria for moving them is that the windowId in which they are completed
    * should be less than committed window.
    */
   @Override
@@ -159,7 +161,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     while (iter.hasNext()) {
       String fileMoved = iter.next();
       long window = mapFilenames.get(fileMoved);
-      logger.info("filemoved is {}", fileMoved);
+      logger.info("file to be moved is {}", fileMoved);
       logger.info("window is {}", window);
       if (committedWindowId >= window) {
         try {
@@ -207,6 +209,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public void processTuple(T tuple)
   {
+    logger.info("tuple is {} , operator Id is {}", tuple.toString(), operatorId);
     if (isHivePartitioned) {
       partition = getHivePartition(tuple);
     }
@@ -251,7 +254,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
         }
       }
       catch (IOException ex) {
-        logger.debug(ex.getMessage());
+        DTThrowable.rethrow(ex);
       }
       countEmptyWindow = 0;
     }
@@ -263,9 +266,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     String hivePartition = null;
     if (isHivePartitioned) {
       hivePartition = mapFilePartition.get(fileMoved);
-      if (!hivePartitions.contains(hivePartition)) {
-        hivePartitions.add(hivePartition);
-      }
+      // User removes/drops a partition.
+      if(!hivePartitions.contains(hivePartition))
+        hivePartition = hivePartitions.get(0);
     }
     String command = getInsertCommand(store.getOperatorpath() + fileMoved, hivePartition);
     Statement stmt;
@@ -279,6 +282,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     }
     catch (SQLException ex) {
       logger.error("Moving file into hive failed" + ex.getMessage());
+      throw new RuntimeException("Moving file into hive failed" + ex);
     }
   }
 
@@ -293,37 +297,18 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public abstract String getHivePartition(T tuple);
 
   /*
-   * To be implemented by the user, giving a default implementation for one partition column here.
+   * To be implemented by the user
    */
-  protected String getInsertCommand(String filepath, String partition)
-  {
-    String command;
-    if (isHivePartitioned) {
-      if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
-      }
-      else {
-        command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
-      }
-    }
-    else {
-      if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      }
-      else {
-        command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      }
-    }
-    logger.info("command is {}", command);
+  protected abstract String getInsertCommand(String filepath, String partition);
 
-    return command;
+  /*
+   * To be implemented by the user
+   */
+  protected abstract void addPartition(String partition);
 
-  }
-
-  public void addPartition(String partition)
-  {
-    hivePartitions.add("dt='2014-12-18'");
-    hivePartitions.add(partition);
-  }
+  /*
+   * To be implemented by the user
+   */
+  protected abstract void dropPartition(String partition);
 
 }
