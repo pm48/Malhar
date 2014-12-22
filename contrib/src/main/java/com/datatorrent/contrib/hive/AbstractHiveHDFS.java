@@ -54,14 +54,26 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 {
   protected transient boolean isHivePartitioned = true;
   protected transient int numPartitions = 2;
-  protected ArrayList<String> hivePartitions = new ArrayList<String>();
+  //This Property is user configurable.
+  protected ArrayList<String> hivePartitionColumns = new ArrayList<String>();
+
+  public ArrayList<String> getHivePartitionColumns()
+  {
+    return hivePartitionColumns;
+  }
+
+  public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
+  {
+    this.hivePartitionColumns = hivePartitionColumns;
+  }
+
   protected HashMap<String, String> mapFilePartition = new HashMap<String, String>();
   protected String partition;
   @Nonnull
   protected String tablename;
 
   public HDFSRollingOutputOperator<T> hdfsOp;
-  //This variable is user configurable
+  //This variable is user configurable.
   @Min(0)
   private transient long maxWindowsWithNoData = 100;
 
@@ -203,16 +215,17 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
   /**
    * Function to process each incoming tuple
-   *
+   * This can be overridden by user for multiple partition columns.
+   * Giving an implementation for one partition column.
    * @param tuple incoming tuple
    */
   @Override
   public void processTuple(T tuple)
   {
-    logger.info("tuple is {} , operator Id is {}", tuple.toString(), operatorId);
     if (isHivePartitioned) {
       partition = getHivePartition(tuple);
     }
+    partition = getHivePartitionColumns().get(0) + "=" + partition;
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
   }
@@ -239,7 +252,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Override
   public void endWindow()
   {
-    hdfsOp.endWindow();
     if (isEmptyWindow) {
       countEmptyWindow++;
     }
@@ -258,6 +270,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       }
       countEmptyWindow = 0;
     }
+       hdfsOp.endWindow();
   }
 
   public void processHiveFile(String fileMoved)
@@ -267,8 +280,8 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     if (isHivePartitioned) {
       hivePartition = mapFilePartition.get(fileMoved);
       // User removes/drops a partition.
-      if(!hivePartitions.contains(hivePartition))
-        hivePartition = hivePartitions.get(0);
+     /* if(!hivePartitions.contains(hivePartition))
+        hivePartition = hivePartitions.get(0);*/
     }
     String command = getInsertCommand(store.getOperatorpath() + fileMoved, hivePartition);
     Statement stmt;
@@ -294,21 +307,11 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   /*
    * To be implemented by the user
    */
-  public abstract String getHivePartition(T tuple);
+  protected abstract String getHivePartition(T tuple);
 
   /*
    * To be implemented by the user
    */
   protected abstract String getInsertCommand(String filepath, String partition);
-
-  /*
-   * To be implemented by the user
-   */
-  protected abstract void addPartition(String partition);
-
-  /*
-   * To be implemented by the user
-   */
-  protected abstract void dropPartition(String partition);
 
 }

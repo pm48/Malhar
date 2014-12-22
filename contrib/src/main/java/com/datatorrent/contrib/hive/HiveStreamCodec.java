@@ -27,11 +27,11 @@ import org.slf4j.LoggerFactory;
  * An optional stream codec which implements Externalizable interface.
  * This was done so that user can implement their own serialization/deserialization functions.
  */
-public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implements Externalizable
+public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implements Serializable
 {
   private static final long serialVersionUID = 201412121604L;
-  private static final Logger logger = LoggerFactory.getLogger(HiveStreamCodec.class);
-  protected HiveInsertOperator<T> hiveOperator;
+  //private static final Logger logger = LoggerFactory.getLogger(HiveStreamCodec.class);
+  //protected HiveInsertOperator<T> hiveOperator;
 
   /*
    * mandatory public no-arg constructor
@@ -41,43 +41,15 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
     super();
   }
 
-  public void setHiveOperator(HiveInsertOperator<T> hiveOperator)
-  {
-    this.hiveOperator = hiveOperator;
-  }
 
   @Override
   public int getPartition(T o)
   {
-    logger.info("hivePartition in stream codec is" + hiveOperator.hivePartitions.toString());
-    logger.info("hiveOperator used is" + hiveOperator.getName());
-    return hiveOperator.getHivePartition(o).hashCode();
+    //logger.info("hivePartition in stream codec is" + hiveOperator.hivePartitions.toString());
+    //logger.info("hiveOperator used is" + hiveOperator.getName());
+    return o.hashCode();
   }
 
-  @Override
-  public void writeExternal(ObjectOutput out) throws IOException
-  {
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    ObjectOutputStream obj = new ObjectOutputStream(os);
-    Output output = new Output(obj);
-    kryo.writeClassAndObject(output, hiveOperator);
-    byte[] outBytes = output.toBytes();
-    out.writeInt(outBytes.length);
-    out.write(outBytes,0,outBytes.length);
-    out.flush();
-  }
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
-  {
-    int size = in.readInt();
-    byte[] data = new byte[size];
-    in.readFully(data);
-    String hex = Hex.encodeHexString(data);
-    Input input = new Input(data,0,size);
-    input.setBuffer(data);
-    hiveOperator = (HiveInsertOperator<T>)kryo.readClassAndObject(input);
-  }
 
 }

@@ -32,7 +32,6 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Operator.ProcessingMode;
 import com.datatorrent.api.Partitioner.Partition;
 import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.*;
-import com.datatorrent.lib.testbench.RandomWordGenerator;
 import com.datatorrent.lib.util.TestUtils.TestInfo;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
@@ -55,7 +54,7 @@ public class AbstractHiveOutputOperatorTest
   public static final int NUM_WINDOWS = 10;
   public static final int BLAST_SIZE = 10;
   public static final int DATABASE_SIZE = NUM_WINDOWS * BLAST_SIZE;
-  public static final String tablename = "temp";
+  public static final String tablename = "hive";
   public static final String tablemap = "tempmap";
   public static String delimiterMap = ":";
   private static int OPERATOR_ID = 0;
@@ -84,8 +83,8 @@ public class AbstractHiveOutputOperatorTest
     @Override
     protected void finished(Description description)
     {
-      super.finished(description);
-      // FileUtils.deleteQuietly(new File(getDir()));
+      //super.finished(description);
+     // FileUtils.deleteQuietly(new File(getDir()));
     }
 
   }
@@ -303,9 +302,9 @@ public class AbstractHiveOutputOperatorTest
     outputOperator.setStore(hiveStore);
     outputOperator.setTablename(tablename);
     outputOperator.hdfsOp.setFilePermission(0777);
-    outputOperator.hdfsOp.setMaxLength(128);
+    outputOperator.hdfsOp.setMaxLength(64);
     outputOperator.addPartition("dt='2014-12-19'");
-    outputOperator.addPartition("dt ='2014-12-20'");
+    outputOperator.addPartition("dt='2014-12-20'");
     outputOperator.setNumPartitions(2);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
@@ -337,23 +336,26 @@ public class AbstractHiveOutputOperatorTest
 
     int wid = 0;
     for (int i = 0; i < 10; i++) {
-      int j = 1;
+      int j = 0;
 
       for (AbstractHiveHDFS<String> o: opers) {
-        String tuple = "abc" + j + i;
         o.beginWindow(wid);
-        o.processTuple(tuple);
+        o.input.put("111");
+       /* if(wid == 5){
+        o.addPartition("dt ='2014-12-17'");
+        LOG.info("parition added");
+        }*/
+        if(wid ==9)
+          o.committed(6);
+        //LOG.info("Operator partition 1 has these hivepartitions {} ", opers.get(1).hivePartitions.toString());
         o.endWindow();
         j++;
       }
       wid++;
     }
 
-    wid = 6;
-    for (AbstractHiveHDFS<String> o: opers) {
-      o.committed(wid);
-      wid = 7;
-    }
+    for (AbstractHiveHDFS<String> o: opers)
+      o.teardown();
 
     hiveStore.connect();
 

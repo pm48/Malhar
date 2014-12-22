@@ -60,29 +60,13 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
     return writeToHive.toString();
   }
 
-  @Override
+   @Override
   public String getHivePartition(T tuple)
   {
-    if(hivePartitions.isEmpty()){
-    isHivePartitioned = false;
-    return null;
-    }
-    int index = tuple.hashCode() %(hivePartitions.size()) ;
-    return hivePartitions.get(index);
+    return tuple.toString();
   }
 
-  @Override
-  public void addPartition(String partition)
-  {
-    hivePartitions.add("dt='2014-12-18'");
-    hivePartitions.add(partition);
-  }
 
-  @Override
-  protected void dropPartition(String partition)
-  {
-    hivePartitions.remove(partition);
-  }
 
   /*
    * User can specify multiple partitions here, giving a default implementation for one partition column here.
@@ -98,9 +82,6 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
       else {
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
       }
-      if (!hivePartitions.contains(partition)) {
-        hivePartitions.add(partition);
-      }
     }
     else {
       if (!hdfsOp.isHDFSLocation()) {
@@ -114,5 +95,6 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
     return command;
 
   }
+
 
 }

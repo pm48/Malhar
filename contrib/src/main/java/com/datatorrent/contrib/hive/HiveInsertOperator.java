@@ -35,12 +35,7 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
   @Override
   public String getHivePartition(T tuple)
   {
-    if(hivePartitions.isEmpty()){
-    isHivePartitioned = false;
-    return null;
-    }
-    int index = tuple.hashCode() %(hivePartitions.size()) ;
-    return hivePartitions.get(index);
+    return tuple.toString();
   }
 
   /*
@@ -57,10 +52,9 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
       else {
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
       }
-      if (!hivePartitions.contains(partition)) {
+
         logger.info("new partition is {}" , partition);
-        hivePartitions.add(partition);
-      }
+      
     }
     else {
       if (!hdfsOp.isHDFSLocation()) {
@@ -70,22 +64,9 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
       }
     }
-
     return command;
 
   }
 
-  @Override
-  public void addPartition(String partition)
-  {
-    hivePartitions.add("dt='2014-12-18'");
-    hivePartitions.add(partition);
-  }
-
-  @Override
-  protected void dropPartition(String partition)
-  {
-    hivePartitions.remove(partition);
-  }
 
 }

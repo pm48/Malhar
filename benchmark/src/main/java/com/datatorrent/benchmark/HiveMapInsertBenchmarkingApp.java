@@ -28,6 +28,7 @@ import com.datatorrent.contrib.hive.HiveMapInsertOperator;
 import com.datatorrent.contrib.hive.HiveStore;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,10 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(mapGenerator, PortContext.QUEUE_CAPACITY, 10000);
     dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
     HiveMapInsertOperator<Map<String,Object>> hiveMapInsert = dag.addOperator("HiveMapInsertOperator", new HiveMapInsertOperator<Map<String,Object>>());
-    hiveMapInsert.addPartition("dt='2014-12-17'");
+    ArrayList<String> hivePartitionColumns = new ArrayList<String>();
+    hivePartitionColumns.add("dt='2014-12-12'");
+    hivePartitionColumns.add("dt='2014-12-13'");
+    hiveMapInsert.setHivePartitionColumns(hivePartitionColumns);
     dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveMapInsert.input);
   }
 
