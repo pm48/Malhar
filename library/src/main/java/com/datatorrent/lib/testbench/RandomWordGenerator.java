@@ -94,10 +94,6 @@ public class RandomWordGenerator implements InputOperator
       }
     }
     if (outputString.isConnected()) {
-     //StringBuilder output = new StringBuilder();
-     /*for (int j = 0; j < 1000; j++) {
-        output.append('h');
-      }*/
       for (;
               tupleCounter < tuplesPerWindow;
               tupleCounter++) {

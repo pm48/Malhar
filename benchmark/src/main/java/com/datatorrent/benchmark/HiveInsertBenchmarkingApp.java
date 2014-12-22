@@ -68,9 +68,9 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
     hivePartitionColumns.add("dt");
     hiveInsert.setHivePartitionColumns(hivePartitionColumns);
-    HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
+   // HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
    // streamCodec.setHiveOperator(hiveInsert);
-    dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, streamCodec);
+   // dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, streamCodec);
     dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
 

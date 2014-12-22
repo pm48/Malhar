@@ -52,9 +52,6 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
       else {
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
       }
-
-        logger.info("new partition is {}" , partition);
-
     }
     else {
       if (!hdfsOp.isHDFSLocation()) {
