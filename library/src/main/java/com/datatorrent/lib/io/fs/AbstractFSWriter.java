@@ -45,6 +45,7 @@ import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.annotation.OperatorAnnotation;
 
 import com.datatorrent.lib.counters.BasicCounters;
+import org.apache.hadoop.fs.permission.FsPermission;
 
 /**
  * This base implementation for a fault tolerant HDFS output operator,
@@ -95,6 +96,9 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
    * Size of the copy buffer used to restore files to checkpointed state.
    */
   private static final int COPY_BUFFER_SIZE = 1024;
+
+  @Nonnull
+  protected int filePermission = 0777;
 
   /**
    * The default number of max open files.
@@ -313,6 +317,8 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
           else {
             fsOutput = fs.create(lfilepath, (short) replication);
           }
+
+          fs.setPermission(lfilepath, FsPermission.createImmutable((short)filePermission));
 
           //Get the end offset of the file.
 
@@ -592,7 +598,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
     streamsCache.invalidate(fileName);
   }
 
-  /**
+   /**
    * This method is used to force buffers to be flushed at the end of the window.
    * flush must be used on a local file system, so an if statement checks to
    * make sure that hflush is used on local file systems.
@@ -741,6 +747,25 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
   {
     return this.maxOpenFiles;
   }
+
+  /**
+   * Get the permission on the file which is being written.
+   * @return filePermission
+   */
+  public int getFilePermission()
+  {
+    return filePermission;
+  }
+
+  /**
+   * Set the permission on the file which is being written.
+   * @param filePermission
+   */
+  public void setFilePermission(int filePermission)
+  {
+    this.filePermission = filePermission;
+  }
+
 
   public static enum Counters
   {

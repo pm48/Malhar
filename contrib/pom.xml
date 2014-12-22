@@ -15,7 +15,7 @@
   <properties>
     <!-- skip tests by default as they depend on manual setup -->
     <skip.contrib.module.tests>false</skip.contrib.module.tests>
-    <skipTests>true</skipTests>
+    <skipTests>false</skipTests>
   </properties>
   <repositories>
     <repository>
@@ -531,6 +531,24 @@
       <groupId>com.couchbase.client</groupId>
       <artifactId>couchbase-client</artifactId>
       <version>1.4.4</version>
+      <optional>true</optional>
+    </dependency>
+     <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-jdbc</artifactId>
+      <version>0.13.1</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-service</artifactId>
+      <version>0.13.1</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-exec</artifactId>
+      <version>0.13.1</version>
       <optional>true</optional>
     </dependency>
   </dependencies>
