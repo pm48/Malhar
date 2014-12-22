@@ -227,7 +227,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     if (isHivePartitioned) {
       partition = getHivePartition(tuple);
     }
-    partition = getHivePartitionColumns().get(0) + "=" + partition;
+    partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
     isEmptyWindow = false;
     hdfsOp.input.process(tuple);
   }

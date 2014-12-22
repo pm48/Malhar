@@ -54,7 +54,7 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
       }
 
         logger.info("new partition is {}" , partition);
-      
+
     }
     else {
       if (!hdfsOp.isHDFSLocation()) {
@@ -64,6 +64,7 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
       }
     }
+    logger.info("command is {}" ,command);
     return command;
 
   }
