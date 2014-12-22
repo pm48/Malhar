@@ -69,8 +69,7 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
     HiveMapInsertOperator<Map<String,Object>> hiveMapInsert = dag.addOperator("HiveMapInsertOperator", new HiveMapInsertOperator<Map<String,Object>>());
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
-    hivePartitionColumns.add("dt='2014-12-12'");
-    hivePartitionColumns.add("dt='2014-12-13'");
+    hivePartitionColumns.add("dt");
     hiveMapInsert.setHivePartitionColumns(hivePartitionColumns);
     dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveMapInsert.input);
   }

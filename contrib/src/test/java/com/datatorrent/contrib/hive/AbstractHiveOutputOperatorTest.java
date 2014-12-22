@@ -83,8 +83,8 @@ public class AbstractHiveOutputOperatorTest
     @Override
     protected void finished(Description description)
     {
-      //super.finished(description);
-     // FileUtils.deleteQuietly(new File(getDir()));
+      super.finished(description);
+      FileUtils.deleteQuietly(new File(getDir()));
     }
 
   }
@@ -193,7 +193,7 @@ public class AbstractHiveOutputOperatorTest
     outputOperator.setTablename(tablename);
     outputOperator.hdfsOp.setFilePermission(0777);
     outputOperator.hdfsOp.setMaxLength(128);
-    outputOperator.addPartition("dt='2014-12-19'");
+//    outputOperator.addPartition("dt='2014-12-19'");
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -227,7 +227,7 @@ public class AbstractHiveOutputOperatorTest
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is" + databaseSize);
+    LOG.info("database size is {}" , databaseSize);
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
@@ -283,7 +283,7 @@ public class AbstractHiveOutputOperatorTest
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablemap);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is" + databaseSize);
+    LOG.info("database size is {}" , databaseSize);
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
@@ -303,8 +303,8 @@ public class AbstractHiveOutputOperatorTest
     outputOperator.setTablename(tablename);
     outputOperator.hdfsOp.setFilePermission(0777);
     outputOperator.hdfsOp.setMaxLength(64);
-    outputOperator.addPartition("dt='2014-12-19'");
-    outputOperator.addPartition("dt='2014-12-20'");
+//    outputOperator.addPartition("dt='2014-12-19'");
+//    outputOperator.addPartition("dt='2014-12-20'");
     outputOperator.setNumPartitions(2);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
@@ -336,8 +336,6 @@ public class AbstractHiveOutputOperatorTest
 
     int wid = 0;
     for (int i = 0; i < 10; i++) {
-      int j = 0;
-
       for (AbstractHiveHDFS<String> o: opers) {
         o.beginWindow(wid);
         o.input.put("111");
@@ -349,7 +347,6 @@ public class AbstractHiveOutputOperatorTest
           o.committed(6);
         //LOG.info("Operator partition 1 has these hivepartitions {} ", opers.get(1).hivePartitions.toString());
         o.endWindow();
-        j++;
       }
       wid++;
     }
@@ -442,7 +439,7 @@ public class AbstractHiveOutputOperatorTest
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is" + databaseSize);
+    LOG.info("database size is {}" , databaseSize);
     Assert.assertEquals("Numer of tuples in database",
                         33,
                         databaseSize);
@@ -506,7 +503,7 @@ public class AbstractHiveOutputOperatorTest
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is" + databaseSize);
+    LOG.info("database size is {}" , databaseSize);
     Assert.assertEquals("Numer of tuples in database",
                         100,
                         databaseSize);

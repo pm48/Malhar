@@ -26,6 +26,7 @@ import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.contrib.hive.HiveInsertOperator;
 import com.datatorrent.contrib.hive.HiveStore;
+import com.datatorrent.contrib.hive.HiveStreamCodec;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -65,12 +66,11 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
     HiveInsertOperator<String> hiveInsert = dag.addOperator("HiveInsertOperator",new HiveInsertOperator<String>());
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
-    hivePartitionColumns.add("dt='2014-12-12'");
-    hivePartitionColumns.add("dt='2014-12-13'");
+    hivePartitionColumns.add("dt");
     hiveInsert.setHivePartitionColumns(hivePartitionColumns);
-   // HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
+    HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
    // streamCodec.setHiveOperator(hiveInsert);
-   // dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, streamCodec);
+    dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, streamCodec);
     dag.addStream("Generator2HDFSOutput", wordGenerator.outputString, hiveInsert.input);
   }
 

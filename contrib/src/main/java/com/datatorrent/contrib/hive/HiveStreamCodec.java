@@ -16,40 +16,22 @@
 package com.datatorrent.contrib.hive;
 
 import com.datatorrent.lib.codec.KryoSerializableStreamCodec;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import java.io.*;
-import org.apache.commons.codec.binary.Hex;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /*
- * An optional stream codec which implements Externalizable interface.
- * This was done so that user can implement their own serialization/deserialization functions.
+ * An optional stream codec for uniform distribution of tuples on upstream operator.
  */
-public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implements Serializable
+public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T>
 {
   private static final long serialVersionUID = 201412121604L;
-  //private static final Logger logger = LoggerFactory.getLogger(HiveStreamCodec.class);
-  //protected HiveInsertOperator<T> hiveOperator;
 
-  /*
-   * mandatory public no-arg constructor
-   */
   public HiveStreamCodec()
   {
     super();
   }
 
-
   @Override
   public int getPartition(T o)
   {
-    //logger.info("hivePartition in stream codec is" + hiveOperator.hivePartitions.toString());
-    //logger.info("hiveOperator used is" + hiveOperator.getName());
     return o.hashCode();
   }
-
-
-
 }

@@ -56,10 +56,10 @@ public class HiveJdbcClient
 
     // show tables
     sql = "show tables '" + tableName + "'";
-    System.out.println("Running: " + sql);
+    LOG.info("Running: {}" , sql);
     ResultSet res = stmt.executeQuery(sql);
     if (res.next()) {
-      System.out.println(res.getString(1));
+      LOG.info(res.getString(1));
     }
 
     // select * query
@@ -67,15 +67,15 @@ public class HiveJdbcClient
     System.out.println("Running: " + sql);
     res = stmt.executeQuery(sql);
     while (res.next()) {
-      System.out.println(res.getString(1));
+      LOG.info(res.getString(1));
     }
 
     // regular hive query
     sql = "select count(*) from " + tableName;
-    System.out.println("Running: " + sql);
+    LOG.info("Running: {}" , sql);
     res = stmt.executeQuery(sql);
     while (res.next()) {
-      System.out.println(res.getString(1));
+      LOG.info(res.getString(1));
     }
   }
 

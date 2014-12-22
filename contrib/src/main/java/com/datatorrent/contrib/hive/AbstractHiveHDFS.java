@@ -52,8 +52,9 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
 public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>
 {
-  protected transient boolean isHivePartitioned = true;
-  protected transient int numPartitions = 2;
+  protected boolean isHivePartitioned = true;
+  @Min(1)
+  protected int numPartitions = 2;
   //This Property is user configurable.
   protected ArrayList<String> hivePartitionColumns = new ArrayList<String>();
 
@@ -65,6 +66,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
   {
     this.hivePartitionColumns = hivePartitionColumns;
+    this.isHivePartitioned = true;
   }
 
   protected HashMap<String, String> mapFilePartition = new HashMap<String, String>();
@@ -177,7 +179,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       logger.info("window is {}", window);
       if (committedWindowId >= window) {
         try {
-          logger.info("path in committed window is" + store.getOperatorpath() + fileMoved);
+          logger.info("path in committed window is {}" , store.getOperatorpath() + fileMoved);
           /*
            * Check if file was not moved to hive because of operator crash or any other failure.
            * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
@@ -259,7 +261,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       logger.debug("empty window count is max.");
       String lastFile = hdfsOp.getHDFSRollingLastFile();
       try {
-        logger.debug("path in end window is" + store.getOperatorpath() + "/" + lastFile);
+        logger.debug("path in end window is {}" , store.getOperatorpath() + "/" + lastFile);
         if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + lastFile))) {
           logger.debug("last file not moved");
           hdfsOp.rotateCall(hdfsOp.lastFile);
@@ -279,9 +281,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     String hivePartition = null;
     if (isHivePartitioned) {
       hivePartition = mapFilePartition.get(fileMoved);
-      // User removes/drops a partition.
-     /* if(!hivePartitions.contains(hivePartition))
-        hivePartition = hivePartitions.get(0);*/
     }
     String command = getInsertCommand(store.getOperatorpath() + fileMoved, hivePartition);
     Statement stmt;
@@ -294,7 +293,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       }
     }
     catch (SQLException ex) {
-      logger.error("Moving file into hive failed" + ex.getMessage());
       throw new RuntimeException("Moving file into hive failed" + ex);
     }
   }

@@ -38,10 +38,6 @@ public class HiveInsertBenchmarkTest
     InputStream inputStream = getClass().getResourceAsStream("/dt-site-hive.xml");
     conf.addResource(inputStream);
 
-   // HiveStore store = new HiveStore();
-   // store.setDbUrl(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
-   // store.setConnectionProperties(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
-   // store.setFilepath(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
     LOG.info("conf properties are {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
     LOG.info("conf dburl is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
     LOG.info("conf filepath is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
@@ -49,7 +45,6 @@ public class HiveInsertBenchmarkTest
     LOG.info("maximum length is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.hdfsOp.maxLength"));
     LOG.info("tablename is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename"));
     HiveInsertBenchmarkingApp app = new HiveInsertBenchmarkingApp();
-    //AbstractHiveOutputOperatorTest.hiveInitializeDatabase(store);
     LocalMode lm = LocalMode.newInstance();
     try {
       lm.prepareDAG(app, conf);
