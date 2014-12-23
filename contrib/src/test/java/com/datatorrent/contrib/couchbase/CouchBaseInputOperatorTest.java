@@ -33,14 +33,8 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner.Partition;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.datatorrent.lib.io.fs.AbstractFSDirectoryInputOperator;
-import com.datatorrent.lib.io.fs.AbstractFSDirectoryInputOperatorTest.TestFSDirectoryInputOperator;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import java.util.*;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.junit.Test;
 
 public class CouchBaseInputOperatorTest
@@ -54,7 +48,7 @@ public class CouchBaseInputOperatorTest
   protected static ArrayList<String> keyList;
   private static String uri = "node13.morado.com:8091,node14.morado.com:8091";
 
-  
+
   public void TestCouchBaseInputOperator()
   {
     CouchBaseWindowStore store = new CouchBaseWindowStore();

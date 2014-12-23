@@ -27,7 +27,6 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
 
 import com.datatorrent.common.util.DTThrowable;
-import static com.datatorrent.contrib.couchbase.CouchBaseStore.logger;
 import com.esotericsoftware.kryo.Kryo;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import com.esotericsoftware.kryo.io.Input;

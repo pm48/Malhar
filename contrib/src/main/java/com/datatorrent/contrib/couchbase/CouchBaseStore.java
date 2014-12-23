@@ -67,7 +67,6 @@ public class CouchBaseStore implements Connectable
   protected transient CouchbaseClient client;
   @Min(1)
   protected Integer queueSize = 100;
-  protected boolean splitURIString;
 
   public Integer getQueueSize()
   {
@@ -78,7 +77,6 @@ public class CouchBaseStore implements Connectable
   {
     this.queueSize = queueSize;
   }
-
   protected Integer maxTuples = 1000;
   protected int blockTime = 1000;
   protected long timeout = 10000;
@@ -119,6 +117,8 @@ public class CouchBaseStore implements Connectable
     this.maxTuples = maxTuples;
   }
 
+
+
   public int getShutdownTimeout()
   {
     return shutdownTimeout;
@@ -136,35 +136,13 @@ public class CouchBaseStore implements Connectable
     client = null;
     password = "";
     bucket = "default";
-    splitURIString = false;
+
   }
 
   public CouchbaseClient getInstance()
   {
     return client;
   }
-
-  /*public CouchbaseClient getPartitionInstance(String serverURL)
-  {
-    ArrayList<URI> nodes = new ArrayList<URI>();
-    CouchbaseClient clientPartition = null;
-    serverURL = serverURL.replace("default", "pools");
-    try {
-      nodes.add(new URI(serverURL));
-    }
-    catch (URISyntaxException ex) {
-      DTThrowable.rethrow(ex);
-    }
-
-     try {
-      clientPartition = new CouchbaseClient(nodes, "default", "");
-    }
-    catch (IOException e) {
-      logger.error("Error connecting to Couchbase: " + e.getMessage());
-      DTThrowable.rethrow(e);
-    }
-    return clientPartition;
-  }*/
 
   public void addNodes(URI url)
   {
@@ -214,7 +192,7 @@ public class CouchBaseStore implements Connectable
   {
     String[] tokens = uriString.split(",");
     URI uri = null;
-    for (String url: tokens) {
+    for (String url : tokens) {
       try {
         uri = new URI("http", url, "/pools", null, null);
       }
@@ -236,6 +214,7 @@ public class CouchBaseStore implements Connectable
     }
   }
 
+
   @Override
   public boolean isConnected()
   {
@@ -250,5 +229,5 @@ public class CouchBaseStore implements Connectable
     client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
   }
 
-}
 
+}
