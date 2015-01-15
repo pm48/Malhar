@@ -26,6 +26,10 @@ import javax.annotation.Nonnull;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
+import com.couchbase.client.vbucket.ConfigurationProvider;
+import com.couchbase.client.vbucket.ConfigurationProviderHTTP;
+import com.couchbase.client.vbucket.config.Bucket;
+import com.couchbase.client.vbucket.config.Config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,17 +46,33 @@ public class CouchBaseStore implements Connectable
 {
 
   protected static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
-
+  protected transient ConfigurationProvider configurationProvider;
   @Nonnull
   protected String bucket;
+
+  public String getBucket()
+  {
+    return bucket;
+  }
+
+  public void setBucket(String bucket)
+  {
+    this.bucket = bucket;
+  }
+
   @Nonnull
   protected String password;
   @Nonnull
   protected String uriString;
+  @Nonnull
+  protected String usernameConfig;
+  @Nonnull
+  protected String passwordConfig;
 
   protected transient CouchbaseClient client;
   @Min(1)
   protected Integer queueSize = 100;
+  protected boolean splitURIString;
 
   public Integer getQueueSize()
   {
@@ -63,6 +83,7 @@ public class CouchBaseStore implements Connectable
   {
     this.queueSize = queueSize;
   }
+
   protected Integer maxTuples = 1000;
   protected int blockTime = 1000;
   protected long timeout = 10000;
@@ -103,8 +124,6 @@ public class CouchBaseStore implements Connectable
     this.maxTuples = maxTuples;
   }
 
-
-
   public int getShutdownTimeout()
   {
     return shutdownTimeout;
@@ -122,7 +141,9 @@ public class CouchBaseStore implements Connectable
     client = null;
     password = "";
     bucket = "default";
-
+    splitURIString = false;
+    usernameConfig = "root";
+    passwordConfig = "prerna123";
   }
 
   public CouchbaseClient getInstance()
@@ -133,11 +154,6 @@ public class CouchBaseStore implements Connectable
   public void addNodes(URI url)
   {
     baseURIs.add(url);
-  }
-
-  public void setBucket(String bucketName)
-  {
-    this.bucket = bucketName;
   }
 
   /**
@@ -156,12 +172,34 @@ public class CouchBaseStore implements Connectable
     this.uriString = uriString;
   }
 
+  public Config getConf()
+  {
+    try {
+      connect();
+    }
+    catch (IOException ex) {
+      DTThrowable.rethrow(ex);
+    }
+    this.configurationProvider = new ConfigurationProviderHTTP(baseURIs, usernameConfig, passwordConfig);
+    Bucket configBucket = this.configurationProvider.getBucketConfiguration(bucket);
+    Config conf = configBucket.getConfig();
+    //List<InetSocketAddress> addrs=AddrUtil.getAddressesFromURL(cfb.getVBucketConfig().getCouchServers());
+    //logger.info("configuration is" + conf);
+    try {
+      disconnect();
+    }
+    catch (IOException ex) {
+      DTThrowable.rethrow(ex);
+    }
+    return conf;
+  }
+
   @Override
   public void connect() throws IOException
   {
     String[] tokens = uriString.split(",");
     URI uri = null;
-    for (String url : tokens) {
+    for (String url: tokens) {
       try {
         uri = new URI("http", url, "/pools", null, null);
       }
@@ -183,7 +221,6 @@ public class CouchBaseStore implements Connectable
     }
   }
 
-
   @Override
   public boolean isConnected()
   {
@@ -194,8 +231,9 @@ public class CouchBaseStore implements Connectable
   @Override
   public void disconnect() throws IOException
   {
-    client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
+    if (client != null) {
+      client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
+    }
   }
-
 
 }

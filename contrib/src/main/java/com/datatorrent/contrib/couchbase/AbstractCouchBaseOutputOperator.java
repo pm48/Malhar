@@ -15,6 +15,8 @@
  */
 package com.datatorrent.contrib.couchbase;
 
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.vbucket.config.Config;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
@@ -27,8 +29,22 @@ import org.slf4j.LoggerFactory;
 import com.datatorrent.lib.db.AbstractAggregateTransactionableStoreOutputOperator;
 
 import com.datatorrent.api.Context.OperatorContext;
+import com.datatorrent.api.DefaultPartition;
+import com.datatorrent.api.Partitioner;
 
 import com.datatorrent.common.util.DTThrowable;
+import static com.datatorrent.contrib.couchbase.AbstractCouchBaseInputOperator.logger;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 /**
  * AbstractCouchBaseOutputOperator which extends Transactionable Store Output Operator.
@@ -38,7 +54,7 @@ import com.datatorrent.common.util.DTThrowable;
  * but for inserts there might be duplicates when operator fails.
  *
  */
-public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggregateTransactionableStoreOutputOperator<T, CouchBaseWindowStore>
+public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggregateTransactionableStoreOutputOperator<T, CouchBaseWindowStore> implements Partitioner<AbstractCouchBaseOutputOperator<T>>
 {
   private static final transient Logger logger = LoggerFactory.getLogger(AbstractCouchBaseOutputOperator.class);
   protected transient HashMap<OperationFuture, Long> mapFuture;
@@ -49,6 +65,9 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
   private transient CompletionListener listener;
   private transient boolean failure;
   private transient Object syncObj;
+  protected transient Config conf;
+  protected transient CouchbaseClient clientPartition = null;
+  private String urlString;
 
   public AbstractCouchBaseOutputOperator()
   {
@@ -63,6 +82,28 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
   @Override
   public void setup(OperatorContext context)
   {
+    if (conf == null) {
+      conf = store.getConf();
+    }
+    if (clientPartition == null) {
+      ArrayList<URI> nodes = new ArrayList<URI>();
+
+      urlString = urlString.replace("default", "pools");
+      try {
+        nodes.add(new URI(urlString));
+      }
+      catch (URISyntaxException ex) {
+        DTThrowable.rethrow(ex);
+      }
+
+      try {
+        clientPartition = new CouchbaseClient(nodes, "default", "");
+      }
+      catch (IOException e) {
+        logger.error("Error connecting to Couchbase: " + e.getMessage());
+        DTThrowable.rethrow(e);
+      }
+    }
     ProcessingMode mode = context.getValue(context.PROCESSING_MODE);
     if (mode == ProcessingMode.AT_MOST_ONCE) {
       //map must be cleared to avoid writing same data twice
@@ -98,6 +139,28 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
     setKeyValueInCouchBase(tuple);
   }
 
+  private int serverIndex;
+
+  public String getUrlString()
+  {
+    return urlString;
+  }
+
+  public void setUrlString(String urlString)
+  {
+    this.urlString = urlString;
+  }
+
+  public int getServerIndex()
+  {
+    return serverIndex;
+  }
+
+  public void setServerIndex(int serverIndex)
+  {
+    this.serverIndex = serverIndex;
+  }
+
   public void setKeyValueInCouchBase(T tuple)
   {
     id++;
@@ -106,16 +169,28 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
     if (serializer != null) {
       value = serializer.serialize(value);
     }
-    OperationFuture<Boolean> future = processKeyValue(key, value);
-    synchronized (syncObj) {
-      future.addListener(listener);
-      mapFuture.put(future, id);
-      if (!mapTuples.containsKey(id)) {
-        mapTuples.put(id, tuple);
+    int master = conf.getMaster(conf.getVbucketByKey(key));
+    if (master == getServerIndex()) {
+      OperationFuture<Boolean> future = processKeyValue(key, value);
+      synchronized (syncObj) {
+        future.addListener(listener);
+        mapFuture.put(future, id);
+        if (!mapTuples.containsKey(id)) {
+          mapTuples.put(id, tuple);
+        }
+        numTuples++;
       }
-      numTuples++;
     }
 
+  }
+
+  @Override
+  public void teardown()
+  {
+    if (clientPartition != null) {
+      clientPartition.shutdown(store.shutdownTimeout, TimeUnit.SECONDS);
+    }
+    super.teardown();
   }
 
   @Override
@@ -123,6 +198,40 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
   {
     waitForQueueSize(0);
     id = 0;
+  }
+
+  @Override
+  public void partitioned(Map<Integer, Partition<AbstractCouchBaseOutputOperator<T>>> partitions)
+  {
+
+  }
+
+  @Override
+  public Collection<Partition<AbstractCouchBaseOutputOperator<T>>> definePartitions(Collection<Partition<AbstractCouchBaseOutputOperator<T>>> partitions, int incrementalCapacity)
+  {
+    conf = store.getConf();
+    int numPartitions = conf.getCouchServers().size();
+    List<URL> list = conf.getCouchServers();
+    Collection<Partition<AbstractCouchBaseOutputOperator<T>>> newPartitions = Lists.newArrayListWithExpectedSize(numPartitions);
+    Kryo kryo = new Kryo();
+    for (int i = 0; i < numPartitions; i++) {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      Output output = new Output(bos);
+      kryo.writeObject(output, this);
+      output.close();
+      Input lInput = new Input(bos.toByteArray());
+      @SuppressWarnings("unchecked")
+      AbstractCouchBaseOutputOperator<T> oper = kryo.readObject(lInput, this.getClass());
+      oper.setServerIndex(i);
+      oper.setUrlString(list.get(i).toString());
+      logger.info("oper {} urlstring is {}", i, oper.getUrlString());
+      // oper.setStore(this.store);
+      newPartitions.add(new DefaultPartition<AbstractCouchBaseOutputOperator<T>>(oper));
+    }
+    // assign the partition keys
+    DefaultPartition.assignPartitionKeys(newPartitions, input);
+    return newPartitions;
+
   }
 
   public void waitForQueueSize(int sizeOfQueue)
