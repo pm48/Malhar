@@ -45,7 +45,7 @@ import javax.validation.constraints.Min;
 public class CouchBaseStore implements Connectable
 {
 
-  protected static final  Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
+  protected static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
   protected transient ConfigurationProvider configurationProvider;
   @Nonnull
   protected String bucket;
@@ -59,10 +59,15 @@ public class CouchBaseStore implements Connectable
   {
     this.bucket = bucket;
   }
+
   @Nonnull
   protected String password;
   @Nonnull
   protected String uriString;
+  @Nonnull
+  protected String usernameConfig;
+  @Nonnull
+  protected String passwordConfig;
 
   protected transient CouchbaseClient client;
   @Min(1)
@@ -129,7 +134,7 @@ public class CouchBaseStore implements Connectable
     this.shutdownTimeout = shutdownTimeout;
   }
 
- transient List<URI> baseURIs = new ArrayList<URI>();
+  transient List<URI> baseURIs = new ArrayList<URI>();
 
   public CouchBaseStore()
   {
@@ -137,34 +142,14 @@ public class CouchBaseStore implements Connectable
     password = "";
     bucket = "default";
     splitURIString = false;
+    usernameConfig = "root";
+    passwordConfig = "prerna123";
   }
 
   public CouchbaseClient getInstance()
   {
     return client;
   }
-
-  /*public CouchbaseClient getPartitionInstance(String serverURL)
-  {
-    ArrayList<URI> nodes = new ArrayList<URI>();
-    CouchbaseClient clientPartition = null;
-    serverURL = serverURL.replace("default", "pools");
-    try {
-      nodes.add(new URI(serverURL));
-    }
-    catch (URISyntaxException ex) {
-      DTThrowable.rethrow(ex);
-    }
-
-     try {
-      clientPartition = new CouchbaseClient(nodes, "default", "");
-    }
-    catch (IOException e) {
-      logger.error("Error connecting to Couchbase: " + e.getMessage());
-      DTThrowable.rethrow(e);
-    }
-    return clientPartition;
-  }*/
 
   public void addNodes(URI url)
   {
@@ -195,7 +180,7 @@ public class CouchBaseStore implements Connectable
     catch (IOException ex) {
       DTThrowable.rethrow(ex);
     }
-    this.configurationProvider = new ConfigurationProviderHTTP(baseURIs, "root", "prerna123");
+    this.configurationProvider = new ConfigurationProviderHTTP(baseURIs, usernameConfig, passwordConfig);
     Bucket configBucket = this.configurationProvider.getBucketConfiguration(bucket);
     Config conf = configBucket.getConfig();
     //List<InetSocketAddress> addrs=AddrUtil.getAddressesFromURL(cfb.getVBucketConfig().getCouchServers());
@@ -246,9 +231,9 @@ public class CouchBaseStore implements Connectable
   @Override
   public void disconnect() throws IOException
   {
-    if(client!=null)
-    client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
+    if (client != null) {
+      client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
+    }
   }
 
 }
-
