@@ -33,7 +33,6 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
 
 import com.datatorrent.common.util.DTThrowable;
-import static com.datatorrent.contrib.couchbase.AbstractCouchBaseInputOperator.logger;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -172,6 +171,8 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
     int master = conf.getMaster(conf.getVbucketByKey(key));
     if (master == getServerIndex()) {
       OperationFuture<Boolean> future = processKeyValue(key, value);
+      logger.info("master is {}", master);
+      logger.info("urlstring is {}", urlString);
       synchronized (syncObj) {
         future.addListener(listener);
         mapFuture.put(future, id);
