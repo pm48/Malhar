@@ -26,6 +26,10 @@ import javax.annotation.Nonnull;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
+import com.couchbase.client.vbucket.ConfigurationProvider;
+import com.couchbase.client.vbucket.ConfigurationProviderHTTP;
+import com.couchbase.client.vbucket.config.Bucket;
+import com.couchbase.client.vbucket.config.Config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,18 +45,54 @@ import javax.validation.constraints.Min;
 public class CouchBaseStore implements Connectable
 {
 
-  protected static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
-
+  private static final  Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
+  private transient ConfigurationProvider configurationProvider;
   @Nonnull
   protected String bucket;
+
+  public String getBucket()
+  {
+    return bucket;
+  }
+
+  public void setBucket(String bucket)
+  {
+    this.bucket = bucket;
+  }
   @Nonnull
   protected String password;
+  @Nonnull
+  protected String userConfig;
+
+  public String getUserConfig()
+  {
+    return userConfig;
+  }
+
+  public void setUserConfig(String userConfig)
+  {
+    this.userConfig = userConfig;
+  }
+
+  public String getPasswordConfig()
+  {
+    return passwordConfig;
+  }
+
+  public void setPasswordConfig(String passwordConfig)
+  {
+    this.passwordConfig = passwordConfig;
+  }
+  @Nonnull
+  protected String passwordConfig;
+
   @Nonnull
   protected String uriString;
 
   protected transient CouchbaseClient client;
   @Min(1)
   protected Integer queueSize = 100;
+  protected boolean splitURIString;
 
   public Integer getQueueSize()
   {
@@ -63,6 +103,7 @@ public class CouchBaseStore implements Connectable
   {
     this.queueSize = queueSize;
   }
+
   protected Integer maxTuples = 1000;
   protected int blockTime = 1000;
   protected long timeout = 10000;
@@ -103,8 +144,6 @@ public class CouchBaseStore implements Connectable
     this.maxTuples = maxTuples;
   }
 
-
-
   public int getShutdownTimeout()
   {
     return shutdownTimeout;
@@ -115,14 +154,14 @@ public class CouchBaseStore implements Connectable
     this.shutdownTimeout = shutdownTimeout;
   }
 
-  transient List<URI> baseURIs = new ArrayList<URI>();
+ transient List<URI> baseURIs = new ArrayList<URI>();
 
   public CouchBaseStore()
   {
     client = null;
     password = "";
     bucket = "default";
-
+    splitURIString = false;
   }
 
   public CouchbaseClient getInstance()
@@ -133,11 +172,6 @@ public class CouchBaseStore implements Connectable
   public void addNodes(URI url)
   {
     baseURIs.add(url);
-  }
-
-  public void setBucket(String bucketName)
-  {
-    this.bucket = bucketName;
   }
 
   /**
@@ -156,12 +190,34 @@ public class CouchBaseStore implements Connectable
     this.uriString = uriString;
   }
 
+  public Config getConf()
+  {
+    try {
+      connect();
+    }
+    catch (IOException ex) {
+      DTThrowable.rethrow(ex);
+    }
+    this.configurationProvider = new ConfigurationProviderHTTP(baseURIs, userConfig, passwordConfig);
+    Bucket configBucket = this.configurationProvider.getBucketConfiguration(bucket);
+    Config conf = configBucket.getConfig();
+    //List<InetSocketAddress> addrs=AddrUtil.getAddressesFromURL(cfb.getVBucketConfig().getCouchServers());
+    //logger.info("configuration is" + conf);
+    try {
+      disconnect();
+    }
+    catch (IOException ex) {
+      DTThrowable.rethrow(ex);
+    }
+    return conf;
+  }
+
   @Override
   public void connect() throws IOException
   {
     String[] tokens = uriString.split(",");
     URI uri = null;
-    for (String url : tokens) {
+    for (String url: tokens) {
       try {
         uri = new URI("http", url, "/pools", null, null);
       }
@@ -183,7 +239,6 @@ public class CouchBaseStore implements Connectable
     }
   }
 
-
   @Override
   public boolean isConnected()
   {
@@ -194,8 +249,9 @@ public class CouchBaseStore implements Connectable
   @Override
   public void disconnect() throws IOException
   {
+    if(client!=null)
     client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
   }
 
-
 }
+
