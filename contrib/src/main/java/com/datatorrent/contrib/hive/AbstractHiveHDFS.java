@@ -29,17 +29,11 @@ import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.Operator.CheckpointListener;
 import com.datatorrent.api.annotation.OperatorAnnotation;
-import com.datatorrent.api.annotation.Stateless;
-
-import com.datatorrent.common.util.DTThrowable;
 import com.google.common.collect.Lists;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import javax.validation.constraints.Min;
-import org.apache.hadoop.fs.Path;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -50,7 +44,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
  * An abstract Hive operator which can insert data in txt format in tables/partitions from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements CheckpointListener, Partitioner<AbstractHiveHDFS<T>>
+public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T, HiveStore> implements Partitioner<AbstractHiveHDFS<T>>
 {
   protected boolean isHivePartitioned = true;
   @Min(1)
@@ -74,7 +68,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   @Nonnull
   protected String tablename;
 
-  public HDFSRollingOutputOperator<T> hdfsOp;
+ // public HDFSRollingOutputOperator<T> hdfsOp;
   //This variable is user configurable.
   @Min(0)
   private transient long maxWindowsWithNoData = 100;
@@ -117,11 +111,10 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   {
   }
 
-  protected long committedWindowId = Stateless.WINDOW_ID;
   private static final Logger logger = LoggerFactory.getLogger(AbstractHiveHDFS.class);
   private transient String appId;
   private transient int operatorId;
-  protected HashMap<String, Long> mapFilenames;
+  //protected HashMap<String, Long> mapFilenames;
 
   public long getMaxWindowsWithNoData()
   {
@@ -135,9 +128,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
 
   private int countEmptyWindow;
   private boolean isEmptyWindow;
-  protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
+ // protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
 
-  public HDFSRollingOutputOperator<T> getHdfsOp()
+  /*public HDFSRollingOutputOperator<T> getHdfsOp()
   {
     return hdfsOp;
   }
@@ -145,13 +138,12 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public void setHdfsOp(HDFSRollingOutputOperator<T> hdfsOp)
   {
     this.hdfsOp = hdfsOp;
-  }
+  }*/
 
   public AbstractHiveHDFS()
   {
-    hdfsOp = new HDFSRollingOutputOperator<T>();
-    mapFilenames = new HashMap<String, Long>();
-    hdfsOp.hive = this;
+    //hdfsOp = new HDFSRollingOutputOperator<T>();
+   // hdfsOp.hive = this;
     countEmptyWindow = 0;
   }
 
@@ -159,14 +151,14 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
   public void beginWindow(long windowId)
   {
     isEmptyWindow = true;
-    windowIDOfCompletedPart = windowId;
+   // windowIDOfCompletedPart = windowId;
   }
 
   /*
    * Moving completed files into hive on committed window callback.
    * Criteria for moving them is that the windowId in which they are completed
    * should be less than committed window.
-   */
+
   @Override
   public void committed(long windowId)
   {
@@ -183,7 +175,7 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
           /*
            * Check if file was not moved to hive because of operator crash or any other failure.
            * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
-           */
+
           if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + fileMoved))) {
             processHiveFile(fileMoved);
           }
@@ -195,15 +187,9 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
       }
 
     }
-  }
+  }*/
 
-  /*
-   *This method can be used for debugging purposes.
-   */
-  @Override
-  public void checkpointed(long windowId)
-  {
-  }
+
 
   public String getTablename()
   {
@@ -229,51 +215,30 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     }
     partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
     isEmptyWindow = false;
-    hdfsOp.input.process(tuple);
+    processHiveFile(tuple.toString());
   }
+
 
   @Override
   public void setup(OperatorContext context)
   {
     appId = context.getValue(DAG.APPLICATION_ID);
     operatorId = context.getId();
-    hdfsOp.setFilePath(store.filepath + "/" + appId + "/" + operatorId);
+    //hdfsOp.setFilePath(store.filepath + "/" + appId + "/" + operatorId);
     store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
     super.setup(context);
-    hdfsOp.setup(context);
+    //hdfsOp.setup(context);
     isEmptyWindow = true;
   }
 
   @Override
   public void teardown()
   {
-    hdfsOp.teardown();
+   // hdfsOp.teardown();
     super.teardown();
   }
 
-  @Override
-  public void endWindow()
-  {
-    if (isEmptyWindow) {
-      countEmptyWindow++;
-    }
-    if (countEmptyWindow >= maxWindowsWithNoData) {
-      logger.debug("empty window count is max.");
-      String lastFile = hdfsOp.getHDFSRollingLastFile();
-      try {
-        logger.debug("path in end window is {}" , store.getOperatorpath() + "/" + lastFile);
-        if (hdfsOp.getFileSystem().exists(new Path(store.getOperatorpath() + "/" + lastFile))) {
-          logger.debug("last file not moved");
-          hdfsOp.rotateCall(hdfsOp.lastFile);
-        }
-      }
-      catch (IOException ex) {
-        DTThrowable.rethrow(ex);
-      }
-      countEmptyWindow = 0;
-    }
-       hdfsOp.endWindow();
-  }
+
 
   public void processHiveFile(String fileMoved)
   {
@@ -295,11 +260,6 @@ public abstract class AbstractHiveHDFS<T> extends AbstractStoreOutputOperator<T,
     catch (SQLException ex) {
       throw new RuntimeException("Moving file into hive failed" + ex);
     }
-  }
-
-  public String getHiveTuple(T tuple)
-  {
-    return tuple.toString() + "\n";
   }
 
   /*

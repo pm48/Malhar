@@ -46,20 +46,20 @@ public class HiveInsertOperator<T> extends AbstractHiveHDFS<T>
   {
     String command;
     if (isHivePartitioned) {
-      if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
-      }
-      else {
+    //  if (!hdfsOp.isHDFSLocation()) {
+    //    command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
+    //  }
+    //  else {
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
-      }
+    //  }
     }
     else {
-      if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      }
-      else {
+     // if (!hdfsOp.isHDFSLocation()) {
+     //   command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
+     // }
+     // else {
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      }
+     // }
     }
     logger.info("command is {}" ,command);
     return command;

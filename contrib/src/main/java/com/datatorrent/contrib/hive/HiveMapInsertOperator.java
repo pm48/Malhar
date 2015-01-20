@@ -15,7 +15,6 @@
  */
 package com.datatorrent.contrib.hive;
 
-import java.util.Iterator;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 
@@ -45,7 +44,7 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
     this.store = new HiveStore();
   }
 
-  @Override
+ /* @Override
   @SuppressWarnings("rawtypes")
   public String getHiveTuple(T tuple)
   {
@@ -58,9 +57,9 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
      writeToHive.append(key).append(delimiter).append(obj).append("\n");
     }
     return writeToHive.toString();
-  }
+  }*/
 
-   @Override
+  @Override
   public String getHivePartition(T tuple)
   {
     return tuple.toString();
@@ -76,20 +75,20 @@ public class HiveMapInsertOperator<T  extends Map<?,?>> extends AbstractHiveHDFS
   {
     String command;
     if (isHivePartitioned) {
-      if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
-      }
-      else {
+     // if (!hdfsOp.isHDFSLocation()) {
+     //   command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
+     // }
+     // else {
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
-      }
+     // }
     }
     else {
-      if (!hdfsOp.isHDFSLocation()) {
-        command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      }
-      else {
+     // if (!hdfsOp.isHDFSLocation()) {
+     //   command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
+     // }
+     // else {
         command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      }
+     // }
     }
 
     return command;
