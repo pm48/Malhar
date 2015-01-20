@@ -15,10 +15,27 @@
  */
 package com.datatorrent.contrib.couchbase;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.vbucket.config.Config;
-import java.io.IOException;
-import java.util.List;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Lists;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.datatorrent.lib.db.AbstractStoreInputOperator;
 
@@ -27,20 +44,6 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.esotericsoftware.kryo.Kryo;
-import org.apache.commons.io.output.ByteArrayOutputStream;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Lists;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * AbstractCouchBaseInputOperator which extends AbstractStoreInputOperator.
@@ -48,8 +51,9 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInputOperator<T, CouchBaseStore> implements Partitioner<AbstractCouchBaseInputOperator<T>>
 {
-  private static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
+  private static final Logger logger = LoggerFactory.getLogger(AbstractCouchBaseInputOperator.class);
   protected transient CouchbaseClient clientPartition = null;
+  private boolean isPartitioned = false;
 
   private int serverIndex;
   private String urlString;
@@ -85,10 +89,11 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   public void setup(Context.OperatorContext context)
   {
     super.setup(context);
-    if (conf == null) {
-      conf = store.getConf();
-    }
-    if (clientPartition == null) {
+    if (clientPartition == null && isPartitioned) {
+      if (conf == null) {
+        conf = store.getConf();
+      }
+
       ArrayList<URI> nodes = new ArrayList<URI>();
 
       urlString = urlString.replace("default", "pools");
@@ -103,7 +108,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
         clientPartition = new CouchbaseClient(nodes, "default", "");
       }
       catch (IOException e) {
-        logger.error("Error connecting to Couchbase: " + e.getMessage());
+        logger.error("Error connecting to Couchbase: {}" , e.getMessage());
         DTThrowable.rethrow(e);
       }
     }
@@ -122,21 +127,26 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   public void emitTuples()
   {
     List<String> keys = getKeys();
+    Object result = null;
     for (String key: keys) {
-      int master = conf.getMaster(conf.getVbucketByKey(key));
-      if (master == getServerIndex()) {
-        logger.info("master is {}", master);
-        logger.info("urlstring is {}", urlString);
-        Object result = clientPartition.get(key);
-        logger.info("result is {} urlstring is {}", result, urlString);
-        if (result != null) {
-          T tuple = getTuple(result);
-          outputPort.emit(tuple);
+      if (isPartitioned) {
+        int master = conf.getMaster(conf.getVbucketByKey(key));
+        if (master == getServerIndex()) {
+          logger.debug("master is {}", master);
+          logger.debug("urlstring is {}", urlString);
+          result = clientPartition.get(key);
         }
-
       }
-    }
+      else {
+        result = store.getInstance().get(key);
+      }
 
+      if (result != null) {
+        T tuple = getTuple(result);
+        outputPort.emit(tuple);
+      }
+
+    }
   }
 
   public abstract T getTuple(Object object);
@@ -153,6 +163,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   public Collection<Partition<AbstractCouchBaseInputOperator<T>>> definePartitions(Collection<Partition<AbstractCouchBaseInputOperator<T>>> partitions, int incrementalCapacity)
   {
     conf = store.getConf();
+    isPartitioned = true;
     int numPartitions = conf.getCouchServers().size();
     List<URL> list = conf.getCouchServers();
     Collection<Partition<AbstractCouchBaseInputOperator<T>>> newPartitions = Lists.newArrayListWithExpectedSize(numPartitions);
@@ -167,7 +178,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
       AbstractCouchBaseInputOperator<T> oper = kryo.readObject(lInput, this.getClass());
       oper.setServerIndex(i);
       oper.setUrlString(list.get(i).toString());
-      logger.info("oper {} urlstring is {}", i, oper.getUrlString());
+      logger.debug("oper {} urlstring is {}", i, oper.getUrlString());
       newPartitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<T>>(oper));
     }
 

@@ -160,7 +160,7 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
     public void onComplete(OperationFuture<?> f) throws Exception
     {
       if (!((Boolean)f.get())) {
-        logger.error("Operation failed " + f);
+        logger.error("Operation failed {}" , f);
         failure = true;
         return;
       }

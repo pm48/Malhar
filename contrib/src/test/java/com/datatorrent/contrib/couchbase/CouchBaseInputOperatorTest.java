@@ -15,7 +15,9 @@
  */
 package com.datatorrent.contrib.couchbase;
 
-import java.io.IOException;
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.CouchbaseConnectionFactory;
+import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
@@ -33,14 +35,16 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner.Partition;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.datatorrent.lib.io.fs.AbstractFSDirectoryInputOperator;
-import com.datatorrent.lib.io.fs.AbstractFSDirectoryInputOperatorTest.TestFSDirectoryInputOperator;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import java.util.*;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.couchbase.mock.Bucket;
+import org.couchbase.mock.Bucket.BucketType;
+import org.couchbase.mock.BucketConfiguration;
+import org.couchbase.mock.CouchbaseMock;
+
+import org.junit.After;
+
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 public class CouchBaseInputOperatorTest
@@ -53,30 +57,119 @@ public class CouchBaseInputOperatorTest
   protected static ArrayList<URI> nodes = new ArrayList<URI>();
   protected static ArrayList<String> keyList;
   private static String uri = "127.0.0.1:8091";
+  private CouchbaseMock mockCouchbase = null;
+  private TestInputOperator inputOperator = null;
+  protected static CouchbaseClient client = null;
+  private BucketConfiguration bucketConfiguration = new BucketConfiguration();
+  private int numNodes = 4;
+  private int numVBuckets = 16;
+  protected final CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
+  protected CouchbaseConnectionFactory connectionFactory;
 
-
-  public void TestCouchBaseInputOperator()
+  @Test
+  public void testDefaults() throws Exception
   {
+    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets);
+    Map<String, Bucket> buckets = mock.getBuckets();
+    assertEquals(1, buckets.size());
+    assert (buckets.containsKey("default"));
+    assertEquals("", buckets.get("default").getPassword());
+    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("default").getType());
+  }
+
+  @Test
+  public void testPasswords() throws Exception
+  {
+    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets, "xxx:,yyy:pass,zzz");
+    Map<String, Bucket> buckets = mock.getBuckets();
+    assertEquals(3, buckets.size());
+    assert (buckets.containsKey("xxx"));
+    assert (buckets.containsKey("yyy"));
+    assert (buckets.containsKey("zzz"));
+    assertEquals("", buckets.get("xxx").getPassword());
+    assertEquals("", buckets.get("zzz").getPassword());
+    assertEquals("pass", buckets.get("yyy").getPassword());
+  }
+
+  @Test
+  public void testTypes() throws Exception
+  {
+    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets, "xxx::,yyy::memcache,zzz,kkk::couchbase,aaa::unknown");
+    Map<String, Bucket> buckets = mock.getBuckets();
+    assertEquals(5, buckets.size());
+    assert (buckets.containsKey("xxx"));
+    assert (buckets.containsKey("yyy"));
+    assert (buckets.containsKey("zzz"));
+    assert (buckets.containsKey("kkk"));
+    assert (buckets.containsKey("aaa"));
+    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("xxx").getType());
+    assertEquals(Bucket.BucketType.MEMCACHED, buckets.get("yyy").getType());
+    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("zzz").getType());
+    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("kkk").getType());
+    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("aaa").getType());
+  }
+
+  @Test
+  public void testMixed() throws Exception
+  {
+    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets, "xxx:pass:memcache,yyy:secret:couchbase");
+    Map<String, Bucket> buckets = mock.getBuckets();
+    assertEquals(2, buckets.size());
+    assert (buckets.containsKey("xxx"));
+    assert (buckets.containsKey("yyy"));
+    assertEquals(Bucket.BucketType.MEMCACHED, buckets.get("xxx").getType());
+    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("yyy").getType());
+    assertEquals("pass", buckets.get("xxx").getPassword());
+    assertEquals("secret", buckets.get("yyy").getPassword());
+  }
+
+  @After
+  public void teardown() throws Exception
+  {
+    if (mockCouchbase != null) {
+      mockCouchbase.stop();
+      mockCouchbase = null;
+    }
+    inputOperator.teardown();
+    client.flush();
+  }
+
+  protected void createMock(String name, String password) throws Exception
+  {
+    bucketConfiguration.numNodes = 10;
+    bucketConfiguration.numReplicas = 3;
+    bucketConfiguration.name = name;
+    bucketConfiguration.type = BucketType.COUCHBASE;
+    bucketConfiguration.password = password;
+
+    ArrayList<BucketConfiguration> configList = new ArrayList<BucketConfiguration>();
+    configList.add(bucketConfiguration);
+    mockCouchbase = new CouchbaseMock(0, configList);
+    mockCouchbase.start();
+    mockCouchbase.waitForStartup();
+  }
+
+  @Test
+  public void TestCouchBaseInputOperator() throws InterruptedException, Exception
+  {
+    createMock("default", "");
+    List<URI> uriList = new ArrayList<URI>();
+    int port = mockCouchbase.getHttpPort();
+    uriList.add(new URI("http", null, "localhost", port, "/pools", "", ""));
+    connectionFactory = cfb.buildCouchbaseConnection(uriList, bucketConfiguration.name, bucketConfiguration.password);
+    client = new CouchbaseClient(connectionFactory);
     CouchBaseWindowStore store = new CouchBaseWindowStore();
     keyList = new ArrayList<String>();
-    store.setBucket(bucket);
-    store.setPassword(password);
-    store.setUriString(uri);
-    try {
-      store.connect();
-    }
-    catch (IOException ex) {
-      DTThrowable.rethrow(ex);
-    }
-
-    store.getInstance().flush();
+    store.setBucket(bucketConfiguration.name);
+    store.setPassword(bucketConfiguration.password);
+    store.setUriString("localhost:" + port);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
-    TestInputOperator inputOperator = new TestInputOperator();
+    inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
-    inputOperator.insertEventsInTable(100);
+    inputOperator.insertEventsInTable(10);
 
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputOperator.outputPort.setSink(sink);
@@ -85,7 +178,9 @@ public class CouchBaseInputOperatorTest
     inputOperator.emitTuples();
     inputOperator.endWindow();
 
-    Assert.assertEquals("tuples in couchbase", 100, sink.collectedTuples.size());
+    Assert.assertEquals("tuples in couchbase", 10, sink.collectedTuples.size());
+    store.disconnect();
+    teardown();
   }
 
   @Test
@@ -96,32 +191,24 @@ public class CouchBaseInputOperatorTest
     store.setBucket(bucket);
     store.setPassword(password);
     store.setUriString(uri);
-    try {
-      store.connect();
-    }
-    catch (IOException ex) {
-      DTThrowable.rethrow(ex);
-    }
-
     store.getInstance().flush();
-     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
+    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
     List<Partition<AbstractCouchBaseInputOperator<String>>> partitions = Lists.newArrayList();
-    TestInputOperator inputOperator = new TestInputOperator();
+    inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
     inputOperator.insertEventsInTable(100);
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
-    inputOperator.outputPort.setSink(sink);
     partitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<String>>(inputOperator));
     Collection<Partition<AbstractCouchBaseInputOperator<String>>> newPartitions = inputOperator.definePartitions(partitions, 1);
     Assert.assertEquals(2, newPartitions.size());
-     for (Partition<AbstractCouchBaseInputOperator<String>> p : newPartitions) {
+    for (Partition<AbstractCouchBaseInputOperator<String>> p: newPartitions) {
       Assert.assertNotSame(inputOperator, p.getPartitionedInstance());
-     }
-      /* Collect all operators in a list */
+    }
+    /* Collect all operators in a list */
     List<AbstractCouchBaseInputOperator<String>> opers = Lists.newArrayList();
-    for (Partition<AbstractCouchBaseInputOperator<String>> p : newPartitions) {
+    for (Partition<AbstractCouchBaseInputOperator<String>> p: newPartitions) {
       TestInputOperator oi = (TestInputOperator)p.getPartitionedInstance();
       oi.setStore(store);
       oi.setup(null);
@@ -131,8 +218,8 @@ public class CouchBaseInputOperatorTest
 
     sink.clear();
     int wid = 0;
-    for(int i = 0; i < 10; i++) {
-      for(AbstractCouchBaseInputOperator<String> o : opers) {
+    for (int i = 0; i < 10; i++) {
+      for (AbstractCouchBaseInputOperator<String> o: opers) {
         o.beginWindow(wid);
         o.emitTuples();
         o.endWindow();
@@ -140,8 +227,7 @@ public class CouchBaseInputOperatorTest
       wid++;
     }
     Assert.assertEquals("Tuples read should be same ", 100, sink.collectedTuples.size());
-    }
-
+  }
 
   public static class TestInputOperator extends AbstractCouchBaseInputOperator<String>
   {
@@ -151,6 +237,7 @@ public class CouchBaseInputOperatorTest
     public String getTuple(Object entry)
     {
       String tuple = entry.toString();
+      logger.debug("returned tuple is {}" , tuple);
       return tuple;
     }
 
@@ -164,13 +251,13 @@ public class CouchBaseInputOperatorTest
     {
       String key = null;
       Integer value = null;
-      logger.info("number of events is" + numEvents);
+      logger.debug("number of events is {}" , numEvents);
       for (int i = 0; i < numEvents; i++) {
         key = String.valueOf("Key" + i * 10);
         keyList.add(key);
         value = i * 100;
         try {
-          store.client.set(key, value).get();
+          client.set(key, value).get();
         }
         catch (InterruptedException ex) {
           DTThrowable.rethrow(ex);
@@ -179,9 +266,9 @@ public class CouchBaseInputOperatorTest
           DTThrowable.rethrow(ex);
         }
       }
+
     }
 
   }
 
 }
-

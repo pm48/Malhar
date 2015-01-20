@@ -92,7 +92,6 @@ public class CouchBaseStore implements Connectable
   protected transient CouchbaseClient client;
   @Min(1)
   protected Integer queueSize = 100;
-  protected boolean splitURIString;
 
   public Integer getQueueSize()
   {
@@ -144,6 +143,8 @@ public class CouchBaseStore implements Connectable
     this.maxTuples = maxTuples;
   }
 
+
+
   public int getShutdownTimeout()
   {
     return shutdownTimeout;
@@ -161,7 +162,9 @@ public class CouchBaseStore implements Connectable
     client = null;
     password = "";
     bucket = "default";
-    splitURIString = false;
+    userConfig = "Administrator";
+    password = "password";
+
   }
 
   public CouchbaseClient getInstance()
@@ -186,7 +189,6 @@ public class CouchBaseStore implements Connectable
 
   public void setUriString(String uriString)
   {
-    logger.info("In setter method of URI");
     this.uriString = uriString;
   }
 
@@ -201,8 +203,6 @@ public class CouchBaseStore implements Connectable
     this.configurationProvider = new ConfigurationProviderHTTP(baseURIs, userConfig, passwordConfig);
     Bucket configBucket = this.configurationProvider.getBucketConfiguration(bucket);
     Config conf = configBucket.getConfig();
-    //List<InetSocketAddress> addrs=AddrUtil.getAddressesFromURL(cfb.getVBucketConfig().getCouchServers());
-    //logger.info("configuration is" + conf);
     try {
       disconnect();
     }
@@ -217,7 +217,7 @@ public class CouchBaseStore implements Connectable
   {
     String[] tokens = uriString.split(",");
     URI uri = null;
-    for (String url: tokens) {
+    for (String url : tokens) {
       try {
         uri = new URI("http", url, "/pools", null, null);
       }
@@ -234,10 +234,11 @@ public class CouchBaseStore implements Connectable
       //client = new CouchbaseClient(baseURIs, "default", "");
     }
     catch (IOException e) {
-      logger.error("Error connecting to Couchbase: " + e.getMessage());
+      logger.error("Error connecting to Couchbase: {}" , e.getMessage());
       DTThrowable.rethrow(e);
     }
   }
+
 
   @Override
   public boolean isConnected()
@@ -253,5 +254,5 @@ public class CouchBaseStore implements Connectable
     client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
   }
 
-}
 
+}
