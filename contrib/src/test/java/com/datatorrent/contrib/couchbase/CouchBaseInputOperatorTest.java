@@ -56,6 +56,7 @@ public class CouchBaseInputOperatorTest
   private static int OPERATOR_ID = 0;
   protected static ArrayList<URI> nodes = new ArrayList<URI>();
   protected static ArrayList<String> keyList;
+  //Used for testing couchbase with partitions.
   private static String uri = "127.0.0.1:8091";
   private CouchbaseMock mockCouchbase = null;
   private TestInputOperator inputOperator = null;
