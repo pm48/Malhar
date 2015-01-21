@@ -48,11 +48,12 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
   public void populateDAG(DAG dag, Configuration conf)
   {
     HiveStore store = new HiveStore();
-    store.setDbUrl(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl"));
-    store.setConnectionProperties(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties"));
-    store.setFilepath(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath"));
+    store.setDbUrl(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.store.dbUrl"));
+    store.setConnectionProperties(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.store.connectionProperties"));
+    store.setFilepath(conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.store.filepath"));
+
     try {
-      hiveInitializeDatabase(store,conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename"));
+      hiveInitializeDatabase(store,conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.tablename"));
     }
     catch (SQLException ex) {
      LOG.debug(ex.getMessage());
@@ -63,8 +64,8 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     RandomWordGenerator wordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
     FSRollingOutputOperator<String> rollingFsWriter = dag.addOperator("RollingFsWriter", new FSRollingOutputOperator<String>());
-
-    HiveOperator<String> hiveInsert = dag.addOperator("HiveOperator",new HiveOperator<String>());
+    rollingFsWriter.setFilePath(store.filepath);
+    HiveOperator hiveInsert = dag.addOperator("HiveOperator",new HiveOperator());
     hiveInsert.setStore(store);
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
     hivePartitionColumns.add("dt");

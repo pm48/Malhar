@@ -49,7 +49,7 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   private static final int MAX_LENGTH = 66060288;
   private static final Logger logger = LoggerFactory.getLogger(FSRollingOutputOperator.class);
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
-  protected String partition;
+  //protected String partition;
   protected long committedWindowId = Stateless.WINDOW_ID;
   private boolean isEmptyWindow;
   private int countEmptyWindow;
@@ -100,26 +100,12 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
     }
   }
 
-  /*
-   * This method is used for testing purposes.
-   */
-  public boolean isHDFSLocation()
-  {
-    if ((fs instanceof LocalFileSystem) || (fs instanceof RawLocalFileSystem)) {
-      return false;
-    }
-    else if (fs.getScheme().equalsIgnoreCase("hdfs")) {
-      return true;
-    }
-    throw new UnsupportedOperationException("This operation is not supported");
-  }
-
   @Override
   public void setup(OperatorContext context)
   {
-    super.setup(context);
     outputFileName = File.separator + context.getId() + "-" + "transactions.out.part";
     isEmptyWindow = true;
+    super.setup(context);
   }
 
   @Override
@@ -139,14 +125,14 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   protected void rotateHook(String finishedFile)
   {
     mapFilenames.put(finishedFile, windowIDOfCompletedPart);
-    String[] partitions = finishedFile.split("/");
+   /* String[] partitions = finishedFile.split("/");
 
     for (int i = 0; i < partitions.length - 1; i++) {
       logger.info("partitions are {}", partitions[i]);
     }
 
     partition = partitions[1].replace("\"", "'");
-    finishedFile = partition.concat(finishedFile);
+    finishedFile = partition.concat(finishedFile);*/
     logger.info("finishedFile is {}",finishedFile);
   }
 
@@ -156,8 +142,9 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   @Override
   protected String getFileName(T tuple)
   {
-    String temp = partition.replace("'", "\"");
-    String output = File.separator + temp + outputFileName;
+    //String temp = partition.replace("'", "\"");
+    //String output = File.separator + temp + outputFileName;
+    String output = File.separator + outputFileName;
     return output;
   }
 

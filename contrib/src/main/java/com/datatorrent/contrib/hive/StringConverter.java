@@ -20,6 +20,6 @@ public class StringConverter extends Converter<String,String>
   @Override
   public String getTuple(String tuple)
   {
-    return tuple + "/n";
+    return tuple + "\n";
   }
 }
