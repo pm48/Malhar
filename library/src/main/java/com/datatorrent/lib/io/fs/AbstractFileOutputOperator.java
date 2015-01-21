@@ -168,6 +168,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
    * This is the operator context passed at setup.
    */
   private transient OperatorContext context;
+  
 
   /**
    * Last time stamp collected.
