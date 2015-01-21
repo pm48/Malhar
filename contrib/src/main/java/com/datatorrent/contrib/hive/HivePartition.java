@@ -16,10 +16,10 @@
 package com.datatorrent.contrib.hive;
 
 
-public class HivePartition implements HivePartitionInterface<Object>
+public  class HivePartition implements HivePartitionInterface<Object>
 {
   @Override
-  public String getHivePartition(Object tuple)
+  public  String getHivePartition(Object tuple)
   {
     return tuple.toString();
   }

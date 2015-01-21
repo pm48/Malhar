@@ -8,52 +8,52 @@
     <description>Root DbUrl.</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.filepath</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.store.filepath</name>
     <value>file:///user/hive</value>
     <description>Filepath</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.maxWindowsWithNoData</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.maxWindowsWithNoData</name>
     <value>100</value>
     <description>Max windows with no data</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.numPartions</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.numPartions</name>
     <value>3</value>
     <description>Partitions in Insert Operator</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveMapInsertOperator.numPartions</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.numPartions</name>
     <value>3</value>
     <description>Partitions in Map Insert Operator</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.tablename</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.tablename</name>
     <value>temp</value>
     <description>tablename for insert string</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.hdfsOp.filePermission</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.RollingFsWriter.filePermission</name>
     <value>0777</value>
     <description>Permission</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.hdfsOp.maxLength</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.RollingFsWriter.maxLength</name>
     <value>100</value>
     <description>Max Length</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.connectionProperties</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.store.connectionProperties</name>
     <value>user:hive,password:""</value>
     <description>The connection properties for the database.</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.filepath</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.store.filepath</name>
     <value>/user/hive</value>
     <description>Filepath</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.maxWindowsWithNoData</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.maxWindowsWithNoData</name>
     <value>100</value>
     <description>Max Windows with no data</description>
   </property>
@@ -63,32 +63,32 @@
     <description>tablename for insert map</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveInsertOperator.store.dbUrl</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
     <description>Test database connector string.</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.delimiter</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.delimiter</name>
     <value>:</value>
     <description>Delimiter for map</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.dbUrl</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
     <description>Test database connector string.</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.hdfsOp.filePermission</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.hdfsOp.filePermission</name>
     <value>0777</value>
     <description>Permission</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.store.connectionProperties</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.store.connectionProperties</name>
     <value>user:hive,password:""</value>
     <description>Test database connector string.</description>
   </property>
   <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveMapInsertOperator.hdfsOp.maxLength</name>
+    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.RollingFsWriter.maxLength</name>
     <value>100</value>
     <description>Max Length</description>
   </property>

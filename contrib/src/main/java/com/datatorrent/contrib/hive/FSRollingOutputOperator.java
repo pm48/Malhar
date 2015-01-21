@@ -45,6 +45,7 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   private transient String outputFileName;
   protected MutableInt partNumber;
   protected HashMap<String, Long> mapFilenames = new HashMap<String, Long>();
+  protected HashMap<String, String> mapPartition = new HashMap<String, String>();
   // Hdfs block size which can be set as a property by user.
   private static final int MAX_LENGTH = 66060288;
   private static final Logger logger = LoggerFactory.getLogger(FSRollingOutputOperator.class);
@@ -53,6 +54,7 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   protected long committedWindowId = Stateless.WINDOW_ID;
   private boolean isEmptyWindow;
   private int countEmptyWindow;
+  private String partition;
   //This variable is user configurable.
   @Min(0)
   private transient long maxWindowsWithNoData = 100;
@@ -125,15 +127,7 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   protected void rotateHook(String finishedFile)
   {
     mapFilenames.put(finishedFile, windowIDOfCompletedPart);
-   /* String[] partitions = finishedFile.split("/");
-
-    for (int i = 0; i < partitions.length - 1; i++) {
-      logger.info("partitions are {}", partitions[i]);
-    }
-
-    partition = partitions[1].replace("\"", "'");
-    finishedFile = partition.concat(finishedFile);*/
-    logger.info("finishedFile is {}",finishedFile);
+    logger.info("finishedFile is {}", finishedFile);
   }
 
   /*
@@ -142,9 +136,15 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   @Override
   protected String getFileName(T tuple)
   {
-    //String temp = partition.replace("'", "\"");
-    //String output = File.separator + temp + outputFileName;
-    String output = File.separator + outputFileName;
+    HivePartition hivePartition = new HivePartition();
+    partition = hivePartition.getHivePartition(tuple);
+    String output = null;
+    if (partition != null) {
+      output = File.separator + partition + outputFileName;
+    }
+    else {
+      output = outputFileName;
+    }
     return output;
   }
 
@@ -173,22 +173,18 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
       String fileMoved = iter.next();
       long window = mapFilenames.get(fileMoved);
       logger.info("file to be moved is {}", fileMoved);
+      String[] output = fileMoved.split("/");
+      if(output.length > 1)
+        mapPartition.put(output[2], output[1]);
+      else
+        mapPartition.put(output[1], null);
+      logger.info("partition is" + output[1]);
+      logger.info("file is" + output[2]);
       logger.info("window is {}", window);
       if (committedWindowId >= window) {
-      //  try {
-        //logger.info("path in committed window is {}" , store.getOperatorpath() + fileMoved);
-          /*
-         * Check if file was not moved to hive because of operator crash or any other failure.
-         * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
-         */
-        //  if (fs.exists(new Path(store.getOperatorpath() + fileMoved))) {
-        outputPort.emit(fileMoved);
-        //  }
-        //  }
-      /*  catch (IOException ex) {
-         logger.debug(ex.getMessage());
-         }*/
+        outputPort.emit(mapPartition);
         iter.remove();
+        mapPartition.clear();
       }
 
     }
@@ -197,7 +193,7 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   /**
    * The output port that will emit tuple into DAG.
    */
-  public final transient DefaultOutputPort<String> outputPort = new DefaultOutputPort<String>();
+  public final transient DefaultOutputPort<HashMap<String,String>> outputPort = new DefaultOutputPort<HashMap<String,String>>();
 
 
   /*

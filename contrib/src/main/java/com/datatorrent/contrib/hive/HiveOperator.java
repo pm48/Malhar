@@ -42,9 +42,8 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
  * Hive operator which can insert data in txt format in tables/partitions from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public class HiveOperator extends AbstractStoreOutputOperator<String, HiveStore> implements Partitioner<HiveOperator>
+public class HiveOperator extends AbstractStoreOutputOperator<Map<String, String>, HiveStore> implements Partitioner<HiveOperator>
 {
-  protected boolean isHivePartitioned = true;
   @Min(1)
   protected int numPartitions = 2;
   //This Property is user configurable.
@@ -58,7 +57,6 @@ public class HiveOperator extends AbstractStoreOutputOperator<String, HiveStore>
   public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
   {
     this.hivePartitionColumns = hivePartitionColumns;
-    this.isHivePartitioned = true;
   }
 
   protected String partition;
@@ -138,18 +136,19 @@ public class HiveOperator extends AbstractStoreOutputOperator<String, HiveStore>
    * This can be overridden by user for multiple partition columns.
    * Giving an implementation for one partition column.
    *
-   * @param tuple incoming tuple
+   * @param tuple incoming tuple which has filename and hive partition.
    */
   @Override
-  public void processTuple(String tuple)
+  public void processTuple(Map<String, String> tuple)
   {
-    if (isHivePartitioned) {
-      HivePartition hivePartition = new HivePartition();
-      partition = hivePartition.getHivePartition(tuple);
-      partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
-    }
-    logger.info("file string path is" + tuple);
-    processHiveFile(tuple);
+    logger.info("file string path is" + tuple.toString());
+    //Object[] input = tuple.entrySet().toArray();
+    //String fileMoved = input[0].toString();
+    String fileMoved = tuple.toString().split("=")[0].substring(1);
+    partition = tuple.get(fileMoved);
+    logger.info("partition is" + partition);
+    processHiveFile(fileMoved);
+
   }
 
   @Override
@@ -170,7 +169,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<String, HiveStore>
   public void processHiveFile(String fileMoved)
   {
     logger.info("processing {} file", fileMoved);
-    String command = getInsertCommand(store.getOperatorpath() + fileMoved);
+    String command = getInsertCommand(fileMoved);
     Statement stmt;
     try {
       stmt = store.getConnection().createStatement();
@@ -191,16 +190,19 @@ public class HiveOperator extends AbstractStoreOutputOperator<String, HiveStore>
   protected String getInsertCommand(String filepath)
   {
     String command;
-    if (isHivePartitioned) {
-    //  if (!hdfsOp.isHDFSLocation()) {
+    if (partition != null) {
+      filepath = store.getOperatorpath() + "/" + partition + "/" + filepath;
+      partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
+      //  if (!hdfsOp.isHDFSLocation()) {
       //    command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
       //  }
       //  else {
-      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
+      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partition + " )";
       //  }
     }
     else {
-     // if (!hdfsOp.isHDFSLocation()) {
+      filepath = store.getOperatorpath() + "/" + filepath;
+      // if (!hdfsOp.isHDFSLocation()) {
       //   command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
       // }
       // else {
@@ -211,7 +213,5 @@ public class HiveOperator extends AbstractStoreOutputOperator<String, HiveStore>
     return command;
 
   }
-
-
 
 }

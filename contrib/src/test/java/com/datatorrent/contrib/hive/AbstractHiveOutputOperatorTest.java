@@ -206,15 +206,18 @@ public class AbstractHiveOutputOperatorTest
 
     fsRolling.setup(context);
     hiveOperator.setup(context);
-
+    HashMap<String,String> hmap = new HashMap<String, String>();
+    int j=0;
     for (int wid = 0, total = 0;
             wid < NUM_WINDOWS;
             wid++) {
       fsRolling.beginWindow(wid);
-      if (wid == 5) {
+      if (wid == 6 || wid == 7) {
         fsRolling.committed(wid - 2);
-        hiveOperator.processTuple("/0-transactions.out.part.0");
-        hiveOperator.processTuple("/0-transactions.out.part.1");
+        hmap.put("0-transactions.out.part." + j, "111");
+        hiveOperator.processTuple(hmap);
+        j++;
+        hmap.clear();
       }
       for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
@@ -306,12 +309,15 @@ public class AbstractHiveOutputOperatorTest
   @Test
   public void testHivePartitions() throws SQLException
   {
+    ArrayList<String> hivePartitionColumns = new ArrayList<String>();
+    hivePartitionColumns.add("dt");
     HiveOperator hiveOperator = new HiveOperator();
     FSRollingOutputOperator<String> fsRolling = new FSRollingOutputOperator<String>();
 
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
+    hiveOperator.setHivePartitionColumns(hivePartitionColumns);
     //RandomWordGenerator randomGenerator = new RandomWordGenerator();
     hiveOperator.setStore(hiveStore);
     hiveOperator.setTablename(tablename);
@@ -352,6 +358,7 @@ public class AbstractHiveOutputOperatorTest
     int wid = 0;
     int j=0;
     int total =0;
+    HashMap<String,String> hmap = new HashMap<String, String>();
     for (int i = 0; i < 10; i++) {
       fsRolling.beginWindow(wid);
       for (int tupleCounter = 0;
@@ -360,17 +367,19 @@ public class AbstractHiveOutputOperatorTest
         fsRolling.input.put(111 + "");
       }
       for (HiveOperator o: opers) {
-        o.beginWindow(wid);
-        o.input.put("111");
+        //o.beginWindow(wid);
           if (wid == 5) {
-        fsRolling.committed(wid - 2);
-        o.processTuple("/0-transactions.out.part." + j);
+        fsRolling.committed(wid - 1);
+        hmap.put("/0-transactions.out.part."+j, "111");
+        o.processTuple(hmap);
         j++;
+        hmap.clear();
       }
-        o.endWindow();
+       // o.endWindow();
       }
       wid++;
     }
+    fsRolling.endWindow();
 
     for (HiveOperator o: opers)
       o.teardown();
@@ -390,41 +399,58 @@ public class AbstractHiveOutputOperatorTest
                         databaseSize);
   }
 
- /* @Test
+   @Test
   public void testHDFSHiveCheckpoint() throws SQLException
   {
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
-//    HiveInsertOperator<String> outputOperator = new HiveInsertOperator<String>();
-//    HiveInsertOperator<String> newOp = new HiveInsertOperator<String>();
+     HiveOperator outputOperator = new HiveOperator();
+    HiveOperator newOp = new HiveOperator();
 
     outputOperator.setStore(hiveStore);
-    outputOperator.hdfsOp.setFilePermission(0777);
-    outputOperator.hdfsOp.setMaxLength(128);
+    ArrayList<String> hivePartitionColumns = new ArrayList<String>();
+    hivePartitionColumns.add("dt");
+    FSRollingOutputOperator<String> fsRolling = new FSRollingOutputOperator<String>();
+
+    hiveInitializeDatabase(createStore(null));
+    outputOperator.setHivePartitionColumns(hivePartitionColumns);
+    //RandomWordGenerator randomGenerator = new RandomWordGenerator();
+    outputOperator.setStore(hiveStore);
     outputOperator.setTablename(tablename);
+   fsRolling.setFilePath(testMeta.getDir()+"/" + APP_ID + "/" + OPERATOR_ID);
+    fsRolling.setFilePermission(0777);
+    fsRolling.setMaxLength(128);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
+
+    fsRolling.setup(context);
+     HashMap<String,String> hmap = new HashMap<String, String>();
     outputOperator.setup(context);
     for (int wid = 0, total = 0;
             wid < 10;
             wid++) {
-      outputOperator.beginWindow(wid);
-      if (wid == 4) {
-        outputOperator.committed(wid - 1);
+      fsRolling.beginWindow(wid);
+      if (wid == 6) {
+        fsRolling.committed(wid-1);
+        hmap.put("/0-transactions.out.part.0", "111");
+        hmap.put("/0-transactions.out.part.1", "112");
+        hmap.put("/0-transactions.out.part.2", "113");
+       outputOperator.processTuple(hmap);
+       hmap.clear();
       }
       for (int tupleCounter = 0;
               tupleCounter < 10 && total < 100;
               tupleCounter++, total++) {
-        outputOperator.processTuple(111 + "");
+        fsRolling.input.process(123 + "");
       }
 
       if (wid == 5) {
         Kryo kryo = new Kryo();
-        FieldSerializer<HiveInsertOperator> f1 = (FieldSerializer<HiveInsertOperator>)kryo.getSerializer(HiveInsertOperator.class);
+        FieldSerializer<HiveOperator> f1 = (FieldSerializer<HiveOperator>)kryo.getSerializer(HiveOperator.class);
         FieldSerializer<FSRollingOutputOperator> f2 = (FieldSerializer<FSRollingOutputOperator>)kryo.getSerializer(FSRollingOutputOperator.class);
         FieldSerializer<HiveStore> f3 = (FieldSerializer<HiveStore>)kryo.getSerializer(HiveStore.class);
 
@@ -432,9 +458,6 @@ public class AbstractHiveOutputOperatorTest
         f2.setCopyTransient(false);
         f3.setCopyTransient(false);
         newOp = kryo.copy(outputOperator);
-        //newOp.setStore(hiveStore);
-        //newOp.hdfsOp.setFilePermission(0777);
-        //newOp.setTablename(tablename);
       }
 
       if (wid == 7) {
@@ -442,9 +465,10 @@ public class AbstractHiveOutputOperatorTest
         newOp.setup(context);
 
         newOp.beginWindow(5);
-        for (int i = 271; i < 300; i++) {
-          newOp.processTuple(111 + "");
-        }
+        hmap.put("/0-transactions.out.part.3", "114");
+
+          newOp.processTuple(hmap);
+
         newOp.endWindow();
         newOp.teardown();
         break;
@@ -462,7 +486,7 @@ public class AbstractHiveOutputOperatorTest
     databaseSize = resultSet.getInt(1);
     LOG.info("database size is {}" , databaseSize);
     Assert.assertEquals("Numer of tuples in database",
-                        33,
+                        44,
                         databaseSize);
   }
 

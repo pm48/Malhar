@@ -67,7 +67,7 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     RandomMapOutput mapGenerator = dag.addOperator("MapGenerator", RandomMapOutput.class);
     dag.setAttribute(eventGenerator, PortContext.QUEUE_CAPACITY, 10000);
     dag.setAttribute(mapGenerator, PortContext.QUEUE_CAPACITY, 10000);
-    HiveOperator<String> hiveInsert = dag.addOperator("HiveOperator",new HiveOperator<String>());
+    HiveOperator hiveInsert = dag.addOperator("HiveOperator",new HiveOperator());
     FSRollingOutputOperator<Map> rollingFsWriter = dag.addOperator("RollingFsWriter", new FSRollingOutputOperator<Map>());
 
     hiveInsert.setStore(store);
