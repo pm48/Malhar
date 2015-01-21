@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import javax.validation.constraints.Min;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,39 +40,26 @@ import org.slf4j.LoggerFactory;
  * An implementation of FS Writer that writes text files to hdfs which are inserted
  * into hive on committed window callback.
  */
-public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements CheckpointListener
+public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements CheckpointListener
 {
   private transient String outputFileName;
   protected MutableInt partNumber;
-  protected HashMap<String, Long> mapFilenames = new HashMap<String, Long>();;
-  //protected AbstractHiveHDFS<T> hive;
+  protected HashMap<String, Long> mapFilenames = new HashMap<String, Long>();
   // Hdfs block size which can be set as a property by user.
   private static final int MAX_LENGTH = 66060288;
-  private static final Logger logger = LoggerFactory.getLogger(HDFSRollingOutputOperator.class);
+  private static final Logger logger = LoggerFactory.getLogger(FSRollingOutputOperator.class);
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
-  protected HashMap<String, String> mapFilePartition = new HashMap<String, String>();
   protected String partition;
   protected long committedWindowId = Stateless.WINDOW_ID;
   private boolean isEmptyWindow;
   private int countEmptyWindow;
-  protected HiveStore store;
-
-  public HiveStore getStore()
-  {
-    return store;
-  }
-
-  public void setStore(HiveStore store)
-  {
-    this.store = store;
-  }
-   //This variable is user configurable.
+  //This variable is user configurable.
   @Min(0)
   private transient long maxWindowsWithNoData = 100;
 
-  public HDFSRollingOutputOperator()
+  public FSRollingOutputOperator()
   {
-    countEmptyWindow =0;
+    countEmptyWindow = 0;
     setMaxLength(MAX_LENGTH);
   }
 
@@ -90,7 +75,7 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
                            partNumber.intValue());
   }
 
-    public long getMaxWindowsWithNoData()
+  public long getMaxWindowsWithNoData()
   {
     return maxWindowsWithNoData;
   }
@@ -109,21 +94,15 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
     if (countEmptyWindow >= maxWindowsWithNoData) {
       logger.debug("empty window count is max.");
       String lastFile = getHDFSRollingLastFile();
-      try {
-        logger.debug("path in end window is {}" , store.getOperatorpath() + "/" + lastFile);
-        if (fs.exists(new Path(store.getOperatorpath() + "/" + lastFile))) {
-          logger.debug("last file not moved");
-          rotateCall(lastFile);
-        }
-      }
-      catch (IOException ex) {
-        DTThrowable.rethrow(ex);
-      }
+      logger.debug("last file not moved");
+      rotateCall(lastFile);
       countEmptyWindow = 0;
     }
-      // hdfsOp.endWindow();
   }
 
+  /*
+   * This method is used for testing purposes.
+   */
   public boolean isHDFSLocation()
   {
     if ((fs instanceof LocalFileSystem) || (fs instanceof RawLocalFileSystem)) {
@@ -153,12 +132,12 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
    * To be implemented by the user, giving a default implementation for one partition column here.
    * Partitions array will get all hive partitions in it.
    * MapFilenames has mapping from completed file to windowId in which it got completed.
-   * MapFilePartition stores mapping from completed files to their corresponding hive partitions.
+   *
    */
+
   @Override
   protected void rotateHook(String finishedFile)
   {
-    //hive.mapFilenames.put(finishedFile, hive.windowIDOfCompletedPart);
     mapFilenames.put(finishedFile, windowIDOfCompletedPart);
     String[] partitions = finishedFile.split("/");
 
@@ -167,7 +146,8 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
     }
 
     partition = partitions[1].replace("\"", "'");
-    mapFilePartition.put(finishedFile, partition);
+    finishedFile = partition.concat(finishedFile);
+    logger.info("finishedFile is {}",finishedFile);
   }
 
   /*
@@ -184,15 +164,12 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
   /*
    * Implement this function according to tuple you want to pass in Hive.
    */
+  @Override
   protected byte[] getBytesForTuple(T tuple)
   {
-    String hiveTuple = getHiveTuple(tuple);
-    return hiveTuple.getBytes();
-  }
-
-  public String getHiveTuple(T tuple)
-  {
-    return tuple.toString() + "\n";
+    StringConverter converter = new StringConverter();
+    String output = converter.getTuple(tuple.toString());
+    return output.getBytes();
   }
 
   /*
@@ -211,22 +188,21 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
       logger.info("file to be moved is {}", fileMoved);
       logger.info("window is {}", window);
       if (committedWindowId >= window) {
-        try {
-          //logger.info("path in committed window is {}" , store.getOperatorpath() + fileMoved);
+      //  try {
+        //logger.info("path in committed window is {}" , store.getOperatorpath() + fileMoved);
           /*
-           * Check if file was not moved to hive because of operator crash or any other failure.
-           * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
-           */
-          if (fs.exists(new Path(store.getOperatorpath() + fileMoved))) {
-                 outputPort.emit(fileMoved);
-          }
-        }
-        catch (IOException ex) {
-          logger.debug(ex.getMessage());
-        }
+         * Check if file was not moved to hive because of operator crash or any other failure.
+         * When FSWriter comes back to the checkpointed state, it would check for this file and then move it to hive.
+         */
+        //  if (fs.exists(new Path(store.getOperatorpath() + fileMoved))) {
+        outputPort.emit(fileMoved);
+        //  }
+        //  }
+      /*  catch (IOException ex) {
+         logger.debug(ex.getMessage());
+         }*/
         iter.remove();
       }
-
 
     }
   }
@@ -244,7 +220,6 @@ public class HDFSRollingOutputOperator<T> extends AbstractFSWriter<T> implements
   public void checkpointed(long windowId)
   {
   }
-
 
   protected void rotateCall(String lastFile)
   {

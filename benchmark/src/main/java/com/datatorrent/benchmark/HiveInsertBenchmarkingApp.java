@@ -24,9 +24,7 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
-import com.datatorrent.contrib.hive.HDFSRollingOutputOperator;
-import com.datatorrent.contrib.hive.HiveInsertOperator;
-import com.datatorrent.contrib.hive.HiveStore;
+import com.datatorrent.contrib.hive.*;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -64,16 +62,19 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
     RandomWordGenerator wordGenerator = dag.addOperator("WordGenerator", RandomWordGenerator.class);
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
-    HDFSRollingOutputOperator<String> rollingFsWriter = dag.addOperator("RollingFsWriter", new HDFSRollingOutputOperator<String>());
-    rollingFsWriter.setStore(store);
-    HiveInsertOperator<String> hiveInsert = dag.addOperator("HiveInsertOperator",new HiveInsertOperator<String>());
+    FSRollingOutputOperator<String> rollingFsWriter = dag.addOperator("RollingFsWriter", new FSRollingOutputOperator<String>());
+
+    HiveOperator<String> hiveInsert = dag.addOperator("HiveOperator",new HiveOperator<String>());
+    hiveInsert.setStore(store);
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
     hivePartitionColumns.add("dt");
     hiveInsert.setHivePartitionColumns(hivePartitionColumns);
+
+    HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
+    HivePartition hivePartition = new HivePartition();
+    streamCodec.setHivePartition(hivePartition);
+    dag.setInputPortAttribute(rollingFsWriter.input, PortContext.STREAM_CODEC, streamCodec);
     dag.addStream("Generator2HDFS", wordGenerator.outputString, rollingFsWriter.input);
-   // HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
-   // streamCodec.setHiveOperator(hiveInsert);
-   // dag.setInputPortAttribute(hiveInsert.input, PortContext.STREAM_CODEC, streamCodec);
     dag.addStream("FsWriter2Hive", rollingFsWriter.outputPort, hiveInsert.input);
   }
 

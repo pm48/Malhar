@@ -31,18 +31,18 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
 {
   private static final long serialVersionUID = 201412121604L;
 
-  protected HiveInsertOperator<T> hiveOperator;
+  protected HivePartition hivePartition;
   private static final Logger logger = LoggerFactory.getLogger(HiveStreamCodec.class);
 
-  public void setHiveOperator(HiveInsertOperator<T> hiveOperator)
+  public void setHivePartition(HivePartition hivePartition)
   {
-    this.hiveOperator = hiveOperator;
+    this.hivePartition = hivePartition;
   }
 
   @Override
   public int getPartition(T o)
   {
-    return hiveOperator.getHivePartition(o).hashCode();
+    return hivePartition.getHivePartition(o).hashCode();
   }
 
   @Override
@@ -52,7 +52,7 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
     ByteArrayOutputStream os = new ByteArrayOutputStream();
     ObjectOutputStream obj = new ObjectOutputStream(os);
     Output output = new Output(obj);
-    kryo.writeClassAndObject(output, hiveOperator);
+    kryo.writeClassAndObject(output, hivePartition);
     byte[] outBytes = output.toBytes();
     out.writeInt(outBytes.length);
     out.write(outBytes, 0, outBytes.length);
@@ -70,7 +70,7 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
     logger.info("data is {}", hex);
     Input input = new Input(data);
     input.setBuffer(data);
-    hiveOperator = (HiveInsertOperator<T>)kryo.readClassAndObject(input);
+    hivePartition = (HivePartition)kryo.readClassAndObject(input);
   }
 
 }

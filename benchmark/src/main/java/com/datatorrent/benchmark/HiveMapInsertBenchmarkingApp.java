@@ -24,7 +24,8 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
-import com.datatorrent.contrib.hive.HiveMapInsertOperator;
+import com.datatorrent.contrib.hive.FSRollingOutputOperator;
+import com.datatorrent.contrib.hive.HiveOperator;
 import com.datatorrent.contrib.hive.HiveStore;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -66,12 +67,15 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     RandomMapOutput mapGenerator = dag.addOperator("MapGenerator", RandomMapOutput.class);
     dag.setAttribute(eventGenerator, PortContext.QUEUE_CAPACITY, 10000);
     dag.setAttribute(mapGenerator, PortContext.QUEUE_CAPACITY, 10000);
-    dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
-    HiveMapInsertOperator<Map<String,Object>> hiveMapInsert = dag.addOperator("HiveMapInsertOperator", new HiveMapInsertOperator<Map<String,Object>>());
+    HiveOperator<String> hiveInsert = dag.addOperator("HiveOperator",new HiveOperator<String>());
+    FSRollingOutputOperator<Map> rollingFsWriter = dag.addOperator("RollingFsWriter", new FSRollingOutputOperator<Map>());
+
+    hiveInsert.setStore(store);
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
     hivePartitionColumns.add("dt");
-    hiveMapInsert.setHivePartitionColumns(hivePartitionColumns);
-    dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveMapInsert.input);
+    hiveInsert.setHivePartitionColumns(hivePartitionColumns);
+   // dag.addStream("EventGenerator2Map", eventGenerator.integer_data, rollingFsWriter.input);
+   // dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveInsert.input);
   }
 
   /*
