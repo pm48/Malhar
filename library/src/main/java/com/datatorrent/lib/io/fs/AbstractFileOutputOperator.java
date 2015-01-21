@@ -84,9 +84,9 @@ import org.apache.hadoop.fs.permission.FsPermission;
  * @param <INPUT> This is the input tuple type.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public abstract class AbstractFSWriter<INPUT> extends BaseOperator
+public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
 {
-  private static final Logger LOG = LoggerFactory.getLogger(AbstractFSWriter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(AbstractFileOutputOperator.class);
 
   private static final String TMP_EXTENSION = ".tmp";
 
@@ -196,7 +196,7 @@ public abstract class AbstractFSWriter<INPUT> extends BaseOperator
     }
   };
 
-  public AbstractFSWriter()
+  public AbstractFileOutputOperator()
   {
     endOffsets = Maps.newHashMap();
     counts = Maps.newHashMap();
