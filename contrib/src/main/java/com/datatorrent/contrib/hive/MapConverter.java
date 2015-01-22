@@ -19,10 +19,16 @@ import java.util.Iterator;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 
-public class MapConverter extends Converter<Map<?,?>,String>
+public class MapConverter extends Converter<Map<String,Object>>
 {
   @NotNull
   public String delimiter;
+
+  public MapConverter()
+  {
+  }
+
+
 
   public String getDelimiter()
   {
@@ -36,13 +42,13 @@ public class MapConverter extends Converter<Map<?,?>,String>
 
   @SuppressWarnings("rawtypes")
   @Override
-  public String getTuple(Map tuple)
+  public String getTuple(Map<String,Object> tuple)
   {
-    Iterator keyIter = tuple.keySet().iterator();
+    Iterator<String> keyIter = tuple.keySet().iterator();
     StringBuilder writeToHive = new StringBuilder("");
 
     while (keyIter.hasNext()) {
-      Object key = keyIter.next();
+      String key = keyIter.next();
       Object obj = tuple.get(key);
       writeToHive.append(key).append(delimiter).append(obj).append("\n");
     }

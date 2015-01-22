@@ -65,6 +65,8 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(wordGenerator, PortContext.QUEUE_CAPACITY, 10000);
     FSRollingOutputOperator<String> rollingFsWriter = dag.addOperator("RollingFsWriter", new FSRollingOutputOperator<String>());
     rollingFsWriter.setFilePath(store.filepath);
+    rollingFsWriter.setFilePermission(0777);
+    rollingFsWriter.setConverter(new StringConverter());
     HiveOperator hiveInsert = dag.addOperator("HiveOperator",new HiveOperator());
     hiveInsert.setStore(store);
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();

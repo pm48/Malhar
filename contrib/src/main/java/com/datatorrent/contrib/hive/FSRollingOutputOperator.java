@@ -60,17 +60,19 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Min(0)
   private long maxWindowsWithNoData = 100;
   @NonNull
-  private Converter converter;
+  private Converter<T> converter;
 
-  public Converter getConverter()
+  public Converter<T> getConverter()
   {
     return converter;
   }
 
-  public void setConverter(Converter converter)
+  public void setConverter(Converter<T> converter)
   {
     this.converter = converter;
   }
+
+
 
   public FSRollingOutputOperator()
   {
@@ -121,6 +123,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     outputFileName = File.separator + context.getId() + "-" + "transactions.out.part";
     isEmptyWindow = true;
     super.setup(context);
+    converter = getConverter();
   }
 
   @Override
@@ -167,8 +170,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Override
   protected byte[] getBytesForTuple(T tuple)
   {
-    StringConverter converter = new StringConverter();
-    String output = converter.getTuple(tuple.toString());
+    String output = converter.getTuple(tuple);
     return output.getBytes();
   }
 

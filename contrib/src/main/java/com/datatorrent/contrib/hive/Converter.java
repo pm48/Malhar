@@ -15,7 +15,7 @@
  */
 package com.datatorrent.contrib.hive;
 
-public abstract class Converter<T1,T2>
+public abstract class Converter<T>
 {
-  public abstract T2 getTuple(T1 tuple);
+  public abstract String getTuple(T tuple);
 }

@@ -24,9 +24,7 @@ import com.datatorrent.api.Context.PortContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
-import com.datatorrent.contrib.hive.FSRollingOutputOperator;
-import com.datatorrent.contrib.hive.HiveOperator;
-import com.datatorrent.contrib.hive.HiveStore;
+import com.datatorrent.contrib.hive.*;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -68,14 +66,22 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     dag.setAttribute(eventGenerator, PortContext.QUEUE_CAPACITY, 10000);
     dag.setAttribute(mapGenerator, PortContext.QUEUE_CAPACITY, 10000);
     HiveOperator hiveInsert = dag.addOperator("HiveOperator",new HiveOperator());
-    FSRollingOutputOperator<Map> rollingFsWriter = dag.addOperator("RollingFsWriter", new FSRollingOutputOperator<Map>());
-
+    FSRollingOutputOperator<Map<String,Object>> rollingFsWriter = dag.addOperator("RollingFsWriter", new FSRollingOutputOperator<Map<String,Object>>());
+    rollingFsWriter.setConverter(new MapConverter());
+    rollingFsWriter.setFilePath(store.filepath);
     hiveInsert.setStore(store);
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
     hivePartitionColumns.add("dt");
     hiveInsert.setHivePartitionColumns(hivePartitionColumns);
-   // dag.addStream("EventGenerator2Map", eventGenerator.integer_data, rollingFsWriter.input);
-   // dag.addStream("MapGenerator2HiveOutput", mapGenerator.map_data, hiveInsert.input);
+
+    HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
+    HivePartition hivePartition = new HivePartition();
+    streamCodec.setHivePartition(hivePartition);
+    hiveInsert.setStore(store);
+    dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
+    dag.addStream("MapGenerator2HdfsOutput", mapGenerator.map_data, rollingFsWriter.input);
+    dag.addStream("FsWriter2Hive", rollingFsWriter.outputPort, hiveInsert.input);
+
   }
 
   /*

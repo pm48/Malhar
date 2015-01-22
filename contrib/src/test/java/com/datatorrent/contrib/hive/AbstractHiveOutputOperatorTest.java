@@ -79,12 +79,12 @@ public class AbstractHiveOutputOperatorTest
       new File(getDir()).mkdir();
     }
 
-  /*  @Override
+    @Override
     protected void finished(Description description)
     {
       super.finished(description);
       FileUtils.deleteQuietly(new File(getDir()));
-    }*/
+    }
 
   }
 
@@ -169,7 +169,7 @@ public class AbstractHiveOutputOperatorTest
 
     stmt.execute("drop table " + tablemap);
     //stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemeta + " (dt_window bigint,dt_app_id String,dt_operator_id int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n' stored as TEXTFILE");
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemap + " (col1 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemap + " (col1 map<string,int>) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "MAP KEYS TERMINATED BY '" + delimiterMap + "' \n"
             + "STORED AS TEXTFILE ");
     /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
@@ -206,6 +206,7 @@ public class AbstractHiveOutputOperatorTest
 
     fsRolling.setup(context);
     hiveOperator.setup(context);
+    fsRolling.setConverter(new StringConverter());
     HashMap<String,String> hmap = new HashMap<String, String>();
     int j=0;
     for (int wid = 0, total = 0;
@@ -249,11 +250,14 @@ public class AbstractHiveOutputOperatorTest
   public void testHiveInsertMapOperator() throws SQLException
   {
     HiveOperator hiveOperator = new HiveOperator();
+    ArrayList<String> hivePartitionColumns = new ArrayList<String>();
+    hivePartitionColumns.add("dt");
+    hiveOperator.setHivePartitionColumns(hivePartitionColumns);
 
     hiveInitializeMapDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
-    FSRollingOutputOperator<Map<String,Integer>> fsRolling = new FSRollingOutputOperator<Map<String,Integer>>();
+    FSRollingOutputOperator<Map<String,Object>> fsRolling = new FSRollingOutputOperator<Map<String,Object>>();
     hiveOperator.setStore(hiveStore);
     fsRolling.setFilePath(testMeta.getDir()+"/" + APP_ID + "/" + OPERATOR_ID);
     fsRolling.setFilePermission(0777);
@@ -266,25 +270,33 @@ public class AbstractHiveOutputOperatorTest
 
     fsRolling.setup(context);
     hiveOperator.setup(context);
-
+    MapConverter converter = new MapConverter();
+    converter.setDelimiter(":");
+    fsRolling.setConverter(converter);
     hiveOperator.setTablename(tablemap);
     //fsRolling.setDelimiter(":");
-    HashMap<String, Integer> map = new HashMap<String, Integer>();
+    HashMap<String, Object> map = new HashMap<String, Object>();
+    HashMap<String, String> hmap = new HashMap<String, String>();
     for (int wid = 0;
             wid < NUM_WINDOWS;
             wid++) {
       fsRolling.beginWindow(wid);
-      if (wid == 5) {
-        fsRolling.committed(wid - 2);
-      }
-
-      for (int tupleCounter = 0;
+       for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE;
               tupleCounter++) {
         map.put(111 + "", 111);
         fsRolling.input.put(map);
         map.clear();
       }
+      int j=0;
+      if (wid == 6 || wid == 7) {
+        fsRolling.committed(wid - 2);
+        hmap.put("0-transactions.out.part." + j, "111");
+        hiveOperator.processTuple(hmap);
+        j++;
+        hmap.clear();
+      }
+
       fsRolling.endWindow();
     }
 
@@ -302,7 +314,7 @@ public class AbstractHiveOutputOperatorTest
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
-                        34,
+                        17,
                         databaseSize);
   }
 
@@ -313,7 +325,7 @@ public class AbstractHiveOutputOperatorTest
     hivePartitionColumns.add("dt");
     HiveOperator hiveOperator = new HiveOperator();
     FSRollingOutputOperator<String> fsRolling = new FSRollingOutputOperator<String>();
-
+    fsRolling.setConverter(new StringConverter());
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
@@ -413,7 +425,7 @@ public class AbstractHiveOutputOperatorTest
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
     hivePartitionColumns.add("dt");
     FSRollingOutputOperator<String> fsRolling = new FSRollingOutputOperator<String>();
-
+    fsRolling.setConverter(new StringConverter());
     hiveInitializeDatabase(createStore(null));
     outputOperator.setHivePartitionColumns(hivePartitionColumns);
     //RandomWordGenerator randomGenerator = new RandomWordGenerator();
@@ -429,7 +441,7 @@ public class AbstractHiveOutputOperatorTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     fsRolling.setup(context);
-     HashMap<String,String> hmap = new HashMap<String, String>();
+    HashMap<String,String> hmap = new HashMap<String, String>();
     outputOperator.setup(context);
     for (int wid = 0, total = 0;
             wid < 10;
