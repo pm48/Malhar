@@ -98,20 +98,12 @@ public class RandomWordGenerator implements InputOperator
       for (;
               tupleCounter < tuplesPerWindow;
               tupleCounter++) {
-      String output = "2014-12-1" + random.nextInt(100);
+      String output = random.nextInt(100)+"";
       outputString.emit(output);
     }
-
-    for(;
-        tupleCounter < tuplesPerWindow;
-        tupleCounter++)
-    {
-      byte[] bytes = new byte[tupleSize];
-      random.nextBytes(bytes);
-      output.emit(bytes);
     }
   }
-  }
+
   @Override
   public void endWindow()
   {

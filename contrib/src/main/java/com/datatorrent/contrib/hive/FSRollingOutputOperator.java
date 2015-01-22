@@ -20,7 +20,7 @@ import java.util.Iterator;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 
-import com.datatorrent.lib.io.fs.AbstractFSWriter;
+import com.datatorrent.lib.io.fs.AbstractFileOutputOperator;
 
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DefaultOutputPort;
@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
  * An implementation of FS Writer that writes text files to hdfs which are inserted
  * into hive on committed window callback.
  */
-public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements CheckpointListener
+public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> implements CheckpointListener
 {
   private transient String outputFileName;
   protected MutableInt partNumber;
@@ -127,7 +127,7 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   protected void rotateHook(String finishedFile)
   {
     mapFilenames.put(finishedFile, windowIDOfCompletedPart);
-    logger.info("finishedFile is {}", finishedFile);
+    logger.debug("finishedFile is {}", finishedFile);
   }
 
   /*
@@ -172,15 +172,15 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
     while (iter.hasNext()) {
       String fileMoved = iter.next();
       long window = mapFilenames.get(fileMoved);
-      logger.info("file to be moved is {}", fileMoved);
       String[] output = fileMoved.split("/");
-      if(output.length > 1)
+      if (output.length > 1) {
         mapPartition.put(output[2], output[1]);
-      else
+      }
+      else {
         mapPartition.put(output[1], null);
-      logger.info("partition is" + output[1]);
-      logger.info("file is" + output[2]);
-      logger.info("window is {}", window);
+      }
+      logger.debug("partition is" + output[1]);
+      logger.debug("file is" + output[2]);
       if (committedWindowId >= window) {
         outputPort.emit(mapPartition);
         iter.remove();
@@ -193,7 +193,7 @@ public class FSRollingOutputOperator<T> extends AbstractFSWriter<T> implements C
   /**
    * The output port that will emit tuple into DAG.
    */
-  public final transient DefaultOutputPort<HashMap<String,String>> outputPort = new DefaultOutputPort<HashMap<String,String>>();
+  public final transient DefaultOutputPort<HashMap<String, String>> outputPort = new DefaultOutputPort<HashMap<String, String>>();
 
 
   /*

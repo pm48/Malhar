@@ -63,11 +63,8 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
   public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException
   {
     int size = in.readInt();
-    logger.info("size is" + size);
     byte[] data = new byte[size];
     in.readFully(data);
-    String hex = Hex.encodeHexString(data);
-    logger.info("data is {}", hex);
     Input input = new Input(data);
     input.setBuffer(data);
     hivePartition = (HivePartition)kryo.readClassAndObject(input);

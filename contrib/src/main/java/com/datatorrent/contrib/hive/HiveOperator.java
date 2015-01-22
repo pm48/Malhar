@@ -109,7 +109,6 @@ public class HiveOperator extends AbstractStoreOutputOperator<Map<String, String
   private static final Logger logger = LoggerFactory.getLogger(HiveOperator.class);
   private transient String appId;
   private transient int operatorId;
-  //protected HashMap<String, Long> mapFilenames;
 
   public long getMaxWindowsWithNoData()
   {

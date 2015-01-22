@@ -168,7 +168,6 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
    * This is the operator context passed at setup.
    */
   private transient OperatorContext context;
-  
 
   /**
    * Last time stamp collected.
@@ -323,7 +322,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
 
           //Get the end offset of the file.
 
-          LOG.info("opened: {}", fs.getFileStatus(lfilepath).getPath());
+          LOG.debug("opened: {}", fs.getFileStatus(lfilepath).getPath());
           return fsOutput;
         }
         catch (IOException e) {
@@ -352,7 +351,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
             FileStatus status = fs.getFileStatus(seenPartFilePath);
 
             if (status.getLen() != offset) {
-              LOG.info("file corrupted {} {} {}", seenFileNamePart, offset, status.getLen());
+              LOG.debug("file corrupted {} {} {}", seenFileNamePart, offset, status.getLen());
               byte[] buffer = new byte[COPY_BUFFER_SIZE];
 
               Path tmpFilePath = new Path(filePath + Path.SEPARATOR + seenFileNamePart + TMP_EXTENSION);
@@ -584,22 +583,6 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
   }
 
   /**
-   * This method will close a file.<br/>
-   *
-   * The child operator should not call this method on rolling files.
-   * @param fileName The name of the file to close and remove.
-   */
-  protected void closeFile(String fileName)
-  {
-    if (!endOffsets.containsKey(fileName)) {
-      throw new IllegalArgumentException("The file " + fileName + " was never opened.");
-    }
-
-    //triggers the RemoveListener#onRemoval() method.
-    streamsCache.invalidate(fileName);
-  }
-
-   /**
    * This method is used to force buffers to be flushed at the end of the window.
    * flush must be used on a local file system, so an if statement checks to
    * make sure that hflush is used on local file systems.

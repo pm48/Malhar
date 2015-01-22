@@ -21,7 +21,7 @@
   </property>
   <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.store.filepath</name>
-    <value>file:///user/hive</value>
+    <value>file:///user/hive2</value>
     <description>Filepath</description>
   </property>
   <property>
