@@ -52,7 +52,7 @@ public class AbstractHiveOutputOperatorTest
   public static final int NUM_WINDOWS = 10;
   public static final int BLAST_SIZE = 10;
   public static final int DATABASE_SIZE = NUM_WINDOWS * BLAST_SIZE;
-  public static final String tablename = "hive";
+  public static final String tablename = "hivetable";
   public static final String tablemap = "tempmap";
   public static String delimiterMap = ":";
   private static int OPERATOR_ID = 0;
@@ -79,7 +79,7 @@ public class AbstractHiveOutputOperatorTest
       new File(getDir()).mkdir();
     }
 
-   /* @Override
+  /*  @Override
     protected void finished(Description description)
     {
       super.finished(description);
@@ -368,9 +368,9 @@ public class AbstractHiveOutputOperatorTest
       }
       for (HiveOperator o: opers) {
         //o.beginWindow(wid);
-          if (wid == 5) {
+          if (wid == 6) {
         fsRolling.committed(wid - 1);
-        hmap.put("/0-transactions.out.part."+j, "111");
+        hmap.put("0-transactions.out.part."+j, "111");
         o.processTuple(hmap);
         j++;
         hmap.clear();
@@ -381,9 +381,10 @@ public class AbstractHiveOutputOperatorTest
     }
     fsRolling.endWindow();
 
-    for (HiveOperator o: opers)
+    for (HiveOperator o: opers){
+      o.endWindow();
       o.teardown();
-
+    }
     hiveStore.connect();
 
     int databaseSize = -1;
@@ -434,21 +435,20 @@ public class AbstractHiveOutputOperatorTest
             wid < 10;
             wid++) {
       fsRolling.beginWindow(wid);
-      if (wid == 6) {
-        fsRolling.committed(wid-1);
-        hmap.put("/0-transactions.out.part.0", "111");
-        hmap.put("/0-transactions.out.part.1", "112");
-        hmap.put("/0-transactions.out.part.2", "113");
-       outputOperator.processTuple(hmap);
-       hmap.clear();
-      }
       for (int tupleCounter = 0;
               tupleCounter < 10 && total < 100;
               tupleCounter++, total++) {
         fsRolling.input.process(123 + "");
       }
+     if (wid == 6) {
+        fsRolling.committed(wid - 1);
+        hmap.put("0-transactions.out.part.0", "123");
+        outputOperator.processTuple(hmap);
+        hmap.clear();
+      }
 
-      if (wid == 5) {
+
+      if (wid == 7) {
         Kryo kryo = new Kryo();
         FieldSerializer<HiveOperator> f1 = (FieldSerializer<HiveOperator>)kryo.getSerializer(HiveOperator.class);
         FieldSerializer<FSRollingOutputOperator> f2 = (FieldSerializer<FSRollingOutputOperator>)kryo.getSerializer(FSRollingOutputOperator.class);
@@ -458,14 +458,11 @@ public class AbstractHiveOutputOperatorTest
         f2.setCopyTransient(false);
         f3.setCopyTransient(false);
         newOp = kryo.copy(outputOperator);
-      }
-
-      if (wid == 7) {
         outputOperator.teardown();
         newOp.setup(context);
 
-        newOp.beginWindow(5);
-        hmap.put("/0-transactions.out.part.3", "114");
+        newOp.beginWindow(6);
+        hmap.put("0-transactions.out.part.1", "123");
 
           newOp.processTuple(hmap);
 
@@ -486,7 +483,7 @@ public class AbstractHiveOutputOperatorTest
     databaseSize = resultSet.getInt(1);
     LOG.info("database size is {}" , databaseSize);
     Assert.assertEquals("Numer of tuples in database",
-                        44,
+                        33,
                         databaseSize);
   }
 

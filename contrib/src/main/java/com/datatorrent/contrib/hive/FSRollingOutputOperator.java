@@ -27,6 +27,7 @@ import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.Operator.CheckpointListener;
 import com.datatorrent.api.annotation.Stateless;
 import com.datatorrent.common.util.DTThrowable;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
@@ -57,7 +58,19 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   private String partition;
   //This variable is user configurable.
   @Min(0)
-  private transient long maxWindowsWithNoData = 100;
+  private long maxWindowsWithNoData = 100;
+  @NonNull
+  private Converter converter;
+
+  public Converter getConverter()
+  {
+    return converter;
+  }
+
+  public void setConverter(Converter converter)
+  {
+    this.converter = converter;
+  }
 
   public FSRollingOutputOperator()
   {

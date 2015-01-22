@@ -192,21 +192,11 @@ public class HiveOperator extends AbstractStoreOutputOperator<Map<String, String
     if (partition != null) {
       filepath = store.getOperatorpath() + "/" + partition + "/" + filepath;
       partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
-      //  if (!hdfsOp.isHDFSLocation()) {
-      //    command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION " + "( " + partition + " )";
-      //  }
-      //  else {
       command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partition + " )";
-      //  }
     }
     else {
       filepath = store.getOperatorpath() + "/" + filepath;
-      // if (!hdfsOp.isHDFSLocation()) {
-      //   command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      // }
-      // else {
-      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
-      // }
+      command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
     }
     logger.info("command is {}", command);
     return command;
