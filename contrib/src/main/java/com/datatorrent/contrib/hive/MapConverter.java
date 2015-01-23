@@ -19,7 +19,7 @@ import java.util.Iterator;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 
-public class MapConverter extends Converter<Map<String,Object>>
+public class MapConverter implements Converter<Map<String,Object>>
 {
   @NotNull
   public String delimiter;
@@ -27,8 +27,6 @@ public class MapConverter extends Converter<Map<String,Object>>
   public MapConverter()
   {
   }
-
-
 
   public String getDelimiter()
   {

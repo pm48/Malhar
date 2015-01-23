@@ -16,7 +16,15 @@
 package com.datatorrent.contrib.hive;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.*;
 import java.util.Iterator;
+import java.util.concurrent.ExecutionException;
+
+import javax.validation.constraints.Min;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 
@@ -26,16 +34,9 @@ import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.Operator.CheckpointListener;
 import com.datatorrent.api.annotation.Stateless;
+
 import com.datatorrent.common.util.DTThrowable;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.concurrent.ExecutionException;
-import javax.validation.constraints.Min;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.RawLocalFileSystem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.validation.constraints.NotNull;
 
 /*
  * An implementation of FS Writer that writes text files to hdfs which are inserted
@@ -45,76 +46,35 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
 {
   private transient String outputFileName;
   protected MutableInt partNumber;
-  protected HashMap<String, Long> mapFilenames = new HashMap<String, Long>();
+  protected HashMap<Long, ArrayList<String>> mapFilenames = new HashMap<Long, ArrayList<String>>();
+  protected ArrayList<String> listFileNames = new ArrayList<String>();
   protected HashMap<String, String> mapPartition = new HashMap<String, String>();
+  protected TreeSet<Long> queueWindows = new TreeSet<Long>();
   // Hdfs block size which can be set as a property by user.
   private static final int MAX_LENGTH = 66060288;
-  private static final Logger logger = LoggerFactory.getLogger(FSRollingOutputOperator.class);
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
   //protected String partition;
   protected long committedWindowId = Stateless.WINDOW_ID;
+  protected long lastCommittedWindowId = Stateless.WINDOW_ID;
   private boolean isEmptyWindow;
   private int countEmptyWindow;
   private String partition;
   //This variable is user configurable.
   @Min(0)
   private long maxWindowsWithNoData = 100;
-  @NonNull
+  @NotNull
   private Converter<T> converter;
+  protected HivePartitionInterface<T> hivePartition;
 
-  public Converter<T> getConverter()
-  {
-    return converter;
-  }
-
-  public void setConverter(Converter<T> converter)
-  {
-    this.converter = converter;
-  }
-
-
+  /**
+   * The output port that will emit tuple into DAG.
+   */
+  public final transient DefaultOutputPort<FilePartitionMapping> outputPort = new DefaultOutputPort<FilePartitionMapping>();
 
   public FSRollingOutputOperator()
   {
     countEmptyWindow = 0;
     setMaxLength(MAX_LENGTH);
-  }
-
-  public String getHDFSRollingLastFile()
-  {
-    Iterator<String> iterFileNames = this.openPart.keySet().iterator();
-    String lastFile = null;
-    if (iterFileNames.hasNext()) {
-      lastFile = iterFileNames.next();
-      partNumber = this.openPart.get(lastFile);
-    }
-    return getPartFileName(lastFile,
-                           partNumber.intValue());
-  }
-
-  public long getMaxWindowsWithNoData()
-  {
-    return maxWindowsWithNoData;
-  }
-
-  public void setMaxWindowsWithNoData(long maxWindowsWithNoData)
-  {
-    this.maxWindowsWithNoData = maxWindowsWithNoData;
-  }
-
-  @Override
-  public void endWindow()
-  {
-    if (isEmptyWindow) {
-      countEmptyWindow++;
-    }
-    if (countEmptyWindow >= maxWindowsWithNoData) {
-      logger.debug("empty window count is max.");
-      String lastFile = getHDFSRollingLastFile();
-      logger.debug("last file not moved");
-      rotateCall(lastFile);
-      countEmptyWindow = 0;
-    }
   }
 
   @Override
@@ -123,7 +83,6 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     outputFileName = File.separator + context.getId() + "-" + "transactions.out.part";
     isEmptyWindow = true;
     super.setup(context);
-    converter = getConverter();
   }
 
   @Override
@@ -142,7 +101,9 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Override
   protected void rotateHook(String finishedFile)
   {
-    mapFilenames.put(finishedFile, windowIDOfCompletedPart);
+    listFileNames.add(finishedFile);
+    mapFilenames.put(windowIDOfCompletedPart, listFileNames);
+    queueWindows.add(windowIDOfCompletedPart);
     logger.debug("finishedFile is {}", finishedFile);
   }
 
@@ -152,15 +113,17 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Override
   protected String getFileName(T tuple)
   {
-    HivePartition hivePartition = new HivePartition();
     partition = hivePartition.getHivePartition(tuple);
     String output = null;
     if (partition != null) {
       output = File.separator + partition + outputFileName;
+      String partFile = getPartFileNamePri(output);
+      mapPartition.put(partFile, partition);
     }
     else {
       output = outputFileName;
     }
+
     return output;
   }
 
@@ -183,37 +146,29 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   public void committed(long windowId)
   {
     committedWindowId = windowId;
-    Iterator<String> iter = mapFilenames.keySet().iterator();
-    while (iter.hasNext()) {
-      String fileMoved = iter.next();
-      long window = mapFilenames.get(fileMoved);
-      String[] output = fileMoved.split("/");
-      if (output.length > 1) {
-        mapPartition.put(output[2], output[1]);
-      }
-      else {
-        mapPartition.put(output[1], null);
-      }
-      logger.debug("partition is" + output[1]);
-      logger.debug("file is" + output[2]);
-      if (committedWindowId >= window) {
-        outputPort.emit(mapPartition);
-        iter.remove();
-        mapPartition.clear();
-      }
+    Iterator<Long> iterWindows = queueWindows.iterator();
+    logger.info("mapFilename is" + mapFilenames.toString());
+    logger.info("queuewindows is" + queueWindows.toString());
 
+    while (iterWindows.hasNext()) {
+      windowId = iterWindows.next();
+      if (committedWindowId >= windowId) {
+        listFileNames = mapFilenames.get(windowId);
+      }
+      FilePartitionMapping partMap = new FilePartitionMapping();
+      for (int i = 0; i < listFileNames.size(); i++) {
+        partMap.setFilename(listFileNames.get(i));
+        partMap.setPartition(mapPartition.get(listFileNames.get(i)));
+        outputPort.emit(partMap);
+      }
+      mapFilenames.remove(windowId);
+      iterWindows.remove();
+      logger.info("mapFilename after emituple is" + mapFilenames.toString());
+      logger.info("queuewindows after emittuple is" + queueWindows.toString());
     }
+    lastCommittedWindowId = committedWindowId;
   }
 
-  /**
-   * The output port that will emit tuple into DAG.
-   */
-  public final transient DefaultOutputPort<HashMap<String, String>> outputPort = new DefaultOutputPort<HashMap<String, String>>();
-
-
-  /*
-   *This method can be used for debugging purposes.
-   */
   @Override
   public void checkpointed(long windowId)
   {
@@ -224,10 +179,6 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     try {
       this.rotate(lastFile);
     }
-    catch (IllegalArgumentException ex) {
-      logger.debug(ex.getMessage());
-      DTThrowable.rethrow(ex);
-    }
     catch (IOException ex) {
       logger.debug(ex.getMessage());
       DTThrowable.rethrow(ex);
@@ -237,5 +188,90 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
       DTThrowable.rethrow(ex);
     }
   }
+
+  public String getHDFSRollingLastFile()
+  {
+    Iterator<String> iterFileNames = this.openPart.keySet().iterator();
+    String lastFile = null;
+    if (iterFileNames.hasNext()) {
+      lastFile = iterFileNames.next();
+      partNumber = this.openPart.get(lastFile);
+    }
+    return getPartFileName(lastFile,
+                           partNumber.intValue());
+  }
+
+  @Override
+  public void endWindow()
+  {
+    if (isEmptyWindow) {
+      countEmptyWindow++;
+    }
+    if (countEmptyWindow >= maxWindowsWithNoData) {
+      String lastFile = getHDFSRollingLastFile();
+      rotateCall(lastFile);
+      countEmptyWindow = 0;
+    }
+
+  }
+
+  public long getMaxWindowsWithNoData()
+  {
+    return maxWindowsWithNoData;
+  }
+
+  public void setMaxWindowsWithNoData(long maxWindowsWithNoData)
+  {
+    this.maxWindowsWithNoData = maxWindowsWithNoData;
+  }
+
+  public Converter<T> getConverter()
+  {
+    return converter;
+  }
+
+  public void setConverter(Converter<T> converter)
+  {
+    this.converter = converter;
+  }
+
+  public HivePartitionInterface<T> getHivePartition()
+  {
+    return hivePartition;
+  }
+
+  public void setHivePartition(HivePartitionInterface<T> hivePartition)
+  {
+    this.hivePartition = hivePartition;
+  }
+
+  public static class FilePartitionMapping
+  {
+    private String filename;
+    private String partition;
+
+    public String getFilename()
+    {
+      return filename;
+    }
+
+    public void setFilename(String filename)
+    {
+      this.filename = filename;
+    }
+
+    public String getPartition()
+    {
+      return partition;
+    }
+
+    public void setPartition(String partition)
+    {
+      this.partition = partition;
+    }
+
+  }
+
+  private static final Logger logger = LoggerFactory.getLogger(FSRollingOutputOperator.class);
 
 }

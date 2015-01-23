@@ -31,19 +31,7 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
 {
   private static final long serialVersionUID = 201412121604L;
 
-  protected HivePartition hivePartition;
-  private static final Logger logger = LoggerFactory.getLogger(HiveStreamCodec.class);
-
-  public void setHivePartition(HivePartition hivePartition)
-  {
-    this.hivePartition = hivePartition;
-  }
-
-  @Override
-  public int getPartition(T o)
-  {
-    return hivePartition.getHivePartition(o).hashCode();
-  }
+  protected HivePartitionInterface<T> hivePartition;
 
   @Override
   public void writeExternal(ObjectOutput out) throws IOException
@@ -67,7 +55,18 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
     in.readFully(data);
     Input input = new Input(data);
     input.setBuffer(data);
-    hivePartition = (HivePartition)kryo.readClassAndObject(input);
+    hivePartition = (HivePartitionInterface)kryo.readClassAndObject(input);
   }
+
+   public HivePartitionInterface<T> getHivePartition()
+  {
+    return hivePartition;
+  }
+
+  public void setHivePartition(HivePartitionInterface<T> hivePartition)
+  {
+    this.hivePartition = hivePartition;
+  }
+
 
 }

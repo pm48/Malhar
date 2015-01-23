@@ -605,7 +605,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
    * @param fileName The base name of the files you are rolling over.
    * @return The name of the current rolling file.
    */
-  private String getPartFileNamePri(String fileName)
+  protected String getPartFileNamePri(String fileName)
   {
     if (!rollingFile) {
       return fileName;

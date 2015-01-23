@@ -74,10 +74,12 @@ public class HiveMapInsertBenchmarkingApp implements StreamingApplication
     hivePartitionColumns.add("dt");
     hiveInsert.setHivePartitionColumns(hivePartitionColumns);
 
-    HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
-    HivePartition hivePartition = new HivePartition();
+    HiveStreamCodec<Map<String,Object>> streamCodec = new HiveStreamCodec<Map<String,Object>>();
+    HiveMapPartition hivePartition = new HiveMapPartition();
     streamCodec.setHivePartition(hivePartition);
+    rollingFsWriter.setHivePartition(hivePartition);
     hiveInsert.setStore(store);
+    dag.setInputPortAttribute(rollingFsWriter.input, PortContext.STREAM_CODEC, streamCodec);
     dag.addStream("EventGenerator2Map", eventGenerator.integer_data, mapGenerator.input);
     dag.addStream("MapGenerator2HdfsOutput", mapGenerator.map_data, rollingFsWriter.input);
     dag.addStream("FsWriter2Hive", rollingFsWriter.outputPort, hiveInsert.input);

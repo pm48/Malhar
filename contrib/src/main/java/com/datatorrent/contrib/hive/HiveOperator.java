@@ -15,68 +15,49 @@
  */
 package com.datatorrent.contrib.hive;
 
-import com.datatorrent.api.*;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.*;
+import java.util.Collection;
 
 import javax.annotation.Nonnull;
+import javax.validation.constraints.Min;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Lists;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
+
 import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 
+import com.datatorrent.api.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.annotation.OperatorAnnotation;
-import com.google.common.collect.Lists;
-import java.util.Collection;
-
-import javax.validation.constraints.Min;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import java.util.*;
-import org.apache.commons.io.output.ByteArrayOutputStream;
+import com.datatorrent.contrib.hive.FSRollingOutputOperator.FilePartitionMapping;
 
 /*
  * Hive operator which can insert data in txt format in tables/partitions from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public class HiveOperator extends AbstractStoreOutputOperator<Map<String, String>, HiveStore> implements Partitioner<HiveOperator>
+public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMapping, HiveStore> implements Partitioner<HiveOperator>
 {
   @Min(1)
   protected int numPartitions = 2;
   //This Property is user configurable.
   protected ArrayList<String> hivePartitionColumns = new ArrayList<String>();
-
-  public ArrayList<String> getHivePartitionColumns()
-  {
-    return hivePartitionColumns;
-  }
-
-  public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
-  {
-    this.hivePartitionColumns = hivePartitionColumns;
-  }
-
   protected String partition;
   @Nonnull
   protected String tablename;
-
-  // public HDFSRollingOutputOperator<T> hdfsOp;
+  private transient String appId;
+  private transient int operatorId;
   //This variable is user configurable.
   @Min(0)
   private transient long maxWindowsWithNoData = 100;
-
-  public int getNumPartitions()
-  {
-    return numPartitions;
-  }
-
-  public void setNumPartitions(int numPartitions)
-  {
-    this.numPartitions = numPartitions;
-  }
 
   @Override
   public Collection<Partition<HiveOperator>> definePartitions(Collection<Partition<HiveOperator>> partitions, int incrementalCapacity)
@@ -106,9 +87,84 @@ public class HiveOperator extends AbstractStoreOutputOperator<Map<String, String
   {
   }
 
-  private static final Logger logger = LoggerFactory.getLogger(HiveOperator.class);
-  private transient String appId;
-  private transient int operatorId;
+  @Override
+  public void setup(OperatorContext context)
+  {
+    appId = context.getValue(DAG.APPLICATION_ID);
+    operatorId = context.getId();
+    store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
+    super.setup(context);
+  }
+
+  /**
+   * Function to process each incoming tuple
+   * This can be overridden by user for multiple partition columns.
+   * Giving an implementation for one partition column.
+   *
+   * @param tuple incoming tuple which has filename and hive partition.
+   */
+  @Override
+  public void processTuple(FilePartitionMapping tuple)
+  {
+    String fileMoved = tuple.getFilename();
+    partition = tuple.getPartition();
+    processHiveFile(fileMoved);
+
+  }
+
+  public void processHiveFile(String fileMoved)
+  {
+    logger.debug("processing {} file", fileMoved);
+    String command = getInsertCommand(fileMoved);
+    Statement stmt;
+    try {
+      stmt = store.getConnection().createStatement();
+      stmt.execute(command);
+    }
+    catch (SQLException ex) {
+      throw new RuntimeException("Moving file into hive failed" + ex);
+    }
+  }
+
+  /*
+   * User can specify multiple partitions here, giving a default implementation for one partition column here.
+   */
+  protected String getInsertCommand(String filepath)
+  {
+    String command;
+    if (partition != null) {
+      filepath = store.getOperatorpath() + "/" + partition + "/" + filepath;
+      partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
+      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partition + " )";
+    }
+    else {
+      filepath = store.getOperatorpath() + "/" + filepath;
+      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
+    }
+    logger.debug("command is {}", command);
+    return command;
+
+  }
+
+  public ArrayList<String> getHivePartitionColumns()
+  {
+    return hivePartitionColumns;
+  }
+
+  public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
+  {
+    this.hivePartitionColumns = hivePartitionColumns;
+  }
+
+  public int getNumPartitions()
+  {
+    return numPartitions;
+  }
+
+  public void setNumPartitions(int numPartitions)
+  {
+    this.numPartitions = numPartitions;
+  }
 
   public long getMaxWindowsWithNoData()
   {
@@ -130,77 +186,6 @@ public class HiveOperator extends AbstractStoreOutputOperator<Map<String, String
     this.tablename = tablename;
   }
 
-  /**
-   * Function to process each incoming tuple
-   * This can be overridden by user for multiple partition columns.
-   * Giving an implementation for one partition column.
-   *
-   * @param tuple incoming tuple which has filename and hive partition.
-   */
-  @Override
-  public void processTuple(Map<String, String> tuple)
-  {
-    logger.info("file string path is" + tuple.toString());
-    //Object[] input = tuple.entrySet().toArray();
-    //String fileMoved = input[0].toString();
-    String fileMoved = tuple.toString().split("=")[0].substring(1);
-    partition = tuple.get(fileMoved);
-    logger.info("partition is" + partition);
-    processHiveFile(fileMoved);
-
-  }
-
-  @Override
-  public void setup(OperatorContext context)
-  {
-    appId = context.getValue(DAG.APPLICATION_ID);
-    operatorId = context.getId();
-    store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
-    super.setup(context);
-  }
-
-  @Override
-  public void teardown()
-  {
-    super.teardown();
-  }
-
-  public void processHiveFile(String fileMoved)
-  {
-    logger.info("processing {} file", fileMoved);
-    String command = getInsertCommand(fileMoved);
-    Statement stmt;
-    try {
-      stmt = store.getConnection().createStatement();
-      //Either throw exception or log error.
-      boolean result = stmt.execute(command);
-      if (!result) {
-        logger.error("Moving file into hive failed");
-      }
-    }
-    catch (SQLException ex) {
-      throw new RuntimeException("Moving file into hive failed" + ex);
-    }
-  }
-
-  /*
-   * User can specify multiple partitions here, giving a default implementation for one partition column here.
-   */
-  protected String getInsertCommand(String filepath)
-  {
-    String command;
-    if (partition != null) {
-      filepath = store.getOperatorpath() + "/" + partition + "/" + filepath;
-      partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
-      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partition + " )";
-    }
-    else {
-      filepath = store.getOperatorpath() + "/" + filepath;
-      command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename;
-    }
-    logger.info("command is {}", command);
-    return command;
-
-  }
+  private static final Logger logger = LoggerFactory.getLogger(HiveOperator.class);
 
 }

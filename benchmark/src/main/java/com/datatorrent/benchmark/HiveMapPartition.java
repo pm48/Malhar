@@ -13,12 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.contrib.hive;
+package com.datatorrent.benchmark;
 
-public interface Converter<T>
+import com.datatorrent.contrib.hive.HivePartitionInterface;
+import java.util.Map;
+
+public class HiveMapPartition implements HivePartitionInterface<Map<String,Object>>
 {
-  /*
-   * To be implemented by the user
-   */
-  public abstract String getTuple(T tuple);
+
+  @Override
+  public String getHivePartition(Map<String,Object> tuple)
+  {
+    int endIndex = tuple.toString().indexOf("=");
+    return tuple.toString().substring(1, endIndex);
+  }
+
 }

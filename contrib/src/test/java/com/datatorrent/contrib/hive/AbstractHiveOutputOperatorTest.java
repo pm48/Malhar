@@ -31,6 +31,7 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Operator.ProcessingMode;
 import com.datatorrent.api.Partitioner.Partition;
+import com.datatorrent.contrib.hive.FSRollingOutputOperator.FilePartitionMapping;
 import static com.datatorrent.lib.db.jdbc.JdbcNonTransactionalOutputOperatorTest.*;
 import com.datatorrent.lib.util.TestUtils.TestInfo;
 import com.esotericsoftware.kryo.Kryo;
@@ -198,6 +199,8 @@ public class AbstractHiveOutputOperatorTest
     fsRolling.setFilePath(testMeta.getDir()+"/" + APP_ID + "/" + OPERATOR_ID);
     fsRolling.setFilePermission(0777);
     fsRolling.setMaxLength(128);
+    HivePartition<String> partition = new HivePartition<String>();
+    fsRolling.setHivePartition(partition);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -207,24 +210,27 @@ public class AbstractHiveOutputOperatorTest
     fsRolling.setup(context);
     hiveOperator.setup(context);
     fsRolling.setConverter(new StringConverter());
-    HashMap<String,String> hmap = new HashMap<String, String>();
+    FilePartitionMapping mapping = new FilePartitionMapping();
     int j=0;
     for (int wid = 0, total = 0;
             wid < NUM_WINDOWS;
             wid++) {
       fsRolling.beginWindow(wid);
-      if (wid == 6 || wid == 7) {
-        fsRolling.committed(wid - 2);
-        hmap.put("0-transactions.out.part." + j, "111");
-        hiveOperator.processTuple(hmap);
-        j++;
-        hmap.clear();
-      }
-      for (int tupleCounter = 0;
+        for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
               tupleCounter++, total++) {
         fsRolling.input.put(111 + "");
       }
+      if (wid == 7) {
+        fsRolling.committed(wid - 1);
+        mapping.setFilename("0-transactions.out.part.0");
+        mapping.setPartition("111");
+        hiveOperator.processTuple(mapping);
+        mapping.setFilename("0-transactions.out.part.1");
+        mapping.setPartition("111");
+        hiveOperator.processTuple(mapping);
+      }
+
       fsRolling.endWindow();
 
     }
@@ -273,10 +279,13 @@ public class AbstractHiveOutputOperatorTest
     MapConverter converter = new MapConverter();
     converter.setDelimiter(":");
     fsRolling.setConverter(converter);
+     HiveMapPartition partition = new HiveMapPartition();
+    fsRolling.setHivePartition(partition);
     hiveOperator.setTablename(tablemap);
     //fsRolling.setDelimiter(":");
     HashMap<String, Object> map = new HashMap<String, Object>();
-    HashMap<String, String> hmap = new HashMap<String, String>();
+    FilePartitionMapping mapping = new FilePartitionMapping();
+
     for (int wid = 0;
             wid < NUM_WINDOWS;
             wid++) {
@@ -288,13 +297,15 @@ public class AbstractHiveOutputOperatorTest
         fsRolling.input.put(map);
         map.clear();
       }
-      int j=0;
-      if (wid == 6 || wid == 7) {
+
+       if (wid == 6) {
         fsRolling.committed(wid - 2);
-        hmap.put("0-transactions.out.part." + j, "111");
-        hiveOperator.processTuple(hmap);
-        j++;
-        hmap.clear();
+        mapping.setFilename("0-transactions.out.part.0");
+        mapping.setPartition("111");
+        hiveOperator.processTuple(mapping);
+        mapping.setFilename("0-transactions.out.part.1");
+        mapping.setPartition("111");
+        hiveOperator.processTuple(mapping);
       }
 
       fsRolling.endWindow();
@@ -344,7 +355,8 @@ public class AbstractHiveOutputOperatorTest
 
     fsRolling.setup(context);
     hiveOperator.setup(context);
-
+     HivePartition<String> partition = new HivePartition<String>();
+    fsRolling.setHivePartition(partition);
 
     List<Partition<HiveOperator>> partitions = Lists.newArrayList();
 
@@ -370,7 +382,8 @@ public class AbstractHiveOutputOperatorTest
     int wid = 0;
     int j=0;
     int total =0;
-    HashMap<String,String> hmap = new HashMap<String, String>();
+    FilePartitionMapping mapping = new FilePartitionMapping();
+
     for (int i = 0; i < 10; i++) {
       fsRolling.beginWindow(wid);
       for (int tupleCounter = 0;
@@ -381,11 +394,11 @@ public class AbstractHiveOutputOperatorTest
       for (HiveOperator o: opers) {
         //o.beginWindow(wid);
           if (wid == 6) {
-        fsRolling.committed(wid - 1);
-        hmap.put("0-transactions.out.part."+j, "111");
-        o.processTuple(hmap);
-        j++;
-        hmap.clear();
+            fsRolling.committed(wid - 2);
+       mapping.setFilename("0-transactions.out.part." + j);
+        mapping.setPartition("111");
+        o.processTuple(mapping);
+      j++;
       }
        // o.endWindow();
       }
@@ -441,10 +454,12 @@ public class AbstractHiveOutputOperatorTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     fsRolling.setup(context);
-    HashMap<String,String> hmap = new HashMap<String, String>();
+    FilePartitionMapping mapping = new FilePartitionMapping();
     outputOperator.setup(context);
+     HivePartition<String> partition = new HivePartition<String>();
+    fsRolling.setHivePartition(partition);
     for (int wid = 0, total = 0;
-            wid < 10;
+            wid < 20;
             wid++) {
       fsRolling.beginWindow(wid);
       for (int tupleCounter = 0;
@@ -453,14 +468,23 @@ public class AbstractHiveOutputOperatorTest
         fsRolling.input.process(123 + "");
       }
      if (wid == 6) {
-        fsRolling.committed(wid - 1);
-        hmap.put("0-transactions.out.part.0", "123");
-        outputOperator.processTuple(hmap);
-        hmap.clear();
+       fsRolling.committed(wid - 1);
+        mapping.setFilename("0-transactions.out.part.0");
+        mapping.setPartition("123");
+        outputOperator.processTuple(mapping);
+        mapping.setFilename("0-transactions.out.part.1");
+        mapping.setPartition("123");
+        outputOperator.processTuple(mapping);
+      }
+      if (wid == 15) {
+        fsRolling.committed(14);
+        mapping.setFilename("0-transactions.out.part.2");
+        mapping.setPartition("123");
+        outputOperator.processTuple(mapping);
       }
 
 
-      if (wid == 7) {
+      if (wid == 18) {
         Kryo kryo = new Kryo();
         FieldSerializer<HiveOperator> f1 = (FieldSerializer<HiveOperator>)kryo.getSerializer(HiveOperator.class);
         FieldSerializer<FSRollingOutputOperator> f2 = (FieldSerializer<FSRollingOutputOperator>)kryo.getSerializer(FSRollingOutputOperator.class);
@@ -473,13 +497,14 @@ public class AbstractHiveOutputOperatorTest
         outputOperator.teardown();
         newOp.setup(context);
 
-        newOp.beginWindow(6);
-        hmap.put("0-transactions.out.part.1", "123");
+        newOp.beginWindow(15);
+        mapping.setFilename("0-transactions.out.part.3");
+        mapping.setPartition("123");
 
-          newOp.processTuple(hmap);
+        newOp.processTuple(mapping);
 
         newOp.endWindow();
-        newOp.teardown();
+       // newOp.teardown();
         break;
       }
 
@@ -490,7 +515,7 @@ public class AbstractHiveOutputOperatorTest
     int databaseSize = -1;
 
     Statement statement = hiveStore.getConnection().createStatement();
-    ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
+     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
     LOG.info("database size is {}" , databaseSize);

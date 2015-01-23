@@ -67,6 +67,8 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     rollingFsWriter.setFilePath(store.filepath);
     rollingFsWriter.setFilePermission(0777);
     rollingFsWriter.setConverter(new StringConverter());
+    HivePartition<String> partition = new HivePartition<String>();
+    rollingFsWriter.setHivePartition(partition);
     HiveOperator hiveInsert = dag.addOperator("HiveOperator",new HiveOperator());
     hiveInsert.setStore(store);
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
@@ -74,7 +76,7 @@ public class HiveInsertBenchmarkingApp implements StreamingApplication
     hiveInsert.setHivePartitionColumns(hivePartitionColumns);
 
     HiveStreamCodec<String> streamCodec = new HiveStreamCodec<String>();
-    HivePartition hivePartition = new HivePartition();
+    HivePartition<String> hivePartition = new HivePartition<String>();
     streamCodec.setHivePartition(hivePartition);
     dag.setInputPortAttribute(rollingFsWriter.input, PortContext.STREAM_CODEC, streamCodec);
     dag.addStream("Generator2HDFS", wordGenerator.outputString, rollingFsWriter.input);
