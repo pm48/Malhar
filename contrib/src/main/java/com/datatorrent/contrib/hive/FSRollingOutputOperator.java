@@ -33,17 +33,25 @@ import com.datatorrent.lib.io.fs.AbstractFileOutputOperator;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DefaultOutputPort;
+import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Operator.CheckpointListener;
+import com.datatorrent.api.Partitioner;
+import com.datatorrent.api.Partitioner.Partition;
 import com.datatorrent.api.annotation.Stateless;
 
 import com.datatorrent.common.util.DTThrowable;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Lists;
 import javax.validation.constraints.NotNull;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 /*
  * An implementation of FS Writer that writes text files to hdfs which are inserted
  * into hive on committed window callback.
  */
-public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> implements CheckpointListener
+public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> implements CheckpointListener, Partitioner<FSRollingOutputOperator>
 {
   private transient String outputFileName;
   protected MutableInt partNumber;
@@ -58,7 +66,21 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   private boolean isEmptyWindow;
   private int countEmptyWindow;
   private String partition;
+  @Min(1)
+  protected int numPartitions = 2;
+
+  public int getNumPartitions()
+  {
+    return numPartitions;
+  }
+
+  public void setNumPartitions(int numPartitions)
+  {
+    this.numPartitions = numPartitions;
+  }
+
   //This variable is user configurable.
+
   @Min(0)
   private long maxWindowsWithNoData = 100;
   @NotNull
@@ -74,6 +96,34 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   {
     countEmptyWindow = 0;
     setMaxLength(MAX_LENGTH);
+  }
+
+  @Override
+  public Collection<Partition<FSRollingOutputOperator>> definePartitions(Collection<Partition<FSRollingOutputOperator>> partitions, int incrementalCapacity)
+  {
+    int totalCount = numPartitions;
+    Collection<Partition<FSRollingOutputOperator>> newPartitions = Lists.newArrayListWithExpectedSize(totalCount);
+    Kryo kryo = new Kryo();
+    for (int i = 0; i < totalCount; i++) {
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+      Output output = new Output(bos);
+      kryo.writeObject(output, this);
+      output.close();
+      Input lInput = new Input(bos.toByteArray());
+      @SuppressWarnings("unchecked")
+      FSRollingOutputOperator oper = kryo.readObject(lInput, this.getClass());
+      newPartitions.add(new DefaultPartition<FSRollingOutputOperator>(oper));
+    }
+    // assign the partition keys
+    DefaultPartition.assignPartitionKeys(newPartitions, input);
+
+    return newPartitions;
+
+  }
+
+  @Override
+  public void partitioned(Map<Integer, Partition<FSRollingOutputOperator>> partitions)
+  {
   }
 
   @Override
@@ -100,11 +150,11 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Override
   protected void rotateHook(String finishedFile)
   {
-    logger.info("permission is {}" , getFilePermission());
-    if(mapFilenames.containsKey(windowIDOfCompletedPart)){
-    listFileNames.add(finishedFile);
+    logger.info("permission is {}", getFilePermission());
+    if (mapFilenames.containsKey(windowIDOfCompletedPart)) {
+      listFileNames.add(finishedFile);
     }
-    else{
+    else {
       listFileNames = new ArrayList<String>();
       listFileNames.add(finishedFile);
     }
@@ -121,12 +171,17 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   protected String getFileName(T tuple)
   {
     partition = hivePartition.getHivePartition(tuple);
+    String output = null;
     if (partition != null) {
-      String partFile = getPartFileNamePri(outputFileName);
+      output = File.separator + partition + outputFileName;
+      String partFile = getPartFileNamePri(output);
       mapPartition.put(partFile, partition);
     }
-    logger.info("outputfilename is {}",outputFileName);
-    return outputFileName;
+    else {
+      output = outputFileName;
+    }
+
+    return output;
   }
 
   /*
