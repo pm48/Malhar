@@ -44,6 +44,7 @@ public class HiveInsertBenchmarkTest
     LOG.info("permission is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.RollingFsWriter.filePermission"));
     LOG.info("maximum length is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.RollingFsWriter.maxLength"));
     LOG.info("tablename is {}" , conf.get("dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.tablename"));
+    LOG.info("permission is {}",conf.get("dt.application.HiveInsertBenchmarkingApp.operator.RollingFsWriter.filePermission"));
     HiveInsertBenchmarkingApp app = new HiveInsertBenchmarkingApp();
     LocalMode lm = LocalMode.newInstance();
     try {

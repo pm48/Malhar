@@ -61,7 +61,7 @@
   </property>
   <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.store.filepath</name>
-    <value>/user/hive</value>
+    <value>/user/hive2</value>
     <description>Filepath</description>
   </property>
   <property>
@@ -88,11 +88,6 @@
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.store.dbUrl</name>
     <value>jdbc:hive2://localhost:10000/default</value>
     <description>Test database connector string.</description>
-  </property>
-  <property>
-    <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.hdfsOp.filePermission</name>
-    <value>0777</value>
-    <description>Permission</description>
   </property>
   <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.store.connectionProperties</name>

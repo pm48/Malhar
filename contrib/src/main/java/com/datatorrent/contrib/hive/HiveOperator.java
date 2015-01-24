@@ -38,7 +38,13 @@ import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 import com.datatorrent.api.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.annotation.OperatorAnnotation;
+import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.contrib.hive.FSRollingOutputOperator.FilePartitionMapping;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /*
  * Hive operator which can insert data in txt format in tables/partitions from a file written in hdfs location.
@@ -53,8 +59,6 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   protected String partition;
   @Nonnull
   protected String tablename;
-  private transient String appId;
-  private transient int operatorId;
   //This variable is user configurable.
   @Min(0)
   private transient long maxWindowsWithNoData = 100;
@@ -90,9 +94,8 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   @Override
   public void setup(OperatorContext context)
   {
-    appId = context.getValue(DAG.APPLICATION_ID);
-    operatorId = context.getId();
-    store.setOperatorpath(store.filepath + "/" + appId + "/" + operatorId);
+   // String appId = context.getValue(DAG.APPLICATION_ID);
+    //store.setOperatorpath(store.filepath + "/" + appId);
     super.setup(context);
   }
 
@@ -131,15 +134,17 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
    */
   protected String getInsertCommand(String filepath)
   {
-    String command;
-    if (partition != null) {
-      filepath = store.getOperatorpath() + "/" + partition + "/" + filepath;
-      partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
-      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partition + " )";
-    }
-    else {
-      filepath = store.getOperatorpath() + "/" + filepath;
-      command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
+    String command = null;
+    filepath = store.getFilepath()+ "/" + filepath;
+    File fs = new File(filepath);
+      if(fs.exists()){
+        if (partition != null) {
+          partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
+          command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION" + "( " + partition + " )";
+        }
+        else {
+          command = "load data local inpath '" + filepath + "' into table " + tablename;
+        }
     }
     logger.debug("command is {}", command);
     return command;

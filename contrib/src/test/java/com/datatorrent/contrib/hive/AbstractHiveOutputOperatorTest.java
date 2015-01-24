@@ -69,7 +69,7 @@ public class AbstractHiveOutputOperatorTest
       String methodName = desc.getMethodName();
       String className = desc.getClassName();
       String filePath = new File("target/" + className + "/" + methodName).getAbsolutePath();
-      LOG.info("filepath is {}",filePath);
+      LOG.debug("filepath is {}", filePath);
       return filePath;
     }
 
@@ -196,7 +196,7 @@ public class AbstractHiveOutputOperatorTest
     hiveOperator.setHivePartitionColumns(hivePartitionColumns);
 
     FSRollingOutputOperator<String> fsRolling = new FSRollingOutputOperator<String>();
-    fsRolling.setFilePath(testMeta.getDir()+"/" + APP_ID + "/" + OPERATOR_ID);
+    fsRolling.setFilePath(testMeta.getDir() );
     fsRolling.setFilePermission(0777);
     fsRolling.setMaxLength(128);
     HivePartition<String> partition = new HivePartition<String>();
@@ -210,25 +210,25 @@ public class AbstractHiveOutputOperatorTest
     fsRolling.setup(context);
     hiveOperator.setup(context);
     fsRolling.setConverter(new StringConverter());
-    FilePartitionMapping mapping = new FilePartitionMapping();
-    int j=0;
+    FilePartitionMapping mapping1 = new FilePartitionMapping();
+    FilePartitionMapping mapping2 = new FilePartitionMapping();
     for (int wid = 0, total = 0;
             wid < NUM_WINDOWS;
             wid++) {
       fsRolling.beginWindow(wid);
-        for (int tupleCounter = 0;
+      for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
               tupleCounter++, total++) {
         fsRolling.input.put(111 + "");
       }
       if (wid == 7) {
         fsRolling.committed(wid - 1);
-        mapping.setFilename("0-transactions.out.part.0");
-        mapping.setPartition("111");
-        hiveOperator.processTuple(mapping);
-        mapping.setFilename("0-transactions.out.part.1");
-        mapping.setPartition("111");
-        hiveOperator.processTuple(mapping);
+        mapping1.setFilename("0-transactions.out.part.0");
+        mapping1.setPartition("111");
+        hiveOperator.processTuple(mapping1);
+        mapping2.setFilename("0-transactions.out.part.1");
+        mapping2.setPartition("111");
+        hiveOperator.processTuple(mapping2);
       }
 
       fsRolling.endWindow();
@@ -236,7 +236,6 @@ public class AbstractHiveOutputOperatorTest
     }
 
     //outputOperator.teardown();
-
     hiveStore.connect();
 
     int databaseSize = -1;
@@ -244,11 +243,11 @@ public class AbstractHiveOutputOperatorTest
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is {}" , databaseSize);
+    LOG.debug("database size is {}", databaseSize);
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
-                        33,
+                        66,
                         databaseSize);
   }
 
@@ -263,9 +262,9 @@ public class AbstractHiveOutputOperatorTest
     hiveInitializeMapDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
-    FSRollingOutputOperator<Map<String,Object>> fsRolling = new FSRollingOutputOperator<Map<String,Object>>();
+    FSRollingOutputOperator<Map<String, Object>> fsRolling = new FSRollingOutputOperator<Map<String, Object>>();
     hiveOperator.setStore(hiveStore);
-    fsRolling.setFilePath(testMeta.getDir()+"/" + APP_ID + "/" + OPERATOR_ID);
+    fsRolling.setFilePath(testMeta.getDir());
     fsRolling.setFilePermission(0777);
     fsRolling.setMaxLength(128);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
@@ -279,18 +278,19 @@ public class AbstractHiveOutputOperatorTest
     MapConverter converter = new MapConverter();
     converter.setDelimiter(":");
     fsRolling.setConverter(converter);
-     HiveMapPartition partition = new HiveMapPartition();
+    HiveMapPartition partition = new HiveMapPartition();
     fsRolling.setHivePartition(partition);
     hiveOperator.setTablename(tablemap);
     //fsRolling.setDelimiter(":");
     HashMap<String, Object> map = new HashMap<String, Object>();
-    FilePartitionMapping mapping = new FilePartitionMapping();
+    FilePartitionMapping mapping1 = new FilePartitionMapping();
+    FilePartitionMapping mapping2 = new FilePartitionMapping();
 
     for (int wid = 0;
             wid < NUM_WINDOWS;
             wid++) {
       fsRolling.beginWindow(wid);
-       for (int tupleCounter = 0;
+      for (int tupleCounter = 0;
               tupleCounter < BLAST_SIZE;
               tupleCounter++) {
         map.put(111 + "", 111);
@@ -298,14 +298,14 @@ public class AbstractHiveOutputOperatorTest
         map.clear();
       }
 
-       if (wid == 6) {
+      if (wid == 6) {
         fsRolling.committed(wid - 2);
-        mapping.setFilename("0-transactions.out.part.0");
-        mapping.setPartition("111");
-        hiveOperator.processTuple(mapping);
-        mapping.setFilename("0-transactions.out.part.1");
-        mapping.setPartition("111");
-        hiveOperator.processTuple(mapping);
+        mapping1.setFilename("0-transactions.out.part.0");
+        mapping1.setPartition("111");
+        hiveOperator.processTuple(mapping1);
+        mapping2.setFilename("0-transactions.out.part.1");
+        mapping2.setPartition("111");
+        hiveOperator.processTuple(mapping2);
       }
 
       fsRolling.endWindow();
@@ -321,11 +321,11 @@ public class AbstractHiveOutputOperatorTest
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablemap);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is {}" , databaseSize);
+    LOG.debug("database size is {}", databaseSize);
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
-                        17,
+                        34,
                         databaseSize);
   }
 
@@ -344,7 +344,7 @@ public class AbstractHiveOutputOperatorTest
     //RandomWordGenerator randomGenerator = new RandomWordGenerator();
     hiveOperator.setStore(hiveStore);
     hiveOperator.setTablename(tablename);
-   fsRolling.setFilePath(testMeta.getDir()+"/" + APP_ID + "/" + OPERATOR_ID);
+    fsRolling.setFilePath(testMeta.getDir());
     fsRolling.setFilePermission(0777);
     fsRolling.setMaxLength(128);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
@@ -355,7 +355,7 @@ public class AbstractHiveOutputOperatorTest
 
     fsRolling.setup(context);
     hiveOperator.setup(context);
-     HivePartition<String> partition = new HivePartition<String>();
+    HivePartition<String> partition = new HivePartition<String>();
     fsRolling.setHivePartition(partition);
 
     List<Partition<HiveOperator>> partitions = Lists.newArrayList();
@@ -363,26 +363,26 @@ public class AbstractHiveOutputOperatorTest
     partitions.add(new DefaultPartition<HiveOperator>(hiveOperator));
 
     Collection<Partition<HiveOperator>> newPartitions = hiveOperator.definePartitions(partitions, 1);
-    LOG.info("newpartitions size is {}", newPartitions.size());
+    LOG.debug("newpartitions size is {}", newPartitions.size());
 
     for (Partition<HiveOperator> p: newPartitions) {
       Assert.assertNotSame(hiveOperator, p.getPartitionedInstance());
 
     }
     /* Collect all operators in a list */
-     List<HiveOperator> opers = Lists.newArrayList();
+    List<HiveOperator> opers = Lists.newArrayList();
     for (Partition<HiveOperator> p: newPartitions) {
-       HiveOperator oi  = p.getPartitionedInstance();
-       oi.setup(context);
-       oi.setTablename(tablename);
+      HiveOperator oi = p.getPartitionedInstance();
+      oi.setup(context);
+      oi.setTablename(tablename);
       opers.add(oi);
       OPERATOR_ID++;
     }
 
     int wid = 0;
-    int j=0;
-    int total =0;
-    FilePartitionMapping mapping = new FilePartitionMapping();
+    int j = 0;
+    int total = 0;
+    FilePartitionMapping mapping1 = new FilePartitionMapping();
 
     for (int i = 0; i < 10; i++) {
       fsRolling.beginWindow(wid);
@@ -393,20 +393,20 @@ public class AbstractHiveOutputOperatorTest
       }
       for (HiveOperator o: opers) {
         //o.beginWindow(wid);
-          if (wid == 6) {
-            fsRolling.committed(wid - 2);
-       mapping.setFilename("0-transactions.out.part." + j);
-        mapping.setPartition("111");
-        o.processTuple(mapping);
-      j++;
-      }
-       // o.endWindow();
+        if (wid == 6) {
+          fsRolling.committed(wid - 2);
+          mapping1.setFilename("0-transactions.out.part." + j);
+          mapping1.setPartition("111");
+          o.processTuple(mapping1);
+          j++;
+        }
+        // o.endWindow();
       }
       wid++;
     }
     fsRolling.endWindow();
 
-    for (HiveOperator o: opers){
+    for (HiveOperator o: opers) {
       o.endWindow();
       o.teardown();
     }
@@ -417,21 +417,21 @@ public class AbstractHiveOutputOperatorTest
     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is" + databaseSize);
+    LOG.debug("database size is {}" , databaseSize);
     hiveStore.disconnect();
 
     Assert.assertEquals("Numer of tuples in database",
-                        33,
+                        66,
                         databaseSize);
   }
 
-   @Test
+  @Test
   public void testHDFSHiveCheckpoint() throws SQLException
   {
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
-     HiveOperator outputOperator = new HiveOperator();
+    HiveOperator outputOperator = new HiveOperator();
     HiveOperator newOp = new HiveOperator();
 
     outputOperator.setStore(hiveStore);
@@ -444,7 +444,7 @@ public class AbstractHiveOutputOperatorTest
     //RandomWordGenerator randomGenerator = new RandomWordGenerator();
     outputOperator.setStore(hiveStore);
     outputOperator.setTablename(tablename);
-   fsRolling.setFilePath(testMeta.getDir()+"/" + APP_ID + "/" + OPERATOR_ID);
+    fsRolling.setFilePath(testMeta.getDir());
     fsRolling.setFilePermission(0777);
     fsRolling.setMaxLength(128);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
@@ -454,9 +454,11 @@ public class AbstractHiveOutputOperatorTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     fsRolling.setup(context);
-    FilePartitionMapping mapping = new FilePartitionMapping();
+    FilePartitionMapping mapping1 = new FilePartitionMapping();
+    FilePartitionMapping mapping2 = new FilePartitionMapping();
+    FilePartitionMapping mapping3 = new FilePartitionMapping();
     outputOperator.setup(context);
-     HivePartition<String> partition = new HivePartition<String>();
+    HivePartition<String> partition = new HivePartition<String>();
     fsRolling.setHivePartition(partition);
     for (int wid = 0, total = 0;
             wid < 20;
@@ -467,44 +469,38 @@ public class AbstractHiveOutputOperatorTest
               tupleCounter++, total++) {
         fsRolling.input.process(123 + "");
       }
-     if (wid == 6) {
-       fsRolling.committed(wid - 1);
-        mapping.setFilename("0-transactions.out.part.0");
-        mapping.setPartition("123");
-        outputOperator.processTuple(mapping);
-        mapping.setFilename("0-transactions.out.part.1");
-        mapping.setPartition("123");
-        outputOperator.processTuple(mapping);
+      if (wid == 6) {
+        fsRolling.committed(wid - 1);
+        mapping1.setFilename("0-transactions.out.part.0");
+        mapping1.setPartition("123");
+        outputOperator.processTuple(mapping1);
       }
       if (wid == 15) {
         fsRolling.committed(14);
-        mapping.setFilename("0-transactions.out.part.2");
-        mapping.setPartition("123");
-        outputOperator.processTuple(mapping);
+        mapping2.setFilename("0-transactions.out.part.1");
+        mapping2.setPartition("123");
+        outputOperator.processTuple(mapping2);
       }
-
 
       if (wid == 18) {
         Kryo kryo = new Kryo();
         FieldSerializer<HiveOperator> f1 = (FieldSerializer<HiveOperator>)kryo.getSerializer(HiveOperator.class);
-        FieldSerializer<FSRollingOutputOperator> f2 = (FieldSerializer<FSRollingOutputOperator>)kryo.getSerializer(FSRollingOutputOperator.class);
-        FieldSerializer<HiveStore> f3 = (FieldSerializer<HiveStore>)kryo.getSerializer(HiveStore.class);
+        FieldSerializer<HiveStore> f2 = (FieldSerializer<HiveStore>)kryo.getSerializer(HiveStore.class);
 
         f1.setCopyTransient(false);
         f2.setCopyTransient(false);
-        f3.setCopyTransient(false);
         newOp = kryo.copy(outputOperator);
         outputOperator.teardown();
         newOp.setup(context);
 
         newOp.beginWindow(15);
-        mapping.setFilename("0-transactions.out.part.3");
-        mapping.setPartition("123");
+        mapping3.setFilename("0-transactions.out.part.2");
+        mapping3.setPartition("123");
 
-        newOp.processTuple(mapping);
+        newOp.processTuple(mapping3);
 
         newOp.endWindow();
-       // newOp.teardown();
+        newOp.teardown();
         break;
       }
 
@@ -515,14 +511,13 @@ public class AbstractHiveOutputOperatorTest
     int databaseSize = -1;
 
     Statement statement = hiveStore.getConnection().createStatement();
-     ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
+    ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
     resultSet.next();
     databaseSize = resultSet.getInt(1);
-    LOG.info("database size is {}" , databaseSize);
+    LOG.debug("database size is {}", databaseSize);
     Assert.assertEquals("Numer of tuples in database",
-                        33,
+                        99,
                         databaseSize);
   }
-
 
 }

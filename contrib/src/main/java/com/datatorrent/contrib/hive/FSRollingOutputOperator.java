@@ -31,6 +31,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import com.datatorrent.lib.io.fs.AbstractFileOutputOperator;
 
 import com.datatorrent.api.Context.OperatorContext;
+import com.datatorrent.api.DAG;
 import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.api.Operator.CheckpointListener;
 import com.datatorrent.api.annotation.Stateless;
@@ -53,9 +54,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   // Hdfs block size which can be set as a property by user.
   private static final int MAX_LENGTH = 66060288;
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
-  //protected String partition;
   protected long committedWindowId = Stateless.WINDOW_ID;
-  protected long lastCommittedWindowId = Stateless.WINDOW_ID;
   private boolean isEmptyWindow;
   private int countEmptyWindow;
   private String partition;
@@ -101,10 +100,18 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Override
   protected void rotateHook(String finishedFile)
   {
+    logger.info("permission is {}" , getFilePermission());
+    if(mapFilenames.containsKey(windowIDOfCompletedPart)){
     listFileNames.add(finishedFile);
+    }
+    else{
+      listFileNames = new ArrayList<String>();
+      listFileNames.add(finishedFile);
+    }
     mapFilenames.put(windowIDOfCompletedPart, listFileNames);
+
     queueWindows.add(windowIDOfCompletedPart);
-    logger.debug("finishedFile is {}", finishedFile);
+    logger.info("finishedFile is {}", finishedFile);
   }
 
   /*
@@ -114,17 +121,12 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   protected String getFileName(T tuple)
   {
     partition = hivePartition.getHivePartition(tuple);
-    String output = null;
     if (partition != null) {
-      output = File.separator + partition + outputFileName;
-      String partFile = getPartFileNamePri(output);
+      String partFile = getPartFileNamePri(outputFileName);
       mapPartition.put(partFile, partition);
     }
-    else {
-      output = outputFileName;
-    }
-
-    return output;
+    logger.info("outputfilename is {}",outputFileName);
+    return outputFileName;
   }
 
   /*
@@ -149,16 +151,16 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     Iterator<Long> iterWindows = queueWindows.iterator();
     logger.info("mapFilename is" + mapFilenames.toString());
     logger.info("queuewindows is" + queueWindows.toString());
-
+    ArrayList<String> list = new ArrayList<String>();
     while (iterWindows.hasNext()) {
       windowId = iterWindows.next();
       if (committedWindowId >= windowId) {
-        listFileNames = mapFilenames.get(windowId);
+        list = mapFilenames.get(windowId);
       }
       FilePartitionMapping partMap = new FilePartitionMapping();
-      for (int i = 0; i < listFileNames.size(); i++) {
-        partMap.setFilename(listFileNames.get(i));
-        partMap.setPartition(mapPartition.get(listFileNames.get(i)));
+      for (int i = 0; i < list.size(); i++) {
+        partMap.setFilename(list.get(i));
+        partMap.setPartition(mapPartition.get(list.get(i)));
         outputPort.emit(partMap);
       }
       mapFilenames.remove(windowId);
@@ -166,7 +168,6 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
       logger.info("mapFilename after emituple is" + mapFilenames.toString());
       logger.info("queuewindows after emittuple is" + queueWindows.toString());
     }
-    lastCommittedWindowId = committedWindowId;
   }
 
   @Override
