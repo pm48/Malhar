@@ -68,5 +68,10 @@ public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implement
     this.hivePartition = hivePartition;
   }
 
+  public int getPartition(T o)
+  {
+    return hivePartition.getHivePartition(o).hashCode();
+  }
+
 
 }
