@@ -67,16 +67,11 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   private int countEmptyWindow;
   private String partition;
   @Min(1)
-  protected int numPartitions = 2;
+  protected int numPartitions = 1;
 
   public int getNumPartitions()
   {
     return numPartitions;
-  }
-
-  public void setNumPartitions(int numPartitions)
-  {
-    this.numPartitions = numPartitions;
   }
 
   //This variable is user configurable.
@@ -129,7 +124,8 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Override
   public void setup(OperatorContext context)
   {
-    outputFileName = File.separator + context.getId() + "-" + "transactions.out.part";
+    String appId = context.getValue(DAG.APPLICATION_ID);
+    outputFileName = File.separator + appId + File.separator + context.getId() + "-" + "transactions.out.part";
     isEmptyWindow = true;
     super.setup(context);
   }
@@ -172,9 +168,12 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   {
     partition = hivePartition.getHivePartition(tuple);
     String output = null;
+    outputFileName =  outputFileName + "-" + hivePartition.getFileName(tuple);
     if (partition != null) {
       output = File.separator + partition + outputFileName;
+      logger.info("output is {}",output);
       String partFile = getPartFileNamePri(output);
+      logger.info("partfile is {}",partFile);
       mapPartition.put(partFile, partition);
     }
     else {

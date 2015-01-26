@@ -30,14 +30,9 @@
     <description>Max windows with no data</description>
   </property>
   <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.numPartions</name>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.numPartitions</name>
     <value>3</value>
     <description>Partitions in Insert Operator</description>
-  </property>
-  <property>
-    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.numPartions</name>
-    <value>3</value>
-    <description>Partitions in Map Insert Operator</description>
   </property>
   <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.tablename</name>

@@ -22,4 +22,6 @@ public interface HivePartitionInterface<T>
    */
   public abstract String getHivePartition(T tuple);
 
+  public abstract String getFileName(T tuple);
+
 }

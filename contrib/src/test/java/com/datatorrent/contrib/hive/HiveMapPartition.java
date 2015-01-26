@@ -27,4 +27,10 @@ public class HiveMapPartition implements HivePartitionInterface<Map<String,Objec
     return tuple.toString().substring(1, endIndex);
   }
 
+  @Override
+  public String getFileName(Map<String, Object> tuple)
+  {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
 }

@@ -50,10 +50,8 @@ import org.apache.hadoop.fs.Path;
  * Hive operator which can insert data in txt format in tables/partitions from a file written in hdfs location.
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMapping, HiveStore> implements Partitioner<HiveOperator>
+public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMapping, HiveStore>
 {
-  @Min(1)
-  protected int numPartitions = 2;
   //This Property is user configurable.
   protected ArrayList<String> hivePartitionColumns = new ArrayList<String>();
   protected String partition;
@@ -64,38 +62,10 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   private transient long maxWindowsWithNoData = 100;
 
   @Override
-  public Collection<Partition<HiveOperator>> definePartitions(Collection<Partition<HiveOperator>> partitions, int incrementalCapacity)
-  {
-    int totalCount = numPartitions;
-    Collection<Partition<HiveOperator>> newPartitions = Lists.newArrayListWithExpectedSize(totalCount);
-    Kryo kryo = new Kryo();
-    for (int i = 0; i < totalCount; i++) {
-      ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      Output output = new Output(bos);
-      kryo.writeObject(output, this);
-      output.close();
-      Input lInput = new Input(bos.toByteArray());
-      @SuppressWarnings("unchecked")
-      HiveOperator oper = kryo.readObject(lInput, this.getClass());
-      newPartitions.add(new DefaultPartition<HiveOperator>(oper));
-    }
-    // assign the partition keys
-    DefaultPartition.assignPartitionKeys(newPartitions, input);
-
-    return newPartitions;
-
-  }
-
-  @Override
-  public void partitioned(Map<Integer, Partition<HiveOperator>> partitions)
-  {
-  }
-
-  @Override
   public void setup(OperatorContext context)
   {
    // String appId = context.getValue(DAG.APPLICATION_ID);
-    //store.setOperatorpath(store.filepath + "/" + appId);
+  //  store.setOperatorpath(store.filepath + "/" + appId);
     super.setup(context);
   }
 
@@ -136,6 +106,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   {
     String command = null;
     filepath = store.getFilepath()+ "/" + filepath;
+    logger.info("filepath is {}",filepath);
     File fs = new File(filepath);
       if(fs.exists()){
         if (partition != null) {
@@ -159,16 +130,6 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
   {
     this.hivePartitionColumns = hivePartitionColumns;
-  }
-
-  public int getNumPartitions()
-  {
-    return numPartitions;
-  }
-
-  public void setNumPartitions(int numPartitions)
-  {
-    this.numPartitions = numPartitions;
   }
 
   public long getMaxWindowsWithNoData()

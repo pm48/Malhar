@@ -28,4 +28,10 @@ public class HiveMapPartition implements HivePartitionInterface<Map<String,Objec
     return tuple.toString().substring(1, endIndex);
   }
 
+  @Override
+  public String getFileName(Map<String, Object> tuple)
+  {
+    return tuple.toString();
+  }
+
 }
