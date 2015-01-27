@@ -57,9 +57,6 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   protected String partition;
   @Nonnull
   protected String tablename;
-  //This variable is user configurable.
-  @Min(0)
-  private transient long maxWindowsWithNoData = 100;
 
   @Override
   public void setup(OperatorContext context)
@@ -111,10 +108,10 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
       if(fs.exists()){
         if (partition != null) {
           partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
-          command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION" + "( " + partition + " )";
+          command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION" + "( " + partition + " )";
         }
         else {
-          command = "load data local inpath '" + filepath + "' into table " + tablename;
+          command = "load data inpath '" + filepath + "' into table " + tablename;
         }
     }
     logger.debug("command is {}", command);
@@ -130,16 +127,6 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
   {
     this.hivePartitionColumns = hivePartitionColumns;
-  }
-
-  public long getMaxWindowsWithNoData()
-  {
-    return maxWindowsWithNoData;
-  }
-
-  public void setMaxWindowsWithNoData(long maxWindowsWithNoData)
-  {
-    this.maxWindowsWithNoData = maxWindowsWithNoData;
   }
 
   public String getTablename()

@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  */
 public class HiveStreamCodec<T> extends KryoSerializableStreamCodec<T> implements Externalizable
 {
-  private static final long serialVersionUID = 201412121604L;
+ // private static final long serialVersionUID = 201412121604L;
 
   protected HivePartitionInterface<T> hivePartition;
 

@@ -24,17 +24,14 @@ public  class HivePartition<T> implements HivePartitionInterface<T>
    * The random object use to generate the tuples.
    */
   private transient Random random = new Random();
+  public HivePartition(){
+  }
+
 
   @Override
   public  String getHivePartition(T tuple)
   {
     return "2014-12-1" + random.nextInt(100);
-  }
-
-  @Override
-  public String getFileName(T tuple)
-  {
-    return tuple.toString();
   }
 
 }

@@ -15,7 +15,7 @@
     <value>1000</value>
   </property>
   <property>
-    <name>rootDbUrl</name>
+    <name>dt.rootDbUrl</name>
     <value>jdbc:hive2://localhost:10000</value>
     <description>Root DbUrl.</description>
   </property>
@@ -26,6 +26,11 @@
   </property>
   <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.maxWindowsWithNoData</name>
+    <value>100</value>
+    <description>Max windows with no data</description>
+  </property>
+  <property>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.WordGenerator.tuplesPerWindow</name>
     <value>100</value>
     <description>Max windows with no data</description>
   </property>
@@ -41,7 +46,7 @@
   </property>
   <property>
     <name>dt.application.HiveInsertBenchmarkingApp.operator.RollingFsWriter.filePermission</name>
-    <value>0777</value>
+    <value>511</value>
     <description>Permission</description>
   </property>
   <property>
@@ -94,5 +99,6 @@
     <value>100</value>
     <description>Max Length</description>
   </property>
+
 </configuration>
 

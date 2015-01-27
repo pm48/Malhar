@@ -17,6 +17,10 @@ package com.datatorrent.contrib.hive;
 
 public class StringConverter implements Converter<String>
 {
+
+  public StringConverter()
+  {
+  }
   @Override
   public String getTuple(String tuple)
   {

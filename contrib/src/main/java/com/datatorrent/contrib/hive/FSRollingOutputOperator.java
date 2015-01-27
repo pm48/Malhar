@@ -33,25 +33,17 @@ import com.datatorrent.lib.io.fs.AbstractFileOutputOperator;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DefaultOutputPort;
-import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Operator.CheckpointListener;
-import com.datatorrent.api.Partitioner;
-import com.datatorrent.api.Partitioner.Partition;
 import com.datatorrent.api.annotation.Stateless;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Lists;
 import javax.validation.constraints.NotNull;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 
 /*
  * An implementation of FS Writer that writes text files to hdfs which are inserted
  * into hive on committed window callback.
  */
-public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> implements CheckpointListener, Partitioner<FSRollingOutputOperator>
+public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> implements CheckpointListener
 {
   private transient String outputFileName;
   protected MutableInt partNumber;
@@ -63,11 +55,11 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   private static final int MAX_LENGTH = 66060288;
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
   protected long committedWindowId = Stateless.WINDOW_ID;
-  private boolean isEmptyWindow;
+  private transient boolean isEmptyWindow;
   private int countEmptyWindow;
   private String partition;
   @Min(1)
-  protected int numPartitions = 1;
+  protected int numPartitions = 2;
 
   public int getNumPartitions()
   {
@@ -93,7 +85,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     setMaxLength(MAX_LENGTH);
   }
 
-  @Override
+ /* @Override
   public Collection<Partition<FSRollingOutputOperator>> definePartitions(Collection<Partition<FSRollingOutputOperator>> partitions, int incrementalCapacity)
   {
     int totalCount = numPartitions;
@@ -114,18 +106,15 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
 
     return newPartitions;
 
-  }
+  }*/
 
-  @Override
-  public void partitioned(Map<Integer, Partition<FSRollingOutputOperator>> partitions)
-  {
-  }
+
 
   @Override
   public void setup(OperatorContext context)
   {
     String appId = context.getValue(DAG.APPLICATION_ID);
-    outputFileName = File.separator + appId + File.separator + context.getId() + "-" + "transactions.out.part";
+    outputFileName = File.separator + appId + File.separator + context.getId() ;
     isEmptyWindow = true;
     super.setup(context);
   }
@@ -157,6 +146,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     mapFilenames.put(windowIDOfCompletedPart, listFileNames);
 
     queueWindows.add(windowIDOfCompletedPart);
+    logger.info("permission on file is {}",getFilePermission());
     logger.info("finishedFile is {}", finishedFile);
   }
 
@@ -166,11 +156,12 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   @Override
   protected String getFileName(T tuple)
   {
+    isEmptyWindow = false;
     partition = hivePartition.getHivePartition(tuple);
     String output = null;
-    outputFileName =  outputFileName + "-" + hivePartition.getFileName(tuple);
+   // output =  outputFileName + "-" + hivePartition.getFileName(tuple);
     if (partition != null) {
-      output = File.separator + partition + outputFileName;
+      output =  outputFileName + File.separator + partition + File.separator + "transaction.out.part" ;
       logger.info("output is {}",output);
       String partFile = getPartFileNamePri(output);
       logger.info("partfile is {}",partFile);
