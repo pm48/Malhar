@@ -43,5 +43,15 @@
 	<name>dt.application.PiLibraryDemo.operator.AnalyzeLocation.constant</name>
 	<value>900000000</value>
 </property> -->
+<!-- prperties for pi javascript demo -->
+<property>
+        <name>dt.application.PiJavaScriptDemo.operator.*.attr.MEMORY_MB</name>
+        <value>512</value>
+</property>
+<property>
+        <name>dt.application.PiJavaScriptDemo.operator.rand.tuplesBlast</name>
+        <value>100</value>
+</property>
+
 
 </configuration>
