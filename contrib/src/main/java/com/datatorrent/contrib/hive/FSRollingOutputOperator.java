@@ -45,7 +45,7 @@ import javax.validation.constraints.NotNull;
  */
 public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> implements CheckpointListener
 {
-  private transient String outputFileName;
+  private transient String outputFilePath;
   protected MutableInt partNumber;
   protected HashMap<Long, ArrayList<String>> mapFilenames = new HashMap<Long, ArrayList<String>>();
   protected ArrayList<String> listFileNames = new ArrayList<String>();
@@ -67,7 +67,6 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   }
 
   //This variable is user configurable.
-
   @Min(0)
   private long maxWindowsWithNoData = 100;
   @NotNull
@@ -85,36 +84,11 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     setMaxLength(MAX_LENGTH);
   }
 
- /* @Override
-  public Collection<Partition<FSRollingOutputOperator>> definePartitions(Collection<Partition<FSRollingOutputOperator>> partitions, int incrementalCapacity)
-  {
-    int totalCount = numPartitions;
-    Collection<Partition<FSRollingOutputOperator>> newPartitions = Lists.newArrayListWithExpectedSize(totalCount);
-    Kryo kryo = new Kryo();
-    for (int i = 0; i < totalCount; i++) {
-      ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      Output output = new Output(bos);
-      kryo.writeObject(output, this);
-      output.close();
-      Input lInput = new Input(bos.toByteArray());
-      @SuppressWarnings("unchecked")
-      FSRollingOutputOperator oper = kryo.readObject(lInput, this.getClass());
-      newPartitions.add(new DefaultPartition<FSRollingOutputOperator>(oper));
-    }
-    // assign the partition keys
-    DefaultPartition.assignPartitionKeys(newPartitions, input);
-
-    return newPartitions;
-
-  }*/
-
-
-
   @Override
   public void setup(OperatorContext context)
   {
     String appId = context.getValue(DAG.APPLICATION_ID);
-    outputFileName = File.separator + appId + File.separator + context.getId() ;
+    outputFilePath = File.separator + appId + File.separator + context.getId() ;
     isEmptyWindow = true;
     super.setup(context);
   }
@@ -136,6 +110,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   protected void rotateHook(String finishedFile)
   {
     logger.info("permission is {}", getFilePermission());
+    logger.info("finishedFile is {}",finishedFile);
     if (mapFilenames.containsKey(windowIDOfCompletedPart)) {
       listFileNames.add(finishedFile);
     }
@@ -159,16 +134,16 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     isEmptyWindow = false;
     partition = hivePartition.getHivePartition(tuple);
     String output = null;
-   // output =  outputFileName + "-" + hivePartition.getFileName(tuple);
     if (partition != null) {
-      output =  outputFileName + File.separator + partition + File.separator + "transaction.out.part" ;
+      output =  outputFilePath + File.separator + partition + File.separator + "transaction.out.part" ;
       logger.info("output is {}",output);
       String partFile = getPartFileNamePri(output);
       logger.info("partfile is {}",partFile);
+     // String[] partitionArray = partition.split(",");
       mapPartition.put(partFile, partition);
     }
     else {
-      output = outputFileName;
+      output = outputFilePath;
     }
 
     return output;

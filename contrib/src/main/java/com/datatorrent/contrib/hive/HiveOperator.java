@@ -43,7 +43,9 @@ import com.datatorrent.contrib.hive.FSRollingOutputOperator.FilePartitionMapping
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 
 /*
@@ -55,15 +57,46 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   //This Property is user configurable.
   protected ArrayList<String> hivePartitionColumns = new ArrayList<String>();
   protected String partition;
+  /**
+   * The file system used to write to.
+   */
+  protected transient FileSystem fs;
   @Nonnull
   protected String tablename;
+  @Nonnull
+  protected String hivepath;
 
   @Override
   public void setup(OperatorContext context)
   {
-   // String appId = context.getValue(DAG.APPLICATION_ID);
-  //  store.setOperatorpath(store.filepath + "/" + appId);
+    String appId = context.getValue(DAG.APPLICATION_ID);
+    store.setOperatorpath(store.filepath + "/" + appId + "/" + context.getId());
+    //Getting required file system instance.
+    try {
+      fs = getFSInstance();
+    }
+    catch (IOException ex) {
+      throw new RuntimeException(ex);
+    }
     super.setup(context);
+  }
+
+  /**
+   * Override this method to change the FileSystem instance that is used by the operator.
+   * This method is mainly helpful for unit testing.
+   * @return A FileSystem object.
+   * @throws IOException
+   */
+  protected FileSystem getFSInstance() throws IOException
+  {
+    FileSystem tempFS = FileSystem.newInstance(new Path(store.filepath).toUri(), new Configuration());
+
+    if(tempFS instanceof LocalFileSystem)
+    {
+      tempFS = ((LocalFileSystem) tempFS).getRaw();
+    }
+
+    return tempFS;
   }
 
   /**
@@ -84,7 +117,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
 
   public void processHiveFile(String fileMoved)
   {
-    logger.debug("processing {} file", fileMoved);
+    logger.info("processing {} file", fileMoved);
     String command = getInsertCommand(fileMoved);
     Statement stmt;
     try {
@@ -102,18 +135,32 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   protected String getInsertCommand(String filepath)
   {
     String command = null;
-    filepath = store.getFilepath()+ "/" + filepath;
+    Path hivefilepath = new Path(hivepath + Path.SEPARATOR + filepath);
+    filepath = store.getFilepath()+ Path.SEPARATOR + filepath;
     logger.info("filepath is {}",filepath);
-    File fs = new File(filepath);
-      if(fs.exists()){
+    logger.info("hivefilepath is {}",hivefilepath);
+    try{
+   // if (fs.exists(new Path(filepath))) {
         if (partition != null) {
           partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
+          if(fs.exists(hivefilepath)){
+            command = "load data inpath '" + filepath + "' OVERRIDE into table " + tablename + " PARTITION" + "( " + partition + " )";
+          }
+          else
           command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION" + "( " + partition + " )";
         }
         else {
-          command = "load data inpath '" + filepath + "' into table " + tablename;
+          if(fs.exists(hivefilepath)){
+           command = "load data local inpath '" + filepath + "' OVERRIDE into table " + tablename;
+          }
+          else
+          command = "load data local inpath '" + filepath + "' into table " + tablename;
         }
+   // }
     }
+    catch (IOException e) {
+          throw new RuntimeException(e);
+        }
     logger.debug("command is {}", command);
     return command;
 
@@ -137,6 +184,16 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   public void setTablename(String tablename)
   {
     this.tablename = tablename;
+  }
+
+  public String getHivepath()
+  {
+    return hivepath;
+  }
+
+  public void setHivepath(String hivepath)
+  {
+    this.hivepath = hivepath + "/" + tablename;
   }
 
   private static final Logger logger = LoggerFactory.getLogger(HiveOperator.class);
