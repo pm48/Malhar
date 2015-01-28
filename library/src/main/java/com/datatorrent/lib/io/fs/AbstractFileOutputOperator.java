@@ -433,15 +433,14 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
   @Override
   public void teardown()
   {
-    ConcurrentMap<String, FSDataOutputStream> fileMap = streamsCache.asMap();
     List<String> fileNames = new ArrayList<String>();
     int numberOfFailures = 0;
     IOException savedException = null;
 
     //Close all the streams you can
-    for(String seenFileName: streamsCache.asMap().keySet()) {
-      FSDataOutputStream outputStream = fileMap.get(seenFileName);
-
+    Map<String, FSDataOutputStream> openStreams = streamsCache.asMap();
+    for(String seenFileName: openStreams.keySet()) {
+      FSDataOutputStream outputStream = openStreams.get(seenFileName);
       try {
         outputStream.close();
       }
@@ -451,7 +450,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
         //Add names of first N failed files to list
         if(fileNames.size() < MAX_NUMBER_FILES_IN_TEARDOWN_EXCEPTION) {
           fileNames.add(seenFileName);
-          //save excpetion
+          //save exception
           savedException = ex;
         }
       }
@@ -577,7 +576,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
    * the name of the file part that has just completed closed.
    * @param finishedFile The name of the file part that has just completed and closed.
    */
-  protected void rotateHook(String finishedFile)
+  protected void rotateHook(@SuppressWarnings("unused") String finishedFile)
   {
     //Do nothing by default
   }
@@ -639,18 +638,14 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
   @Override
   public void endWindow()
   {
-    for (String fileName : streamsCache.asMap().keySet()) {
-      try
-      {
-        FSDataOutputStream fsOutput = streamsCache.get(fileName);
+    try {
+      Map<String, FSDataOutputStream> openStreams = streamsCache.asMap();
+      for (FSDataOutputStream fsOutput : openStreams.values()) {
         fsOutput.hflush();
       }
-      catch (ExecutionException e) {
-        throw new RuntimeException(e);
-      }
-      catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
     }
 
     long currentTimeStamp = System.currentTimeMillis();
