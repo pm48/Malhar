@@ -119,6 +119,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   {
     logger.info("processing {} file", fileMoved);
     String command = getInsertCommand(fileMoved);
+    if(command!=null){
     Statement stmt;
     try {
       stmt = store.getConnection().createStatement();
@@ -127,6 +128,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
     catch (SQLException ex) {
       throw new RuntimeException("Moving file into hive failed" + ex);
     }
+  }
   }
 
   /*
@@ -140,7 +142,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
     logger.info("filepath is {}",filepath);
     logger.info("hivefilepath is {}",hivefilepath);
     try{
-   // if (fs.exists(new Path(filepath))) {
+     if (fs.exists(new Path(filepath))) {
         if (partition != null) {
           partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
           if(fs.exists(hivefilepath)){
@@ -156,12 +158,12 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
           else
           command = "load data local inpath '" + filepath + "' into table " + tablename;
         }
-   // }
+    }
     }
     catch (IOException e) {
           throw new RuntimeException(e);
         }
-    logger.debug("command is {}", command);
+    logger.info("command is {}", command);
     return command;
 
   }

@@ -31,7 +31,7 @@ public  class HivePartition<T> implements HivePartitionInterface<T>
   @Override
   public  String getHivePartition(T tuple)
   {
-    return "2014-12-1" + random.nextInt(100);
+    return tuple.toString();
   }
 
 }

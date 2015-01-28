@@ -65,6 +65,9 @@
     <description>Filepath</description>
   </property>
   <property>
+    <name>dt.application.HiveInsertBenchmarkingApp.operator.HiveOperator.hivepath</name>
+    <value>/user/hive2/warehouse/</value>
+  <property>
     <name>dt.application.HiveMapInsertBenchmarkingApp.operator.HiveOperator.maxWindowsWithNoData</name>
     <value>100</value>
     <description>Max Windows with no data</description>

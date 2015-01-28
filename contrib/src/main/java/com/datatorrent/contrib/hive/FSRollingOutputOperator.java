@@ -56,6 +56,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   protected long windowIDOfCompletedPart = Stateless.WINDOW_ID;
   protected long committedWindowId = Stateless.WINDOW_ID;
   private transient boolean isEmptyWindow;
+  private transient int operatorId;
   private int countEmptyWindow;
   private String partition;
   @Min(1)
@@ -88,7 +89,8 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   public void setup(OperatorContext context)
   {
     String appId = context.getValue(DAG.APPLICATION_ID);
-    outputFilePath = File.separator + appId + File.separator + context.getId() ;
+    operatorId = context.getId() ;
+    outputFilePath = File.separator + appId + File.separator + operatorId ;
     isEmptyWindow = true;
     super.setup(context);
   }
@@ -135,7 +137,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     partition = hivePartition.getHivePartition(tuple);
     String output = null;
     if (partition != null) {
-      output =  outputFilePath + File.separator + partition + File.separator + "transaction.out.part" ;
+      output =  outputFilePath + File.separator + partition + File.separator + operatorId + "-transaction.out.part" ;
       logger.info("output is {}",output);
       String partFile = getPartFileNamePri(output);
       logger.info("partfile is {}",partFile);

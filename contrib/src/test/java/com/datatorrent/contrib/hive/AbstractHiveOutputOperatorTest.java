@@ -80,12 +80,12 @@ public class AbstractHiveOutputOperatorTest
       new File(getDir()).mkdir();
     }
 
-    @Override
+   /* @Override
     protected void finished(Description description)
     {
       super.finished(description);
       FileUtils.deleteQuietly(new File(getDir()));
-    }
+    }*/
 
   }
 
@@ -189,11 +189,12 @@ public class AbstractHiveOutputOperatorTest
     hivePartitionColumns.add("dt");
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
-    hiveStore.setFilepath(testMeta.getDir());
+    hiveStore.setFilepath("file://" + testMeta.getDir());
     HiveOperator hiveOperator = new HiveOperator();
     hiveOperator.setStore(hiveStore);
     hiveOperator.setTablename(tablename);
     hiveOperator.setHivePartitionColumns(hivePartitionColumns);
+    hiveOperator.setHivepath("file:///user/hive/warehouse");
 
     FSRollingOutputOperator<String> fsRolling = new FSRollingOutputOperator<String>();
     fsRolling.setFilePath(testMeta.getDir() );
@@ -223,10 +224,10 @@ public class AbstractHiveOutputOperatorTest
       }
       if (wid == 7) {
         fsRolling.committed(wid - 1);
-        mapping1.setFilename("0-transactions.out.part.0");
+        mapping1.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "111" + "/" + "0-transactions.out.part.0");
         mapping1.setPartition("111");
         hiveOperator.processTuple(mapping1);
-        mapping2.setFilename("0-transactions.out.part.1");
+        mapping2.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "111" + "/" + "0-transactions.out.part.1");
         mapping2.setPartition("111");
         hiveOperator.processTuple(mapping2);
       }
