@@ -37,6 +37,10 @@
     <value>128</value>
   </property>
   <property>
+    <name>dt.application.*.operator.*.port.*.attr.BUFFER_MEMORY_MB</name>
+    <value>256</value>
+  </property>
+  <property>
     <name>dt.application.YahooFinanceDemo.operator.StockTickInput.tickers</name>
     <value>IBM,GOOG,AAPL,YHOO</value>
   </property>
