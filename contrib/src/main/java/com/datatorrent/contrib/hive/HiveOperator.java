@@ -18,31 +18,20 @@ package com.datatorrent.contrib.hive;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
-import java.util.Collection;
 
 import javax.annotation.Nonnull;
-import javax.validation.constraints.Min;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Lists;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 
 import com.datatorrent.api.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.annotation.OperatorAnnotation;
-import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.contrib.hive.FSRollingOutputOperator.FilePartitionMapping;
-import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -146,14 +135,14 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
         if (partition != null) {
           partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
           if(fs.exists(hivefilepath)){
-            command = "load data inpath '" + filepath + "' OVERRIDE into table " + tablename + " PARTITION" + "( " + partition + " )";
+            command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partition + " )";
           }
           else
           command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION" + "( " + partition + " )";
         }
         else {
           if(fs.exists(hivefilepath)){
-           command = "load data local inpath '" + filepath + "' OVERRIDE into table " + tablename;
+           command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
           }
           else
           command = "load data local inpath '" + filepath + "' into table " + tablename;
