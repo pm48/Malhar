@@ -139,7 +139,7 @@ public class AbstractHiveOutputOperatorTest
 
     stmt.execute("drop table " + tablename);
     //stmt.execute("CREATE TABLE IF NOT EXISTS " + tablemeta + " (dt_window bigint,dt_app_id String,dt_operator_id int) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n' stored as TEXTFILE");
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 string) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 string) PARTITIONED BY(dt STRING,country STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
     /*stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
      + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
@@ -187,14 +187,15 @@ public class AbstractHiveOutputOperatorTest
   {
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
     hivePartitionColumns.add("dt");
+    hivePartitionColumns.add("country");
     hiveInitializeDatabase(createStore(null));
     HiveStore hiveStore = createStore(null);
-    hiveStore.setFilepath("file://" + testMeta.getDir());
+    hiveStore.setFilepath(testMeta.getDir());
     HiveOperator hiveOperator = new HiveOperator();
     hiveOperator.setStore(hiveStore);
     hiveOperator.setTablename(tablename);
     hiveOperator.setHivePartitionColumns(hivePartitionColumns);
-    hiveOperator.setHivepath("file:///user/hive/warehouse");
+    hiveOperator.setHivepath("/user/hive/warehouse");
 
     FSRollingOutputOperator<String> fsRolling = new FSRollingOutputOperator<String>();
     fsRolling.setFilePath(testMeta.getDir() );
@@ -221,15 +222,19 @@ public class AbstractHiveOutputOperatorTest
               tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
               tupleCounter++, total++) {
         fsRolling.input.put(111 + "");
+        fsRolling.input.put(222 + "");
       }
       if (wid == 7) {
         fsRolling.committed(wid - 1);
         mapping1.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "111" + "/" + "0-transactions.out.part.0");
-        mapping1.setPartition("111");
+        ArrayList<String> partitions = new ArrayList<String>();
+       partitions.add("111");
+      // partitions.add("222");
+        mapping1.setPartition(partitions);
         hiveOperator.processTuple(mapping1);
-        mapping2.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "111" + "/" + "0-transactions.out.part.1");
-        mapping2.setPartition("111");
-        hiveOperator.processTuple(mapping2);
+        //mapping2.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "111" + "/" + "0-transactions.out.part.1");
+        //mapping2.setPartition(partitions);
+       // hiveOperator.processTuple(mapping2);
       }
 
       fsRolling.endWindow();
@@ -302,10 +307,10 @@ public class AbstractHiveOutputOperatorTest
       if (wid == 6) {
         fsRolling.committed(wid - 2);
         mapping1.setFilename("0-transactions.out.part.0");
-        mapping1.setPartition("111");
+//        mapping1.setPartition("111");
         hiveOperator.processTuple(mapping1);
         mapping2.setFilename("0-transactions.out.part.1");
-        mapping2.setPartition("111");
+   //     mapping2.setPartition("111");
         hiveOperator.processTuple(mapping2);
       }
 
@@ -473,13 +478,13 @@ public class AbstractHiveOutputOperatorTest
       if (wid == 6) {
         fsRolling.committed(wid - 1);
         mapping1.setFilename("0-transactions.out.part.0");
-        mapping1.setPartition("123");
+//        mapping1.setPartition("123");
         outputOperator.processTuple(mapping1);
       }
       if (wid == 15) {
         fsRolling.committed(14);
         mapping2.setFilename("0-transactions.out.part.1");
-        mapping2.setPartition("123");
+   //     mapping2.setPartition("123");
         outputOperator.processTuple(mapping2);
       }
 
@@ -496,7 +501,7 @@ public class AbstractHiveOutputOperatorTest
 
         newOp.beginWindow(15);
         mapping3.setFilename("0-transactions.out.part.2");
-        mapping3.setPartition("123");
+//        mapping3.setPartition("123");
 
         newOp.processTuple(mapping3);
 
