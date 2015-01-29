@@ -16,15 +16,19 @@
 package com.datatorrent.benchmark;
 
 import com.datatorrent.contrib.hive.HivePartitionInterface;
+import java.util.ArrayList;
 import java.util.Map;
 
-public class HiveMapPartition implements HivePartitionInterface<Map<String,Object>>
+public class HiveMapPartition implements HivePartitionInterface<Map<String, Object>>
 {
 
   @Override
-  public String getHivePartition(Map<String,Object> tuple)
+  public ArrayList<String> getHivePartition(Map<String, Object> tuple)
   {
     int endIndex = tuple.toString().indexOf("=");
-    return tuple.toString().substring(1, endIndex);
+    ArrayList<String> hivePartitions = new ArrayList<String>();
+    hivePartitions.add(tuple.toString().substring(1, endIndex));
+    return (hivePartitions);
   }
+
 }

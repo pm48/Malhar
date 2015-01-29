@@ -24,7 +24,6 @@ import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import com.datatorrent.lib.db.AbstractStoreOutputOperator;
 
 import com.datatorrent.api.*;
@@ -45,7 +44,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
 {
   //This Property is user configurable.
   protected ArrayList<String> hivePartitionColumns = new ArrayList<String>();
-  protected String partition;
+  protected ArrayList<String> partition;
   /**
    * The file system used to write to.
    */
@@ -73,6 +72,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   /**
    * Override this method to change the FileSystem instance that is used by the operator.
    * This method is mainly helpful for unit testing.
+   *
    * @return A FileSystem object.
    * @throws IOException
    */
@@ -80,9 +80,8 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   {
     FileSystem tempFS = FileSystem.newInstance(new Path(store.filepath).toUri(), new Configuration());
 
-    if(tempFS instanceof LocalFileSystem)
-    {
-      tempFS = ((LocalFileSystem) tempFS).getRaw();
+    if (tempFS instanceof LocalFileSystem) {
+      tempFS = ((LocalFileSystem)tempFS).getRaw();
     }
 
     return tempFS;
@@ -108,16 +107,16 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   {
     logger.info("processing {} file", fileMoved);
     String command = getInsertCommand(fileMoved);
-    if(command!=null){
-    Statement stmt;
-    try {
-      stmt = store.getConnection().createStatement();
-      stmt.execute(command);
+    if (command != null) {
+      Statement stmt;
+      try {
+        stmt = store.getConnection().createStatement();
+        stmt.execute(command);
+      }
+      catch (SQLException ex) {
+        throw new RuntimeException("Moving file into hive failed" + ex);
+      }
     }
-    catch (SQLException ex) {
-      throw new RuntimeException("Moving file into hive failed" + ex);
-    }
-  }
   }
 
   /*
@@ -127,31 +126,45 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   {
     String command = null;
     Path hivefilepath = new Path(hivepath + Path.SEPARATOR + filepath);
-    filepath = store.getFilepath()+ Path.SEPARATOR + filepath;
-    logger.info("filepath is {}",filepath);
-    logger.info("hivefilepath is {}",hivefilepath);
-    try{
-     if (fs.exists(new Path(filepath))) {
-        if (partition != null) {
-          partition = getHivePartitionColumns().get(0) + "='" + partition + "'";
-          if(fs.exists(hivefilepath)){
-            command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partition + " )";
+    filepath = store.getFilepath() + Path.SEPARATOR + filepath;
+    logger.info("filepath is {}", filepath);
+    //logger.info("hivefilepath is {}", hivefilepath);
+    int numPartitions = partition.size();
+    try {
+       if (fs.exists(new Path(filepath))) {
+        if (numPartitions > 0) {
+          StringBuilder partitionString = new StringBuilder(getHivePartitionColumns().get(0) + "='" + partition.get(0) +"'");
+          int i=1;
+          while(i<numPartitions){
+           partitionString.append(",").append(getHivePartitionColumns().get(i)).append("='").append(partition.get(i)).append("'");
+           i++;
+           if(i==numPartitions)
+             break;
           }
-          else
-          command = "load data inpath '" + filepath + "' into table " + tablename + " PARTITION" + "( " + partition + " )";
+           if(i<hivePartitionColumns.size()){
+             partitionString.append(",").append(getHivePartitionColumns().get(i));
+          }
+           logger.info("partitionString is {}" , partitionString);
+          if (fs.exists(hivefilepath)) {
+            command = "load data inpath '" + filepath + "' OVERWRITE into table " + tablename + " PARTITION" + "( " + partitionString + " )";
+          }
+          else {
+            command = "load data local inpath '" + filepath + "' into table " + tablename + " PARTITION" + "( " + partitionString + " )";
+          }
         }
         else {
-          if(fs.exists(hivefilepath)){
-           command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
+          if (fs.exists(hivefilepath)) {
+            command = "load data local inpath '" + filepath + "' OVERWRITE into table " + tablename;
           }
-          else
-          command = "load data local inpath '" + filepath + "' into table " + tablename;
+          else {
+            command = "load data local inpath '" + filepath + "' into table " + tablename;
+          }
         }
-    }
+      }
     }
     catch (IOException e) {
-          throw new RuntimeException(e);
-        }
+      throw new RuntimeException(e);
+    }
     logger.info("command is {}", command);
     return command;
 

@@ -15,6 +15,7 @@
  */
 package com.datatorrent.contrib.hive;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 
@@ -29,9 +30,12 @@ public  class HivePartition<T> implements HivePartitionInterface<T>
 
 
   @Override
-  public  String getHivePartition(T tuple)
+  public ArrayList<String> getHivePartition(T tuple)
   {
-    return tuple.toString();
+    ArrayList<String> hivePartitions = new ArrayList<String>();
+    hivePartitions.add("111");
+   // hivePartitions.add("222");
+    return(hivePartitions);
   }
 
 }

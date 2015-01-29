@@ -49,7 +49,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   protected MutableInt partNumber;
   protected HashMap<Long, ArrayList<String>> mapFilenames = new HashMap<Long, ArrayList<String>>();
   protected ArrayList<String> listFileNames = new ArrayList<String>();
-  protected HashMap<String, String> mapPartition = new HashMap<String, String>();
+  protected HashMap<String, ArrayList<String>> mapPartition = new HashMap<String, ArrayList<String>>();
   protected TreeSet<Long> queueWindows = new TreeSet<Long>();
   // Hdfs block size which can be set as a property by user.
   private static final int MAX_LENGTH = 66060288;
@@ -58,14 +58,7 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   private transient boolean isEmptyWindow;
   private transient int operatorId;
   private int countEmptyWindow;
-  private String partition;
-  @Min(1)
-  protected int numPartitions = 2;
-
-  public int getNumPartitions()
-  {
-    return numPartitions;
-  }
+  private ArrayList<String> partition = new ArrayList<String>();
 
   //This variable is user configurable.
   @Min(0)
@@ -135,20 +128,23 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   {
     isEmptyWindow = false;
     partition = hivePartition.getHivePartition(tuple);
-    String output = null;
-    if (partition != null) {
-      output =  outputFilePath + File.separator + partition + File.separator + operatorId + "-transaction.out.part" ;
-      logger.info("output is {}",output);
-      String partFile = getPartFileNamePri(output);
+    StringBuilder output = new StringBuilder(outputFilePath);
+    int numPartitions = partition.size();
+    if (numPartitions>0) {
+      for(int i=0;i<numPartitions;i++){
+      output.append(File.separator).append(partition.get(i));
+      }
+      output.append(File.separator).append(operatorId).append("-transaction.out.part");
+      logger.info("output is {}",output.toString());
+      String partFile = getPartFileNamePri(output.toString());
       logger.info("partfile is {}",partFile);
      // String[] partitionArray = partition.split(",");
+      logger.info("partition in rollingoperator is {}",partition);
       mapPartition.put(partFile, partition);
-    }
-    else {
-      output = outputFilePath;
-    }
 
-    return output;
+
+    }
+    return output.toString();
   }
 
   /*
@@ -187,8 +183,6 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
       }
       mapFilenames.remove(windowId);
       iterWindows.remove();
-      logger.info("mapFilename after emituple is" + mapFilenames.toString());
-      logger.info("queuewindows after emittuple is" + queueWindows.toString());
     }
   }
 
@@ -271,7 +265,17 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
   public static class FilePartitionMapping
   {
     private String filename;
-    private String partition;
+    private ArrayList<String> partition = new ArrayList<String>();
+
+    public ArrayList<String> getPartition()
+    {
+      return partition;
+    }
+
+    public void setPartition(ArrayList<String> partition)
+    {
+      this.partition = partition;
+    }
 
     public String getFilename()
     {
@@ -281,16 +285,6 @@ public class FSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> im
     public void setFilename(String filename)
     {
       this.filename = filename;
-    }
-
-    public String getPartition()
-    {
-      return partition;
-    }
-
-    public void setPartition(String partition)
-    {
-      this.partition = partition;
     }
 
   }
