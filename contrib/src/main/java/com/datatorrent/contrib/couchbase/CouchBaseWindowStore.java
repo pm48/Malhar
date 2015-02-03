@@ -101,7 +101,6 @@ public class CouchBaseWindowStore extends CouchBaseStore implements Transactiona
     byte[] value = null;
     String key = appId + "_" + operatorId + "_" + lastWindowValue;
     value = (byte[])clientMeta.get(key);
-    value = (byte[])clientMeta.get(key);
     if (value != null) {
       long longval = toLong(value);
       return longval;
