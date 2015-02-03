@@ -17,7 +17,7 @@ package com.datatorrent.lib.io.fs;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.List;
+import java.util.LinkedList;
 
 import javax.validation.constraints.NotNull;
 
@@ -26,15 +26,14 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultOutputPort;
-import com.datatorrent.api.Operator;
 import com.datatorrent.api.annotation.OperatorAnnotation;
 
 import com.datatorrent.lib.io.IdempotentStorageManager;
+import com.datatorrent.lib.io.block.BlockMetadata.FileBlockMetadata;
 
 /**
  * Input operator that scans a directory for files and splits a file into blocks.<br/>
@@ -43,19 +42,17 @@ import com.datatorrent.lib.io.IdempotentStorageManager;
  * @displayName File Splitter
  * @category Input
  * @tags file, input operator
+ *
+ * @since 2.0.0
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
-public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.FileMetadata> implements Operator.CheckpointListener
+public class FileSplitter extends AbstractFileInputOperator<FileSplitter.FileMetadata>
 {
   protected Long blockSize;
   protected transient int operatorId;
   private int sequenceNo;
 
-  @NotNull
-  protected IdempotentStorageManager idempotentStorageManager;
-
   protected transient long currentWindowId;
-  protected transient List<String> currentWindowRecoveryState;
 
   public FileSplitter()
   {
@@ -63,11 +60,10 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
     pendingFiles = Sets.newLinkedHashSet();
     blockSize = null;
     idempotentStorageManager = new IdempotentStorageManager.FSIdempotentStorageManager();
-    currentWindowRecoveryState = Lists.newArrayList();
   }
 
   public final transient DefaultOutputPort<FileMetadata> filesMetadataOutput = new DefaultOutputPort<FileMetadata>();
-  public final transient DefaultOutputPort<BlockMetadata> blocksMetadataOutput = new DefaultOutputPort<BlockMetadata>();
+  public final transient DefaultOutputPort<FileBlockMetadata> blocksMetadataOutput = new DefaultOutputPort<FileBlockMetadata>();
 
   @Override
   public void setup(Context.OperatorContext context)
@@ -79,19 +75,9 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
     if (blockSize == null) {
       blockSize = fs.getDefaultBlockSize(filePath);
     }
-    idempotentStorageManager.setup(context);
   }
 
   @Override
-  public void beginWindow(long windowId)
-  {
-    currentWindowId = windowId;
-    if (windowId <= idempotentStorageManager.getLargestRecoveryWindow()) {
-      replay(windowId);
-    }
-    super.beginWindow(windowId);
-  }
-
   protected void replay(long windowId)
   {
     //assumption is that FileSplitter is always statically partitioned. This operator doesn't do
@@ -99,16 +85,16 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
 
     try {
       @SuppressWarnings("unchecked")
-      List<String> recoveredData = (List<String>) idempotentStorageManager.load(operatorId, windowId);
+      LinkedList<RecoveryEntry> recoveredData = (LinkedList<RecoveryEntry>) idempotentStorageManager.load(operatorId, windowId);
       if (recoveredData == null) {
         //This could happen when there are multiple physical instances and one of them is ahead in processing windows.
         return;
       }
-      for (String recoveredPath : recoveredData) {
-        processedFiles.add(recoveredPath);
-        FileMetadata fileMetadata = buildFileMetadata(recoveredPath);
+      for (RecoveryEntry entry : recoveredData) {
+        processedFiles.add(entry.file);
+        FileMetadata fileMetadata = buildFileMetadata(entry.file);
         filesMetadataOutput.emit(fileMetadata);
-        Iterator<BlockMetadata> iterator = new BlockMetadataIterator(this, fileMetadata, blockSize);
+        Iterator<FileBlockMetadata> iterator = new BlockMetadataIterator(this, fileMetadata, blockSize);
         while (iterator.hasNext()) {
           this.blocksMetadataOutput.emit(iterator.next());
         }
@@ -131,12 +117,12 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
     Iterator<String> pendingIterator = pendingFiles.iterator();
     while (pendingIterator.hasNext()) {
       String fPath = pendingIterator.next();
-      currentWindowRecoveryState.add(fPath);
+      currentWindowRecoveryState.add(new RecoveryEntry(fPath, 0, 0));
       LOG.debug("file {}", fPath);
       try {
         FileMetadata fileMetadata = buildFileMetadata(fPath);
         filesMetadataOutput.emit(fileMetadata);
-        Iterator<BlockMetadata> iterator = new BlockMetadataIterator(this, fileMetadata, blockSize);
+        Iterator<FileBlockMetadata> iterator = new BlockMetadataIterator(this, fileMetadata, blockSize);
         while (iterator.hasNext()) {
           this.blocksMetadataOutput.emit(iterator.next());
         }
@@ -148,34 +134,14 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
     }
   }
 
-  @Override
-  public void endWindow()
-  {
-    super.endWindow();
-    if (currentWindowId > idempotentStorageManager.getLargestRecoveryWindow()) {
-      try {
-        idempotentStorageManager.save(currentWindowRecoveryState, operatorId, currentWindowId);
-      }
-      catch (IOException e) {
-        throw new RuntimeException("saving recovery", e);
-      }
-    }
-    currentWindowRecoveryState.clear();
-  }
-
-  @Override
-  public void teardown()
-  {
-    super.teardown();
-    idempotentStorageManager.teardown();
-  }
-
   /**
-   * Can be overridden for creating block metadata of a type that extends {@link BlockMetadata}
+   * Can be overridden for creating block metadata of a type that extends {@link FileBlockMetadata}
    */
-  protected BlockMetadata createBlockMetadata(long pos, long lengthOfFileInBlock, int blockNumber, FileMetadata fileMetadata, boolean isLast)
+  protected FileBlockMetadata createBlockMetadata(long pos, long lengthOfFileInBlock, int blockNumber, FileMetadata fileMetadata, boolean isLast)
   {
-    return new BlockMetadata(pos, lengthOfFileInBlock, fileMetadata.getFilePath(), fileMetadata.getBlockIds()[blockNumber - 1], isLast);
+    return new FileBlockMetadata(fileMetadata.getFilePath(), fileMetadata.getBlockIds()[blockNumber - 1], pos,
+      lengthOfFileInBlock, isLast, blockNumber == 1 ? -1 : fileMetadata.getBlockIds()[blockNumber - 2]);
+
   }
 
   @Override
@@ -227,22 +193,6 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
     throw new UnsupportedOperationException("not supported");
   }
 
-  @Override
-  public void checkpointed(long windowId)
-  {
-  }
-
-  @Override
-  public void committed(long windowId)
-  {
-    try {
-      idempotentStorageManager.deleteUpTo(operatorId, windowId);
-    }
-    catch (IOException e) {
-      throw new RuntimeException("deleting state", e);
-    }
-  }
-
   public void setBlockSize(Long blockSize)
   {
     this.blockSize = blockSize;
@@ -253,20 +203,10 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
     return blockSize;
   }
 
-  public void setIdempotentStorageManager(IdempotentStorageManager idempotentStorageManager)
-  {
-    this.idempotentStorageManager = idempotentStorageManager;
-  }
-
-  public IdempotentStorageManager getIdempotentStorageManager()
-  {
-    return idempotentStorageManager;
-  }
-
   /**
    * An {@link Iterator} for Block-Metadatas of a file.
    */
-  public static class BlockMetadataIterator implements Iterator<BlockMetadata>
+  public static class BlockMetadataIterator implements Iterator<FileBlockMetadata>
   {
     private final FileMetadata fileMetadata;
     private final long blockSize;
@@ -274,7 +214,7 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
     private long pos;
     private int blockNumber;
 
-    private FileSplitter splitter;
+    private final FileSplitter splitter;
 
     public BlockMetadataIterator(FileSplitter splitter, FileMetadata fileMetadata, long blockSize)
     {
@@ -293,140 +233,22 @@ public class FileSplitter extends AbstractFSDirectoryInputOperator<FileSplitter.
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public BlockMetadata next()
+    public FileBlockMetadata next()
     {
       long length;
       while ((length = blockSize * ++blockNumber) <= pos) {
       }
       boolean isLast = length >= fileMetadata.getFileLength();
       long lengthOfFileInBlock = isLast ? fileMetadata.getFileLength() : length;
-      BlockMetadata blockMetadata = splitter.createBlockMetadata(pos, lengthOfFileInBlock, blockNumber, fileMetadata, isLast);
+      FileBlockMetadata fileBlock = splitter.createBlockMetadata(pos, lengthOfFileInBlock, blockNumber, fileMetadata, isLast);
       pos = lengthOfFileInBlock;
-      return blockMetadata;
+      return fileBlock;
     }
 
     @Override
     public void remove()
     {
       throw new UnsupportedOperationException("remove not supported");
-    }
-  }
-
-  /**
-   * Represent the block metadata - file path, the file offset and length associated with the block and if it is the last
-   * block of the file.
-   */
-  public static class BlockMetadata
-  {
-    private final long blockId;
-    private final String filePath;
-    //file offset associated with the block
-    private long offset;
-    //file length associated with the block
-    private long length;
-    private final boolean isLastBlock;
-
-    protected BlockMetadata()
-    {
-      blockId = -1;
-      filePath = null;
-      offset = -1;
-      length = -1;
-      isLastBlock = false;
-    }
-
-    /**
-     * Constructs Block metadata
-     *
-     * @param offset      offset of the file in the block
-     * @param length      length of the file in the block
-     * @param filePath    file path
-     * @param blockId     block id
-     * @param isLastBlock true if this is the last block of file
-     */
-    public BlockMetadata(long offset, long length, String filePath, long blockId, boolean isLastBlock)
-    {
-      this.filePath = filePath;
-      this.blockId = blockId;
-      this.offset = offset;
-      this.length = length;
-      this.isLastBlock = isLastBlock;
-    }
-
-    @Override
-    public boolean equals(Object o)
-    {
-      if (this == o) {
-        return true;
-      }
-      if (!(o instanceof BlockMetadata)) {
-        return false;
-      }
-
-      BlockMetadata that = (BlockMetadata) o;
-      return blockId == that.blockId;
-    }
-
-    @Override
-    public int hashCode()
-    {
-      return (int) blockId;
-    }
-
-    /**
-     * Returns the file path.
-     */
-    public String getFilePath()
-    {
-      return filePath;
-    }
-
-    /**
-     * Returns the block id.
-     */
-    public long getBlockId()
-    {
-      return blockId;
-    }
-
-    /**
-     * Returns the file offset associated with the block.
-     */
-    public long getOffset()
-    {
-      return offset;
-    }
-
-    /**
-     * Sets the offset of the file in the block.
-     */
-    public void setOffset(long offset)
-    {
-      this.offset = offset;
-    }
-
-    /**
-     * Returns the length of the file in the block.
-     */
-    public long getLength()
-    {
-      return length;
-    }
-
-    /**
-     * Sets the length of the file in the block.
-     */
-    public void setLength(long length)
-    {
-      this.length = length;
-    }
-
-    /**
-     * Returns if this is the last block in file.
-     */
-    public boolean isLastBlock()
-    {
-      return isLastBlock;
     }
   }
 

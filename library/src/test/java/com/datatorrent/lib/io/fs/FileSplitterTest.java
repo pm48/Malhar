@@ -37,6 +37,7 @@ import com.datatorrent.api.DAG;
 
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import com.datatorrent.lib.io.IdempotentStorageManager;
+import com.datatorrent.lib.io.block.BlockMetadata;
 import com.datatorrent.lib.testbench.CollectorTestSink;
 
 public class FileSplitterTest
@@ -79,12 +80,12 @@ public class FileSplitterTest
 
       this.fileSplitter = new FileSplitter();
 
-      AbstractFSDirectoryInputOperator.DirectoryScanner scanner = new AbstractFSDirectoryInputOperator.DirectoryScanner();
+      AbstractFileInputOperator.DirectoryScanner scanner = new AbstractFileInputOperator.DirectoryScanner();
       scanner.setFilePatternRegexp(".*[.]txt");
       fileSplitter.setScanner(scanner);
       fileSplitter.setDirectory(dataDirectory);
       fileSplitter.setIdempotentStorageManager(new IdempotentStorageManager.NoopIdempotentStorageManager());
-      fileSplitter.setup(new OperatorContextTestHelper.TestIdOperatorContext(0));
+      fileSplitter.setup(new OperatorContextTestHelper.TestIdOperatorContext(0, new Attribute.AttributeMap.DefaultAttributeMap()));
 
       fileMetadataSink = new CollectorTestSink<Object>();
       fileSplitter.filesMetadataOutput.setSink(fileMetadataSink);
@@ -130,7 +131,7 @@ public class FileSplitterTest
     testMeta.fileSplitter.emitTuples();
     Assert.assertEquals("Blocks", 2, testMeta.blockMetadataSink.collectedTuples.size());
     for (Object blockMetadata : testMeta.blockMetadataSink.collectedTuples) {
-      FileSplitter.BlockMetadata metadata = (FileSplitter.BlockMetadata) blockMetadata;
+      BlockMetadata.FileBlockMetadata metadata = (BlockMetadata.FileBlockMetadata) blockMetadata;
       Assert.assertTrue("path: " + metadata.getFilePath(), testMeta.filePaths.contains(metadata.getFilePath()));
     }
   }
@@ -171,7 +172,7 @@ public class FileSplitterTest
     testMeta.fileSplitter.beginWindow(1);
     Assert.assertEquals("Blocks", 2, testMeta.blockMetadataSink.collectedTuples.size());
     for (Object blockMetadata : testMeta.blockMetadataSink.collectedTuples) {
-      FileSplitter.BlockMetadata metadata = (FileSplitter.BlockMetadata) blockMetadata;
+      BlockMetadata.FileBlockMetadata metadata = (BlockMetadata.FileBlockMetadata) blockMetadata;
       Assert.assertTrue("path: " + metadata.getFilePath(), testMeta.filePaths.contains(metadata.getFilePath()));
     }
   }

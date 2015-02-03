@@ -48,6 +48,8 @@ import com.datatorrent.common.util.DTThrowable;
 /**
  * AbstractCouchBaseInputOperator which extends AbstractStoreInputOperator.
  * Classes extending from this operator should implement the abstract functionality of getTuple and getKeys.
+ *
+ * @since 2.0.0
  */
 public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInputOperator<T, CouchBaseStore> implements Partitioner<AbstractCouchBaseInputOperator<T>>
 {

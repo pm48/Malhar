@@ -18,10 +18,7 @@ package com.datatorrent.lib.db.jdbc;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import javax.annotation.Nonnull;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.datatorrent.api.Context;
 import com.datatorrent.lib.db.AbstractStoreOutputOperator;
@@ -72,7 +69,6 @@ public abstract class AbstractJdbcNonTransactionableOutputOperator<T, S extends 
    *
    * @return the sql statement to update a tuple in the database.
    */
-  @Nonnull
   protected abstract String getUpdateCommand();
 
   /**
@@ -85,6 +81,4 @@ public abstract class AbstractJdbcNonTransactionableOutputOperator<T, S extends 
    * @throws SQLException
    */
   protected abstract void setStatementParameters(PreparedStatement statement, T tuple) throws SQLException;
-
-  private static final Logger logger = LoggerFactory.getLogger(AbstractJdbcTransactionableOutputOperator.class);
 }
