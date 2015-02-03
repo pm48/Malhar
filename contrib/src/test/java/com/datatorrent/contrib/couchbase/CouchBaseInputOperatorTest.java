@@ -56,9 +56,7 @@ public class CouchBaseInputOperatorTest
   private static int OPERATOR_ID = 0;
   protected static ArrayList<URI> nodes = new ArrayList<URI>();
   protected static ArrayList<String> keyList;
-  //Used for testing couchbase with partitions.
-  private static String uri = "127.0.0.1:8091";
-  private CouchbaseMock mockCouchbase1 = null;
+  private CouchbaseMock mockCouchbase = null;
   private TestInputOperator inputOperator = null;
   protected static CouchbaseClient client = null;
   private BucketConfiguration bucketConfiguration = new BucketConfiguration();
@@ -127,13 +125,13 @@ public class CouchBaseInputOperatorTest
   @After
   public void teardown() throws Exception
   {
-    if (mockCouchbase1 != null) {
-      mockCouchbase1.stop();
-      mockCouchbase1 = null;
-    }
-    if (inputOperator != null) {
+     if (inputOperator != null) {
       inputOperator.teardown();
       client.flush();
+    }
+    if (mockCouchbase != null) {
+      mockCouchbase.stop();
+      mockCouchbase = null;
     }
   }
 
@@ -147,12 +145,9 @@ public class CouchBaseInputOperatorTest
 
     ArrayList<BucketConfiguration> configList = new ArrayList<BucketConfiguration>();
     configList.add(bucketConfiguration);
-    mockCouchbase1 = new CouchbaseMock(0, configList);
-    mockCouchbase1.start();
-    mockCouchbase1.waitForStartup();
-   // mockCouchbase2 = new CouchbaseMock(0, configList);
-    // mockCouchbase2.start();
-    // mockCouchbase2.waitForStartup();
+    mockCouchbase = new CouchbaseMock(0, configList);
+    mockCouchbase.start();
+    mockCouchbase.waitForStartup();
   }
 
   @Test
@@ -160,18 +155,19 @@ public class CouchBaseInputOperatorTest
   {
     createMock("default", "");
     List<URI> uriList = new ArrayList<URI>();
-    int port1 = mockCouchbase1.getHttpPort();
+    int port = mockCouchbase.getHttpPort();
     //  int port2 = mockCouchbase2.getHttpPort();
-    uriList.add(new URI("http", null, "localhost", port1, "/pools", "", ""));
+    uriList.add(new URI("http", null, "localhost", port, "/pools", "", ""));
     //  uriList.add(new URI("http", null, "localhost", port2, "/pools", "", ""));
     connectionFactory = cfb.buildCouchbaseConnection(uriList, bucketConfiguration.name, bucketConfiguration.password);
     client = new CouchbaseClient(connectionFactory);
+
     CouchBaseStore store = new CouchBaseStore();
     keyList = new ArrayList<String>();
     store.setBucket(bucketConfiguration.name);
     store.setPassword(bucketConfiguration.password);
-    store.setUriString("localhost:" + port1);
-    store.setServerURIString("localhost:" + port1);
+    store.setUriString("localhost:" + port);
+    store.setServerURIString("localhost:"+ port + "/default");
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
@@ -179,20 +175,19 @@ public class CouchBaseInputOperatorTest
     inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
     inputOperator.insertEventsInTable(10);
-    inputOperator.setServerIndex(1);
-   // List<Partition<AbstractCouchBaseInputOperator<String>>> partitions = Lists.newArrayList();
-    // partitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<String>>(inputOperator));
-    // Collection<Partition<AbstractCouchBaseInputOperator<String>>> newPartitions = inputOperator.definePartitions(partitions, 1);
 
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputOperator.outputPort.setSink(sink);
     inputOperator.setup(context);
     inputOperator.beginWindow(0);
+    logger.info("couchservers are {}",inputOperator.conf.getCouchServers());
+    logger.info("couchservers are {}",inputOperator.conf.getServers());
+
+    inputOperator.setServerIndex(inputOperator.conf.getMaster(inputOperator.conf.getVbucketByKey("Key10")));
     inputOperator.emitTuples();
     inputOperator.endWindow();
-
-    Assert.assertEquals("tuples in couchbase", 10, sink.collectedTuples.size());
-    store.disconnect();
+    inputOperator.teardown();
+    Assert.assertEquals("tuples in couchbase", 1, sink.collectedTuples.size());
     teardown();
   }
 
@@ -201,7 +196,7 @@ public class CouchBaseInputOperatorTest
   {
     createMock("default", "");
     List<URI> uriList = new ArrayList<URI>();
-    int port1 = mockCouchbase1.getHttpPort();
+    int port1 = mockCouchbase.getHttpPort();
     // int port2 = mockCouchbase2.getHttpPort();
     uriList.add(new URI("http", null, "localhost", port1, "/pools", "", ""));
     // uriList.add(new URI("http", null, "localhost", port2, "/pools", "", ""));
@@ -219,7 +214,7 @@ public class CouchBaseInputOperatorTest
     List<Partition<AbstractCouchBaseInputOperator<String>>> partitions = Lists.newArrayList();
     inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
-    inputOperator.insertEventsInTable(100);
+    inputOperator.insertEventsInTable(10);
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     partitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<String>>(inputOperator));
     Collection<Partition<AbstractCouchBaseInputOperator<String>>> newPartitions = inputOperator.definePartitions(partitions, 1);

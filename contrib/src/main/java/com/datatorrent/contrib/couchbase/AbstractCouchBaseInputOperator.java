@@ -106,6 +106,8 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
     Object result = null;
     for (String key: keys) {
         int master = conf.getMaster(conf.getVbucketByKey(key));
+        logger.debug("master is {}",master);
+        logger.debug("serverIndex is {}",getServerIndex());
         if (master == getServerIndex()) {
           logger.debug("master is {}", master);
           result = clientPartition.get(key);

@@ -257,16 +257,20 @@ public class CouchBaseStore implements Connectable
   public CouchbaseClient connectServer() throws IOException
   {
     ArrayList<URI> nodes = new ArrayList<URI>();
-    serverURIString = serverURIString.replace("default", "pools");
+    serverURIString = serverURIString.replace("/default", "");
+    logger.debug("serverURIstring is {}" , serverURIString);
     CouchbaseClient clientPartition = null;
     try {
-      nodes.add(new URI(serverURIString));
+      nodes.add(new URI("http",serverURIString,"/pools", null, null));
     }
     catch (URISyntaxException ex) {
       DTThrowable.rethrow(ex);
     }
     try {
-       clientPartition = new CouchbaseClient(nodes, bucket, password);
+      CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
+      cfb.setOpTimeout(timeout);  // wait up to 10 seconds for an operation to succeed
+      cfb.setOpQueueMaxBlockTime(blockTime); // wait up to 10 second when trying to enqueue an operation
+      clientPartition = new CouchbaseClient(cfb.buildCouchbaseConnection(nodes, bucket, password));
     }
     catch (IOException e) {
       DTThrowable.rethrow(e);
