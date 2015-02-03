@@ -33,6 +33,7 @@ import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner.Partition;
+import com.datatorrent.api.Partitioner.PartitioningContext;
 
 import com.datatorrent.common.util.DTThrowable;
 import com.google.common.collect.Lists;
@@ -217,12 +218,12 @@ public class CouchBaseInputOperatorTest
     inputOperator.insertEventsInTable(10);
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     partitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<String>>(inputOperator));
-    Collection<Partition<AbstractCouchBaseInputOperator<String>>> newPartitions = inputOperator.definePartitions(partitions, 1);
+    /*Collection<Partition<AbstractCouchBaseInputOperator<String>>> newPartitions = inputOperator.definePartitions(partitions);
 //    Assert.assertEquals(2, newPartitions.size());
     for (Partition<AbstractCouchBaseInputOperator<String>> p: newPartitions) {
       Assert.assertNotSame(inputOperator, p.getPartitionedInstance());
     }
-    /* Collect all operators in a list */
+    /* Collect all operators in a list
     List<AbstractCouchBaseInputOperator<String>> opers = Lists.newArrayList();
     for (Partition<AbstractCouchBaseInputOperator<String>> p: newPartitions) {
       TestInputOperator oi = (TestInputOperator)p.getPartitionedInstance();
@@ -230,16 +231,16 @@ public class CouchBaseInputOperatorTest
       oi.setup(null);
       oi.outputPort.setSink(sink);
       opers.add(oi);
-    }
+    } */
 
     sink.clear();
     int wid = 0;
     for (int i = 0; i < 10; i++) {
-      for (AbstractCouchBaseInputOperator<String> o: opers) {
+     /* for (AbstractCouchBaseInputOperator<String> o: opers) {
         o.beginWindow(wid);
         o.emitTuples();
         o.endWindow();
-      }
+      }*/
       wid++;
     }
     Assert.assertEquals("Tuples read should be same ", 100, sink.collectedTuples.size());

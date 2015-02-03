@@ -130,7 +130,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   }
 
   @Override
-  public Collection<Partition<AbstractCouchBaseInputOperator<T>>> definePartitions(Collection<Partition<AbstractCouchBaseInputOperator<T>>> partitions, int incrementalCapacity)
+  public Collection<Partition<AbstractCouchBaseInputOperator<T>>> definePartitions(Collection<Partition<AbstractCouchBaseInputOperator<T>>> partitions, PartitioningContext incrementalCapacity)
   {
     conf = store.getConf();
     int numPartitions = conf.getCouchServers().size();
