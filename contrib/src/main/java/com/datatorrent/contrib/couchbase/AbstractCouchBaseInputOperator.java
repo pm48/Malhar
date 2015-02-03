@@ -53,20 +53,8 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
 {
   private static final Logger logger = LoggerFactory.getLogger(AbstractCouchBaseInputOperator.class);
   protected transient CouchbaseClient clientPartition = null;
-  private boolean isPartitioned = false;
 
   private int serverIndex;
-  private String urlString;
-
-  public String getUrlString()
-  {
-    return urlString;
-  }
-
-  public void setUrlString(String urlString)
-  {
-    this.urlString = urlString;
-  }
 
   protected transient Config conf;
 
@@ -89,27 +77,15 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   public void setup(Context.OperatorContext context)
   {
     super.setup(context);
-    if (clientPartition == null && isPartitioned) {
+    if (clientPartition == null) {
       if (conf == null) {
         conf = store.getConf();
       }
-
-      ArrayList<URI> nodes = new ArrayList<URI>();
-
-      urlString = urlString.replace("default", "pools");
       try {
-        nodes.add(new URI(urlString));
+        clientPartition = store.connectServer();
       }
-      catch (URISyntaxException ex) {
+      catch (IOException ex) {
         DTThrowable.rethrow(ex);
-      }
-
-      try {
-        clientPartition = new CouchbaseClient(nodes, "default", "");
-      }
-      catch (IOException e) {
-        logger.error("Error connecting to Couchbase: {}" , e.getMessage());
-        DTThrowable.rethrow(e);
       }
     }
   }
@@ -129,24 +105,17 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
     List<String> keys = getKeys();
     Object result = null;
     for (String key: keys) {
-      if (isPartitioned) {
         int master = conf.getMaster(conf.getVbucketByKey(key));
         if (master == getServerIndex()) {
           logger.debug("master is {}", master);
-          logger.debug("urlstring is {}", urlString);
           result = clientPartition.get(key);
         }
-      }
-      else {
-        result = store.getInstance().get(key);
       }
 
       if (result != null) {
         T tuple = getTuple(result);
         outputPort.emit(tuple);
       }
-
-    }
   }
 
   public abstract T getTuple(Object object);
@@ -163,7 +132,6 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   public Collection<Partition<AbstractCouchBaseInputOperator<T>>> definePartitions(Collection<Partition<AbstractCouchBaseInputOperator<T>>> partitions, int incrementalCapacity)
   {
     conf = store.getConf();
-    isPartitioned = true;
     int numPartitions = conf.getCouchServers().size();
     List<URL> list = conf.getCouchServers();
     Collection<Partition<AbstractCouchBaseInputOperator<T>>> newPartitions = Lists.newArrayListWithExpectedSize(numPartitions);
@@ -177,8 +145,8 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
       @SuppressWarnings("unchecked")
       AbstractCouchBaseInputOperator<T> oper = kryo.readObject(lInput, this.getClass());
       oper.setServerIndex(i);
-      oper.setUrlString(list.get(i).toString());
-      logger.debug("oper {} urlstring is {}", i, oper.getUrlString());
+      oper.store.setServerURIString(list.get(i).toString());
+      logger.info("oper {} urlstring is {}", i, oper.store.getServerURIString());
       newPartitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<T>>(oper));
     }
 

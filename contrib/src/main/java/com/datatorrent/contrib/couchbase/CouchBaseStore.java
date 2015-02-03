@@ -45,7 +45,7 @@ import javax.validation.constraints.Min;
 public class CouchBaseStore implements Connectable
 {
 
-  private static final  Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
+  private static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
   private transient ConfigurationProvider configurationProvider;
   @Nonnull
   protected String bucket;
@@ -59,6 +59,7 @@ public class CouchBaseStore implements Connectable
   {
     this.bucket = bucket;
   }
+
   @Nonnull
   protected String password;
   @Nonnull
@@ -83,11 +84,25 @@ public class CouchBaseStore implements Connectable
   {
     this.passwordConfig = passwordConfig;
   }
+
   @Nonnull
   protected String passwordConfig;
 
   @Nonnull
   protected String uriString;
+
+  // URL specific to a server.
+  protected String serverURIString;
+
+  public String getServerURIString()
+  {
+    return serverURIString;
+  }
+
+  public void setServerURIString(String serverURIString)
+  {
+    this.serverURIString = serverURIString;
+  }
 
   protected transient CouchbaseClient client;
   @Min(1)
@@ -155,7 +170,7 @@ public class CouchBaseStore implements Connectable
     this.shutdownTimeout = shutdownTimeout;
   }
 
- transient List<URI> baseURIs = new ArrayList<URI>();
+  transient List<URI> baseURIs = new ArrayList<URI>();
 
   public CouchBaseStore()
   {
@@ -239,6 +254,26 @@ public class CouchBaseStore implements Connectable
     }
   }
 
+  public CouchbaseClient connectServer() throws IOException
+  {
+    ArrayList<URI> nodes = new ArrayList<URI>();
+    serverURIString = serverURIString.replace("default", "pools");
+    CouchbaseClient clientPartition = null;
+    try {
+      nodes.add(new URI(serverURIString));
+    }
+    catch (URISyntaxException ex) {
+      DTThrowable.rethrow(ex);
+    }
+    try {
+       clientPartition = new CouchbaseClient(nodes, bucket, password);
+    }
+    catch (IOException e) {
+      DTThrowable.rethrow(e);
+    }
+    return clientPartition;
+
+  }
 
   @Override
   public boolean isConnected()
@@ -250,9 +285,9 @@ public class CouchBaseStore implements Connectable
   @Override
   public void disconnect() throws IOException
   {
-    if(client!=null)
-    client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
+    if (client != null) {
+      client.shutdown(shutdownTimeout, TimeUnit.SECONDS);
+    }
   }
-
 
 }

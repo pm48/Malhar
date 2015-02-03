@@ -100,9 +100,8 @@ public class CouchBaseWindowStore extends CouchBaseStore implements Transactiona
   {
     byte[] value = null;
     String key = appId + "_" + operatorId + "_" + lastWindowValue;
-    logger.debug("key is {}" , key);
     value = (byte[])clientMeta.get(key);
-    logger.debug("value is {}" , value);
+    value = (byte[])clientMeta.get(key);
     if (value != null) {
       long longval = toLong(value);
       return longval;
@@ -163,7 +162,6 @@ public class CouchBaseWindowStore extends CouchBaseStore implements Transactiona
       dos.close();
     }
     catch (IOException e) {
-      logger.error("error converting to long");
       DTThrowable.rethrow(e);
     }
     return result;
@@ -180,7 +178,6 @@ public class CouchBaseWindowStore extends CouchBaseStore implements Transactiona
       dos.close();
     }
     catch (IOException e) {
-      logger.error("error converting to byte array");
       DTThrowable.rethrow(e);
     }
     return result;
