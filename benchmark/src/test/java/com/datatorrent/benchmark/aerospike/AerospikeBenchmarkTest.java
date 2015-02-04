@@ -18,13 +18,13 @@ package com.datatorrent.benchmark.aerospike;
 import org.junit.Test;
 
 import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.aerospike.AerospikeOutputBenchmarkApplication;
 
-public class AerospikeBenchmarkAppTest {
+public class AerospikeBenchmarkTest {
+  private static final long serialVersionUID = 1L;
 
   @Test
   public void test() throws Exception {
 
-    LocalMode.runApp(new AerospikeOutputBenchmarkApplication(), 10000);
+    LocalMode.runApp(new AerospikeOutputOperatorBenchmark(), 10000);
   }
 }

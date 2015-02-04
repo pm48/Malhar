@@ -20,8 +20,11 @@ import com.datatorrent.api.LocalMode;
 import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.contrib.memsql.AbstractMemsqlOutputOperatorTest;
 import com.datatorrent.contrib.memsql.MemsqlStore;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.sql.SQLException;
+import java.util.logging.Level;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
@@ -36,7 +39,13 @@ public class MemsqlOutputBenchmarkTest
   public void testMethod() throws SQLException
   {
     Configuration conf = new Configuration();
-    InputStream inputStream = getClass().getResourceAsStream("/dt-site-memsql.xml");
+    InputStream inputStream = null;
+    try {
+      inputStream = new FileInputStream("src/site/conf/dt-site-memsql.xml");
+    }
+    catch (FileNotFoundException ex) {
+      DTThrowable.rethrow(ex);
+    }
     conf.addResource(inputStream);
 
     MemsqlStore memsqlStore = new MemsqlStore();

@@ -16,6 +16,7 @@
 package com.datatorrent.benchmark.testbench;
 
 import com.datatorrent.api.LocalMode;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
@@ -31,9 +32,9 @@ public class EventIncrementerAppTest
   public void testEventIncrementerApp() throws Exception
   {
     Logger logger = LoggerFactory.getLogger(EventIncrementerAppTest.class);
-    Configuration conf = new Configuration();
     LocalMode lm = LocalMode.newInstance();
-    InputStream is = getClass().getResourceAsStream("/dt-site-testbench.xml");
+    Configuration conf = new Configuration();
+    InputStream is = new FileInputStream("src/site/conf/dt-site-testbench.xml");
     conf.addResource(is);
     conf.get("dt.application.EventIncrementerApp.operator.hmapOper.seed");
     conf.get("dt.application.EventIncrementerApp.operator.hmapOper.keys");

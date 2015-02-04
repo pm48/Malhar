@@ -18,6 +18,7 @@ package com.datatorrent.benchmark.testbench;
 import com.datatorrent.api.LocalMode;
 import com.datatorrent.benchmark.testbench.EventClassifierApp;
 import com.datatorrent.benchmark.testbench.EventClassifierNumberToHashDoubleAppTest;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
@@ -32,9 +33,9 @@ public class FilterClassifierAppTest
   public void testFilterClassifierApp() throws Exception
   {
     Logger logger = LoggerFactory.getLogger(FilterClassifierAppTest.class);
-    Configuration conf = new Configuration();
     LocalMode lm = LocalMode.newInstance();
-    InputStream is = getClass().getResourceAsStream("/dt-site-testbench.xml");
+    Configuration conf = new Configuration();
+    InputStream is = new FileInputStream("src/site/conf/dt-site-testbench.xml");
     conf.addResource(is);
     conf.get("dt.application.FilterClassifier.operator.hmapOper.keys");
     conf.get("dt.application.FilterClassifier.operator.hmapOper.numKeys");

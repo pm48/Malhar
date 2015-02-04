@@ -16,7 +16,12 @@
 package com.datatorrent.benchmark.kafka;
 
 import com.datatorrent.api.LocalMode;
+import com.datatorrent.common.util.DTThrowable;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
@@ -26,8 +31,14 @@ public class KafkaInputBenchmarkTest
   public void testBenchmark()
   {
     Configuration conf = new Configuration();
-    InputStream inputStream = getClass().getResourceAsStream("/dt-site-kafka.xml");
-    conf.addResource(inputStream);
+    InputStream is = null;
+    try {
+      is = new FileInputStream("src/site/conf/dt-site-kafka.xml");
+    }
+    catch (FileNotFoundException ex) {
+      DTThrowable.rethrow(ex);
+    }
+    conf.addResource(is);
 
     LocalMode lma = LocalMode.newInstance();
 
