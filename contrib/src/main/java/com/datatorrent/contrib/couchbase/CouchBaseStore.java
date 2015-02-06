@@ -92,19 +92,6 @@ public class CouchBaseStore implements Connectable
   @Nonnull
   protected String uriString;
 
-  // URL specific to a server.
-  protected String serverURIString;
-
-  public String getServerURIString()
-  {
-    return serverURIString;
-  }
-
-  public void setServerURIString(String serverURIString)
-  {
-    this.serverURIString = serverURIString;
-  }
-
   protected transient CouchbaseClient client;
   @Min(1)
   protected Integer queueSize = 100;
@@ -176,21 +163,12 @@ public class CouchBaseStore implements Connectable
   public CouchBaseStore()
   {
     client = null;
-    password = "";
     bucket = "default";
-    userConfig = "Administrator";
-    passwordConfig = "password";
-
   }
 
   public CouchbaseClient getInstance()
   {
     return client;
-  }
-
-  public void addNodes(URI url)
-  {
-    baseURIs.add(url);
   }
 
   /**
@@ -231,6 +209,7 @@ public class CouchBaseStore implements Connectable
   @Override
   public void connect() throws IOException
   {
+    logger.info("uriString is {}",uriString);
     String[] tokens = uriString.split(",");
     URI uri = null;
     for (String url : tokens) {
@@ -242,6 +221,7 @@ public class CouchBaseStore implements Connectable
       }
       baseURIs.add(uri);
     }
+    logger.info("baseURIs are {}",baseURIs);
     try {
       CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
       cfb.setOpTimeout(timeout);  // wait up to 10 seconds for an operation to succeed
@@ -255,25 +235,22 @@ public class CouchBaseStore implements Connectable
     }
   }
 
-  public CouchbaseClient connectServer() throws IOException
+  public CouchbaseClient connectServer(String urlString) throws IOException
   {
     ArrayList<URI> nodes = new ArrayList<URI>();
-    serverURIString = serverURIString.replace("/default", "");
-    logger.debug("serverURIstring is {}" , serverURIString);
+    logger.debug("serverURIstring in connect server is {}" , urlString);
     CouchbaseClient clientPartition = null;
     try {
-      nodes.add(new URI("http",serverURIString,"/pools", null, null));
+      nodes.add(new URI("http",urlString,"/pools", null, null));
     }
     catch (URISyntaxException ex) {
       DTThrowable.rethrow(ex);
     }
     try {
-      CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
-      cfb.setOpTimeout(timeout);  // wait up to 10 seconds for an operation to succeed
-      cfb.setOpQueueMaxBlockTime(blockTime); // wait up to 10 second when trying to enqueue an operation
-      clientPartition = new CouchbaseClient(cfb.buildCouchbaseConnection(nodes, bucket, password));
+      clientPartition = new CouchbaseClient(nodes, bucket, password);
     }
     catch (IOException e) {
+     logger.error("Error connecting to Couchbase: {}" , e.getMessage());
       DTThrowable.rethrow(e);
     }
     return clientPartition;

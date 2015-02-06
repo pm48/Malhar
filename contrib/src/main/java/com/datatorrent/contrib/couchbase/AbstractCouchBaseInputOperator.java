@@ -16,7 +16,6 @@
 package com.datatorrent.contrib.couchbase;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +40,7 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
 
 import com.datatorrent.common.util.DTThrowable;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * AbstractCouchBaseInputOperator which extends AbstractStoreInputOperator.
@@ -56,6 +56,21 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   private int serverIndex;
 
   protected transient Config conf;
+
+  // URL specific to a server.
+  protected String serverURIString;
+
+  public String getServerURIString()
+  {
+    return serverURIString;
+  }
+
+  @VisibleForTesting
+  public void setServerURIString(String serverURIString)
+  {
+    logger.info("serverURIString is {}",serverURIString);
+    this.serverURIString = serverURIString;
+  }
 
   public int getServerIndex()
   {
@@ -81,7 +96,8 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
         conf = store.getConf();
       }
       try {
-        clientPartition = store.connectServer();
+        logger.info("bucket in store is {}",store.bucket);
+        clientPartition = store.connectServer(serverURIString);
       }
       catch (IOException ex) {
         DTThrowable.rethrow(ex);
@@ -130,8 +146,8 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   public Collection<Partition<AbstractCouchBaseInputOperator<T>>> definePartitions(Collection<Partition<AbstractCouchBaseInputOperator<T>>> partitions, PartitioningContext incrementalCapacity)
   {
     conf = store.getConf();
-    int numPartitions = conf.getCouchServers().size();
-    List<URL> list = conf.getCouchServers();
+    int numPartitions = conf.getServers().size();
+    List<String> list = conf.getServers();
     Collection<Partition<AbstractCouchBaseInputOperator<T>>> newPartitions = Lists.newArrayListWithExpectedSize(numPartitions);
     Kryo kryo = new Kryo();
     for (int i = 0; i < numPartitions; i++) {
@@ -143,8 +159,8 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
       @SuppressWarnings("unchecked")
       AbstractCouchBaseInputOperator<T> oper = kryo.readObject(lInput, this.getClass());
       oper.setServerIndex(i);
-      oper.store.setServerURIString(list.get(i).toString());
-      logger.info("oper {} urlstring is {}", i, oper.store.getServerURIString());
+      oper.setServerURIString(list.get(i));
+      logger.info("oper {} urlstring is {}", i, oper.getServerURIString());
       newPartitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<T>>(oper));
     }
 
