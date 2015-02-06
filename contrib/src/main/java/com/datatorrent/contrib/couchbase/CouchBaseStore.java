@@ -48,7 +48,6 @@ public class CouchBaseStore implements Connectable
 {
 
   private static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
-  private transient ConfigurationProvider configurationProvider;
   @Nonnull
   protected String bucket;
 
@@ -180,7 +179,7 @@ public class CouchBaseStore implements Connectable
     password = "";
     bucket = "default";
     userConfig = "Administrator";
-    password = "password";
+    passwordConfig = "password";
 
   }
 
@@ -217,8 +216,8 @@ public class CouchBaseStore implements Connectable
     catch (IOException ex) {
       DTThrowable.rethrow(ex);
     }
-    this.configurationProvider = new ConfigurationProviderHTTP(baseURIs, userConfig, passwordConfig);
-    Bucket configBucket = this.configurationProvider.getBucketConfiguration(bucket);
+    ConfigurationProvider configurationProvider = new ConfigurationProviderHTTP(baseURIs, userConfig, passwordConfig);
+    Bucket configBucket = configurationProvider.getBucketConfiguration(bucket);
     Config conf = configBucket.getConfig();
     try {
       disconnect();

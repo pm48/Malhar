@@ -36,11 +36,15 @@ import com.datatorrent.api.Partitioner.Partition;
 import com.datatorrent.api.Partitioner.PartitioningContext;
 
 import com.datatorrent.common.util.DTThrowable;
+import com.datatorrent.lib.partitioner.StatelessPartitionerTest.PartitioningContextImpl;
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.net.URL;
 import java.util.*;
 import org.couchbase.mock.Bucket;
 import org.couchbase.mock.Bucket.BucketType;
 import org.couchbase.mock.BucketConfiguration;
+import org.couchbase.mock.CouchbaseBucket;
 import org.couchbase.mock.CouchbaseMock;
 
 import org.junit.After;
@@ -60,10 +64,11 @@ public class CouchBaseInputOperatorTest
   private CouchbaseMock mockCouchbase = null;
   private TestInputOperator inputOperator = null;
   protected static CouchbaseClient client = null;
-  private BucketConfiguration bucketConfiguration = new BucketConfiguration();
+  private TestCouchbaseBucketConfig bucketConfiguration = new TestCouchbaseBucketConfig();
   private int numNodes = 4;
   private int numVBuckets = 16;
   protected final CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
+
   protected CouchbaseConnectionFactory connectionFactory;
 
   @Test
@@ -138,17 +143,51 @@ public class CouchBaseInputOperatorTest
 
   protected void createMock(String name, String password) throws Exception
   {
-    bucketConfiguration.numNodes = 10;
+
+    bucketConfiguration.numNodes = numNodes;
     bucketConfiguration.numReplicas = 3;
     bucketConfiguration.name = name;
     bucketConfiguration.type = BucketType.COUCHBASE;
     bucketConfiguration.password = password;
+    bucketConfiguration.hostname = "localhost";
+    bucketConfiguration.port = 1100;
+    List<URL> uriList = new ArrayList<URL>();
+    uriList.add(new URL("http", "localhost", 1100, "/pools"));
+
+    bucketConfiguration.couchServers = uriList;
+    bucketConfiguration.couchServerCount = 10;
 
     ArrayList<BucketConfiguration> configList = new ArrayList<BucketConfiguration>();
     configList.add(bucketConfiguration);
-    mockCouchbase = new CouchbaseMock(0, configList);
+    mockCouchbase = new CouchbaseMock("localhost", 0, numNodes, 1100, numVBuckets);
     mockCouchbase.start();
     mockCouchbase.waitForStartup();
+  }
+
+  public  class TestCouchbaseBucketConfig extends BucketConfiguration{
+    public List<URL> couchServers;
+    public int couchServerCount;
+
+    public int getCouchServerCount()
+    {
+      return couchServerCount;
+    }
+
+    public void setCouchServerCount(int couchServerCount)
+    {
+      this.couchServerCount = couchServerCount;
+    }
+
+    public List<URL> getCouchServers()
+    {
+      return couchServers;
+    }
+
+    public void setCouchServers(List<URL> couchServers)
+    {
+      this.couchServers = couchServers;
+    }
+
   }
 
   @Test
@@ -163,12 +202,20 @@ public class CouchBaseInputOperatorTest
     connectionFactory = cfb.buildCouchbaseConnection(uriList, bucketConfiguration.name, bucketConfiguration.password);
     client = new CouchbaseClient(connectionFactory);
 
+
+    Bucket bucket = mockCouchbase.getBuckets().get(bucketConfiguration.name);
+    //logger.info("bucket is {}",bucket.toString());
+   // logger.info("bucket urls are",bucket.getServers());
     CouchBaseStore store = new CouchBaseStore();
     keyList = new ArrayList<String>();
     store.setBucket(bucketConfiguration.name);
     store.setPassword(bucketConfiguration.password);
     store.setUriString("localhost:" + port);
-    store.setServerURIString("localhost:"+ port + "/default");
+    //store.setServerURIString("localhost:"+ port);
+   // logger.info("couch servers are {}",cfb.getVBucketConfig().getCouchServers());
+   // logger.info(" servers are {}",cfb.getVBucketConfig().getServers());
+
+   // couchbaseBucket.getCouchServers();
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
@@ -177,10 +224,15 @@ public class CouchBaseInputOperatorTest
     inputOperator.setStore(store);
     inputOperator.insertEventsInTable(10);
 
+
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputOperator.outputPort.setSink(sink);
+    List<Partition<AbstractCouchBaseInputOperator<String>>> partitions = Lists.newArrayList();
+    Collection<Partition<AbstractCouchBaseInputOperator<String>>> newPartitions = inputOperator.definePartitions(partitions, new PartitioningContextImpl(null, 0));
+    Assert.assertEquals(5, newPartitions.size());
     inputOperator.setup(context);
     inputOperator.beginWindow(0);
+
     logger.info("couchservers are {}",inputOperator.conf.getCouchServers());
     logger.info("couchservers are {}",inputOperator.conf.getServers());
 
@@ -192,7 +244,6 @@ public class CouchBaseInputOperatorTest
     teardown();
   }
 
-  @Test
   public void TestCouchBaseInputOperatorWithPartitions() throws InterruptedException, Exception
   {
     createMock("default", "");
