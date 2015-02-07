@@ -15,15 +15,16 @@
  */
 package com.datatorrent.benchmark.testbench;
 
-import com.datatorrent.api.LocalMode;
-import com.datatorrent.benchmark.testbench.EventClassifierApp;
-import com.datatorrent.benchmark.testbench.EventClassifierNumberToHashDoubleAppTest;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import org.apache.hadoop.conf.Configuration;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.hadoop.conf.Configuration;
+
+import com.datatorrent.api.LocalMode;
 /**
  * Benchmark Test for FilterClassifierApp Operator in local mode.
  */
