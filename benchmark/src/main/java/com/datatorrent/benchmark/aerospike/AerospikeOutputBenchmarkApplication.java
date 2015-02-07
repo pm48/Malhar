@@ -33,7 +33,7 @@ import org.apache.hadoop.conf.Configuration;
 
 
 @ApplicationAnnotation(name="AerospikeOutputOperatorBenchmark")
-public class AerospikeOutputOperatorBenchmark implements StreamingApplication {
+public class AerospikeOutputBenchmarkApplication implements StreamingApplication {
 
   private final String NODE = "127.0.0.1";
   private final int PORT = 3000;
@@ -46,7 +46,7 @@ public class AerospikeOutputOperatorBenchmark implements StreamingApplication {
     rand.setMaxvalue(3000);
     rand.setTuplesBlast(250);
 
-    AerospikeOutputOp aero = dag.addOperator("aero", new AerospikeOutputOp());
+    AerospikeOutputOperator aero = dag.addOperator("aero", new AerospikeOutputOperator());
     AerospikeTransactionalStore store = new AerospikeTransactionalStore();
     store.setNode(NODE);
     store.setPort(PORT);

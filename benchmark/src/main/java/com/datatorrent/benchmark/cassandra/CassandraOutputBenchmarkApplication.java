@@ -34,7 +34,7 @@ import com.datatorrent.contrib.cassandra.CassandraTransactionalStore;
  */
 
 @ApplicationAnnotation(name="CassandraOperatorDemo")
-public class CassandraOperatorDemo implements StreamingApplication
+public class CassandraOutputBenchmarkApplication implements StreamingApplication
 {
   private final Locality locality = null;
 
@@ -48,7 +48,7 @@ public class CassandraOperatorDemo implements StreamingApplication
     rand.setMaxvalue(maxValue);
     rand.setTuplesBlast(200);
 
-    CassandraOutputOp cassandra = dag.addOperator("cassandra", new CassandraOutputOp());
+    CassandraOutputOperator cassandra = dag.addOperator("cassandra", new CassandraOutputOperator());
     CassandraTransactionalStore store = new CassandraTransactionalStore();
     store.setKeyspace("test");
     store.setNode("127.0.0.1");

@@ -28,7 +28,7 @@ import com.datatorrent.contrib.cassandra.AbstractCassandraTransactionableOutputO
  *
  * @since 1.0.3
  */
-public class CassandraOutputOp extends  AbstractCassandraTransactionableOutputOperatorPS<Integer>{
+public class CassandraOutputOperator extends  AbstractCassandraTransactionableOutputOperatorPS<Integer>{
 
   private int id = 0;
 

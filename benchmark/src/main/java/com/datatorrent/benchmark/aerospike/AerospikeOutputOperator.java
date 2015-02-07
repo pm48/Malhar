@@ -28,8 +28,7 @@ import com.datatorrent.contrib.aerospike.AbstractAerospikeTransactionalPutOperat
  *
  * @since 1.0.4
  */
-public class AerospikeOutputOp extends AbstractAerospikeTransactionalPutOperator<Integer>{
-  private static final long serialVersionUID = 1L;
+public class AerospikeOutputOperator extends AbstractAerospikeTransactionalPutOperator<Integer>{
 
   private final String KEYSPACE = "test";
   private final String SET_NAME = "Aerospike_Output";
