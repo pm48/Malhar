@@ -123,21 +123,6 @@ public class CouchBaseInputOperatorTest
     assertEquals("secret", buckets.get("yyy").getPassword());
   }
 
-  @After
-  public void teardown() throws Exception
-  {
-     if (mockCouchbase1 != null) {
-      mockCouchbase1.stop();
-      mockCouchbase1 = null;
-    }
-    if (mockCouchbase2 != null) {
-      mockCouchbase2.stop();
-      mockCouchbase2 = null;
-    }
-    if (inputOperator != null) {
-      inputOperator.teardown();
-    }
-  }
 
   protected void createMock(String name, String password) throws Exception
   {
@@ -218,8 +203,17 @@ public class CouchBaseInputOperatorTest
       wid++;
     }
     Assert.assertEquals("Tuples read should be same ", 10, sink.collectedTuples.size());
-
-    teardown();
+    for (AbstractCouchBaseInputOperator<String> o: opers){
+     o.teardown();
+    }
+    if (mockCouchbase1 != null) {
+      mockCouchbase1.stop();
+      mockCouchbase1 = null;
+    }
+    if (mockCouchbase2 != null) {
+      mockCouchbase2.stop();
+      mockCouchbase2 = null;
+    }
   }
 
   public static class TestInputOperator extends AbstractCouchBaseInputOperator<String>
@@ -260,6 +254,7 @@ public class CouchBaseInputOperatorTest
         }
       }
       client.shutdown();
+      client = null;
     }
 
   }
