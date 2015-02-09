@@ -126,16 +126,16 @@ public class CouchBaseInputOperatorTest
   @After
   public void teardown() throws Exception
   {
-    if (inputOperator != null) {
-      inputOperator.teardown();
-    }
-    if (mockCouchbase1 != null) {
+     if (mockCouchbase1 != null) {
       mockCouchbase1.stop();
       mockCouchbase1 = null;
     }
     if (mockCouchbase2 != null) {
       mockCouchbase2.stop();
       mockCouchbase2 = null;
+    }
+    if (inputOperator != null) {
+      inputOperator.teardown();
     }
   }
 

@@ -26,6 +26,7 @@ import com.couchbase.client.vbucket.config.Config;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 
 import org.slf4j.Logger;
@@ -40,7 +41,6 @@ import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * AbstractCouchBaseInputOperator which extends AbstractStoreInputOperator.
@@ -90,13 +90,11 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   @Override
   public void setup(Context.OperatorContext context)
   {
-    super.setup(context);
     if (clientPartition == null) {
       if (conf == null) {
         conf = store.getConf();
       }
       try {
-        logger.info("bucket in store is {}",store.bucket);
         clientPartition = store.connectServer(serverURIString);
       }
       catch (IOException ex) {

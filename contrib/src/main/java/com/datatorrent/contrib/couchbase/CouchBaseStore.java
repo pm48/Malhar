@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
+import javax.validation.constraints.Min;
 
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
@@ -37,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import com.datatorrent.lib.db.Connectable;
 
 import com.datatorrent.common.util.DTThrowable;
-import javax.validation.constraints.Min;
 
 /**
  * CouchBaseStore which provides connect methods to Couchbase data store.
@@ -105,7 +105,6 @@ public class CouchBaseStore implements Connectable
   {
     this.queueSize = queueSize;
   }
-
   protected Integer maxTuples = 1000;
   protected int blockTime = 1000;
   protected long timeout = 10000;
@@ -209,7 +208,6 @@ public class CouchBaseStore implements Connectable
   @Override
   public void connect() throws IOException
   {
-    logger.info("uriString is {}",uriString);
     String[] tokens = uriString.split(",");
     URI uri = null;
     for (String url : tokens) {
@@ -221,7 +219,6 @@ public class CouchBaseStore implements Connectable
       }
       baseURIs.add(uri);
     }
-    logger.info("baseURIs are {}",baseURIs);
     try {
       CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
       cfb.setOpTimeout(timeout);  // wait up to 10 seconds for an operation to succeed
@@ -238,7 +235,6 @@ public class CouchBaseStore implements Connectable
   public CouchbaseClient connectServer(String urlString) throws IOException
   {
     ArrayList<URI> nodes = new ArrayList<URI>();
-    logger.debug("serverURIstring in connect server is {}" , urlString);
     CouchbaseClient clientPartition = null;
     try {
       nodes.add(new URI("http",urlString,"/pools", null, null));
