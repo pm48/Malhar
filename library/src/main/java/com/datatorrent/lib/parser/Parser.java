@@ -22,17 +22,24 @@ import com.datatorrent.lib.util.KeyValPair;
 import java.util.ArrayList;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * @param <INPUT> This is the input tuple type.
  */
 public class Parser<INPUT> extends BaseOperator
 {
-  // List of key value pairs which has name of the field , data type of the field.
-  protected ArrayList<KeyValPair<String,Object>> listKeyValue;
+  // List of key value pairs which has name of the field as key , data type of the field as value.
+  protected ArrayList<Field> listKeyValue;
+
+
   protected Map<String,Object> outputMap;
   protected String delimiter;
 
+  /*
+   * The output is a map with key being the field name and value being the value of the field.
+   */
   public final transient DefaultOutputPort<Map<String,Object>> data = new DefaultOutputPort<Map<String,Object>>();
 
   /**
@@ -47,12 +54,23 @@ public class Parser<INPUT> extends BaseOperator
     }
   };
 
- public enum V_TYPE
+  public void processTuple(INPUT tuple)
+  {
+    if(tuple.toString().contains(delimiter))
+    {
+       String[] splitInput = tuple.toString().split(delimiter);
+
+    }
+    else
+      logger.debug("Delimiter not present");
+  }
+
+ public enum INPUT_TYPE
   {
     DOUBLE, INTEGER, FLOAT, LONG, SHORT, STRING, UNKNOWN
   };
   @NotNull
-  V_TYPE type = V_TYPE.STRING;
+  INPUT_TYPE type = INPUT_TYPE.STRING;
 
   /**
    * This call ensures that type enum is set at setup time.
@@ -61,25 +79,32 @@ public class Parser<INPUT> extends BaseOperator
   public void setType(Class<INPUT> ctype)
   {
     if (ctype == Double.class) {
-      type = V_TYPE.DOUBLE;
+      type = INPUT_TYPE.DOUBLE;
     }
     else if (ctype == Integer.class) {
-      type = V_TYPE.INTEGER;
+      type = INPUT_TYPE.INTEGER;
     }
     else if (ctype == Float.class) {
-      type = V_TYPE.FLOAT;
+      type = INPUT_TYPE.FLOAT;
     }
     else if (ctype == Long.class) {
-      type = V_TYPE.LONG;
+      type = INPUT_TYPE.LONG;
     }
     else if (ctype == Short.class) {
-      type = V_TYPE.SHORT;
+      type = INPUT_TYPE.SHORT;
+    }
+    else if (ctype == String.class) {
+      type = INPUT_TYPE.STRING;
     }
     else {
-      type = V_TYPE.UNKNOWN;
+      type = INPUT_TYPE.UNKNOWN;
     }
   }
 
+  private class Field {
+  String name;
+  INPUT_TYPE type;
+}
   public String getDelimiter()
   {
     return delimiter;
@@ -90,15 +115,16 @@ public class Parser<INPUT> extends BaseOperator
     this.delimiter = delimiter;
   }
 
-  public ArrayList<KeyValPair<String, Object>> getListKeyValue()
+   public ArrayList<Field> getListKeyValue()
   {
     return listKeyValue;
   }
 
-  public void setListKeyValue(ArrayList<KeyValPair<String, Object>> listKeyValue)
+  public void setListKeyValue(ArrayList<Field> listKeyValue)
   {
     this.listKeyValue = listKeyValue;
   }
-
+  
+  private static final Logger logger = LoggerFactory.getLogger(Parser.class);
 
 }
