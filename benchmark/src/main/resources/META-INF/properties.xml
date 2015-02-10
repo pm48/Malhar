@@ -68,11 +68,11 @@
   </property>
   <property>
     <name>dt.application.couchbaseAppOutput.operator.couchbaseOutput.store.userConfig</name>
-    <value>root</value>
+    <value></value>
   </property>
   <property>
     <name>dt.application.couchbaseAppOutput.operator.couchbaseOutput.store.passwordConfig</name>
-    <value>prerna123</value>
+    <value></value>
   </property>
 
   <property>
