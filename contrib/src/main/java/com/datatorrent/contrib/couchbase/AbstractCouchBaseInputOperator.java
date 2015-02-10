@@ -68,7 +68,6 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   @VisibleForTesting
   public void setServerURIString(String serverURIString)
   {
-    logger.info("serverURIString is {}",serverURIString);
     this.serverURIString = serverURIString;
   }
 
@@ -158,7 +157,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
       AbstractCouchBaseInputOperator<T> oper = kryo.readObject(lInput, this.getClass());
       oper.setServerIndex(i);
       oper.setServerURIString(list.get(i));
-      logger.info("oper {} urlstring is {}", i, oper.getServerURIString());
+      logger.debug("oper {} urlstring is {}", i, oper.getServerURIString());
       newPartitions.add(new DefaultPartition<AbstractCouchBaseInputOperator<T>>(oper));
     }
 

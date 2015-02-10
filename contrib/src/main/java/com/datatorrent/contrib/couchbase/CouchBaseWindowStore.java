@@ -91,7 +91,7 @@ public class CouchBaseWindowStore extends CouchBaseStore implements Transactiona
       clientMeta = new CouchbaseClient(cfb.buildCouchbaseConnection(baseURIs, bucketMeta, passwordMeta));
     }
     catch (IOException e) {
-      logger.error("Error connecting to Couchbase: {}" , e.getMessage());
+      logger.error("Error connecting to Couchbase: " , e);
       DTThrowable.rethrow(e);
     }
   }

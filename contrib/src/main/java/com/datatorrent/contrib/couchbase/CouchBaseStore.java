@@ -227,7 +227,7 @@ public class CouchBaseStore implements Connectable
       //client = new CouchbaseClient(baseURIs, "default", "");
     }
     catch (IOException e) {
-      logger.error("Error connecting to Couchbase: {}" , e.getMessage());
+      logger.error("Error connecting to Couchbase:" , e);
       DTThrowable.rethrow(e);
     }
   }
@@ -246,7 +246,7 @@ public class CouchBaseStore implements Connectable
       clientPartition = new CouchbaseClient(nodes, bucket, password);
     }
     catch (IOException e) {
-     logger.error("Error connecting to Couchbase: {}" , e.getMessage());
+     logger.error("Error connecting to Couchbase:" , e);
       DTThrowable.rethrow(e);
     }
     return clientPartition;

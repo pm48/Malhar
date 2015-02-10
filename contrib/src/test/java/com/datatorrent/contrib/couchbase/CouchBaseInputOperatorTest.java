@@ -53,114 +53,55 @@ public class CouchBaseInputOperatorTest
   private static String bucket = "default";
   private static String password = "";
   private static int OPERATOR_ID = 0;
-  protected static ArrayList<URI> nodes = new ArrayList<URI>();
   protected static ArrayList<String> keyList;
-  private CouchbaseMock mockCouchbase1 = null;
-  private CouchbaseMock mockCouchbase2 = null;
   private TestInputOperator inputOperator = null;
   protected static CouchbaseClient client = null;
-  private BucketConfiguration bucketConfiguration = new BucketConfiguration();
   private int numNodes = 2;
   private int numVBuckets = 8;
-  protected final CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
+  private int numReplicas = 3;
 
   protected CouchbaseConnectionFactory connectionFactory;
 
-  @Test
-  public void testDefaults() throws Exception
-  {
-    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets);
-    Map<String, Bucket> buckets = mock.getBuckets();
-    assertEquals(1, buckets.size());
-    assert (buckets.containsKey("default"));
-    assertEquals("", buckets.get("default").getPassword());
-    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("default").getType());
-  }
-
-  @Test
-  public void testPasswords() throws Exception
-  {
-    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets, "xxx:,yyy:pass,zzz");
-    Map<String, Bucket> buckets = mock.getBuckets();
-    assertEquals(3, buckets.size());
-    assert (buckets.containsKey("xxx"));
-    assert (buckets.containsKey("yyy"));
-    assert (buckets.containsKey("zzz"));
-    assertEquals("", buckets.get("xxx").getPassword());
-    assertEquals("", buckets.get("zzz").getPassword());
-    assertEquals("pass", buckets.get("yyy").getPassword());
-  }
-
-  @Test
-  public void testTypes() throws Exception
-  {
-    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets, "xxx::,yyy::memcache,zzz,kkk::couchbase,aaa::unknown");
-    Map<String, Bucket> buckets = mock.getBuckets();
-    assertEquals(5, buckets.size());
-    assert (buckets.containsKey("xxx"));
-    assert (buckets.containsKey("yyy"));
-    assert (buckets.containsKey("zzz"));
-    assert (buckets.containsKey("kkk"));
-    assert (buckets.containsKey("aaa"));
-    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("xxx").getType());
-    assertEquals(Bucket.BucketType.MEMCACHED, buckets.get("yyy").getType());
-    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("zzz").getType());
-    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("kkk").getType());
-    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("aaa").getType());
-  }
-
-  @Test
-  public void testMixed() throws Exception
-  {
-    CouchbaseMock mock = new CouchbaseMock(null, 8091, numNodes, numVBuckets, "xxx:pass:memcache,yyy:secret:couchbase");
-    Map<String, Bucket> buckets = mock.getBuckets();
-    assertEquals(2, buckets.size());
-    assert (buckets.containsKey("xxx"));
-    assert (buckets.containsKey("yyy"));
-    assertEquals(Bucket.BucketType.MEMCACHED, buckets.get("xxx").getType());
-    assertEquals(Bucket.BucketType.COUCHBASE, buckets.get("yyy").getType());
-    assertEquals("pass", buckets.get("xxx").getPassword());
-    assertEquals("secret", buckets.get("yyy").getPassword());
-  }
-
-
-  protected void createMock(String name, String password) throws Exception
+  protected CouchbaseMock createMock(String name, String password,BucketConfiguration bucketConfiguration) throws Exception
   {
     bucketConfiguration.numNodes = numNodes;
-    bucketConfiguration.numReplicas = 3;
+    bucketConfiguration.numReplicas = numReplicas;
     bucketConfiguration.name = name;
     bucketConfiguration.type = BucketType.COUCHBASE;
     bucketConfiguration.password = password;
     bucketConfiguration.hostname = "localhost";
     ArrayList<BucketConfiguration> configList = new ArrayList<BucketConfiguration>();
     configList.add(bucketConfiguration);
-    mockCouchbase1 = new CouchbaseMock(0, configList);
-    mockCouchbase1.start();
+    CouchbaseMock mockCouchbase = new CouchbaseMock(0, configList);
+    return mockCouchbase;
   }
 
   @Test
   public void TestCouchBaseInputOperator() throws InterruptedException, Exception
   {
-    createMock("default", "");
+    BucketConfiguration bucketConfiguration = new BucketConfiguration();
+    CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
+    CouchbaseMock mockCouchbase1 = createMock("default", "",bucketConfiguration);
+    CouchbaseMock mockCouchbase2 = createMock("default", "",bucketConfiguration);
+    mockCouchbase1.start();
+    mockCouchbase1.waitForStartup();
     List<URI> uriList = new ArrayList<URI>();
-    int port0 = mockCouchbase1.getHttpPort();
-    logger.debug("port is {}", port0);
-    mockCouchbase2 = new CouchbaseMock("localhost", 0, numNodes, numVBuckets);
-
+    int port1 = mockCouchbase1.getHttpPort();
+    logger.debug("port is {}", port1);
     mockCouchbase2.start();
     mockCouchbase2.waitForStartup();
-    int port1 = mockCouchbase2.getHttpPort();
-    logger.debug("port is {}", port1);
-    uriList.add(new URI("http", null, "localhost", port0, "/pools", "", ""));
+    int port2 = mockCouchbase2.getHttpPort();
+    logger.debug("port is {}", port2);
+    uriList.add(new URI("http", null, "localhost", port1, "/pools", "", ""));
     connectionFactory = cfb.buildCouchbaseConnection(uriList, bucketConfiguration.name, bucketConfiguration.password);
     client = new CouchbaseClient(connectionFactory);
 
-    CouchBaseStore store = new CouchBaseWindowStore();
+    CouchBaseStore store = new CouchBaseStore();
     keyList = new ArrayList<String>();
     store.setBucket(bucketConfiguration.name);
     store.setPasswordConfig(password);
     store.setPassword(bucketConfiguration.password);
-    store.setUriString("localhost:" + port0 + "," + "localhost:" + port1);
+    store.setUriString("localhost:" + port1 + "," + "localhost:" + port1);
 
     // couchbaseBucket.getCouchServers();
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
@@ -183,12 +124,12 @@ public class CouchBaseInputOperatorTest
     List<AbstractCouchBaseInputOperator<String>> opers = Lists.newArrayList();
     for (Partition<AbstractCouchBaseInputOperator<String>> p: newPartitions) {
       TestInputOperator oi = (TestInputOperator)p.getPartitionedInstance();
-      oi.setServerURIString("localhost:" + port0);
+      oi.setServerURIString("localhost:" + port1);
       oi.setStore(store);
       oi.setup(null);
       oi.outputPort.setSink(sink);
       opers.add(oi);
-      port0 = port1;
+      port1 = port2;
 
     }
 
