@@ -15,6 +15,7 @@
  */
 package com.datatorrent.lib.io;
 
+import com.datatorrent.lib.io.SMTP.SmtpOutputOperator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
