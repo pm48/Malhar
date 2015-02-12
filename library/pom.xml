@@ -84,7 +84,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <skip>true</skip>
+              <skip>false</skip>
               <tags>
                 <tag>
                   <name>customTag1</name>
@@ -319,6 +319,12 @@
           <groupId>org.slf4j</groupId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.supercsv</groupId>
+      <artifactId>super-csv</artifactId>
+      <version>2.2.0</version>
+      <type>jar</type>
     </dependency>
   </dependencies>
 

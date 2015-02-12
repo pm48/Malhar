@@ -18,15 +18,23 @@ package com.datatorrent.lib.parser;
 import java.util.ArrayList;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.supercsv.prefs.CsvPreference;
 
 import com.datatorrent.api.BaseOperator;
+import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
-import javax.annotation.Nonnull;
+import com.datatorrent.common.util.DTThrowable;
+import java.io.*;
+import java.util.HashMap;
+import org.supercsv.cellprocessor.*;
+import org.supercsv.cellprocessor.ift.CellProcessor;
+import org.supercsv.io.*;
 
 /*
  * @param <INPUT> This is the input tuple type.
@@ -34,101 +42,277 @@ import javax.annotation.Nonnull;
 public class Parser<INPUT> extends BaseOperator
 {
   // List of key value pairs which has name of the field as key , data type of the field as value.
-  protected ArrayList<Field> listKeyValue;
-  protected String fileEncoding;
-
-  protected Map<String, Object> outputMap;
   @Nonnull
-  protected String fieldDelimiter;
+  protected ArrayList<Field> listKeyValue;
+  protected String inputEncoding;
+  @Nonnull
+  protected int fieldDelimiter;
   protected String lineDelimiter;
+  protected transient String[] properties;
+  protected transient CellProcessor[] processors;
+  protected ArrayList<Map<String, Object>> arrayMaps = new ArrayList<Map<String, Object>>();
 
-  /*
-   * The output is a map with key being the field name and value being the value of the field.
-   */
-  public final transient DefaultOutputPort<Map<String, Object>> data = new DefaultOutputPort<Map<String, Object>>();
+  public enum INPUT_TYPE
+  {
+    BOOLEAN, DOUBLE, INTEGER, FLOAT, LONG, SHORT, CHARACTER, STRING, DATE, UNKNOWN
+  };
+
+  @NotNull
+  INPUT_TYPE type;
 
   public Parser()
   {
-    fileEncoding = "UTF8";
-    lineDelimiter = "\n";
+    inputEncoding = "UTF8";
+    lineDelimiter = "\r\n";
+    type = INPUT_TYPE.STRING;
   }
 
   /**
+   * The output is a map with key being the field name and value being the value of the field.
+   */
+  public final transient DefaultOutputPort<Map<String, Object>> output = new DefaultOutputPort<Map<String, Object>>()
+  {
+    @Override
+    public void emit(Map<String, Object> tuple)
+    {
+      for(int i=0;i<arrayMaps.size();i++){
+      logger.debug("map output is {}" ,arrayMaps.get(i).toString());
+      output.emit(arrayMaps.get(i));
+      }
+    }
+
+  };
+  /**
    * This input port receives incoming tuples.
    */
-  public final transient DefaultInputPort<INPUT> input = new DefaultInputPort<INPUT>()
+  public final transient DefaultInputPort<INPUT> input1 = new DefaultInputPort<INPUT>()
   {
     @Override
     public void process(INPUT tuple)
     {
-      processTuple(tuple);
+      ICsvMapReader csvReader = null;
+      CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
+      InputStream in;
+      BufferedReader br = null;
+      Map<String,Object> fieldValueMapping = new HashMap<String, Object>();
+
+      try {
+        in = new ByteArrayInputStream(tuple.toString().getBytes(inputEncoding));
+        br = new BufferedReader(new InputStreamReader(in, inputEncoding));
+      }
+      catch (UnsupportedEncodingException ex) {
+        logger.error("Encoding not supported", ex);
+      }
+      csvReader = new CsvMapReader(br, preference);
+      try {
+        String[] header = csvReader.getHeader(true);
+        logger.info("length of header is {}", header.length);
+        int len = header.length;
+        if (len > properties.length) {
+          logger.debug("More column values in csv string than user supplied field properties.");
+        }
+        else if (len < properties.length) {
+          logger.debug("Less column values in csv string than user supplied field properties.");
+        }
+       // else {
+          for (int i = 0; i < len; i++) {
+            logger.info("header is {}", header[i]);
+            fieldValueMapping.put(properties[i], header[i]);
+          }
+          logger.debug("fieldValueMapping is {}", fieldValueMapping.toString());
+          arrayMaps.add(fieldValueMapping);
+          while (true) {
+            fieldValueMapping = csvReader.read(properties, processors);
+            if (fieldValueMapping == null) {
+              break;
+            }
+            arrayMaps.add(fieldValueMapping);
+
+          }
+          logger.info("arrayMaps is {}", arrayMaps.toString());
+       // }
+      }
+      catch (IOException ex) {
+        throw new RuntimeException(ex);
+      }
+      finally {
+        if (csvReader != null) {
+          try {
+            csvReader.close();
+          }
+          catch (IOException ex) {
+            DTThrowable.rethrow(ex);
+          }
+        }
+      }
+
     }
 
   };
-
-  public void processTuple(INPUT tuple)
-  {
-    if (tuple.toString().contains(fieldDelimiter)) {
-      String[] splitInput = tuple.toString().split(fieldDelimiter);
-
-    }
-    else {
-      logger.debug("Delimiter not present");
-    }
-  }
-
-  public enum INPUT_TYPE
-  {
-    DOUBLE, INTEGER, FLOAT, LONG, SHORT, STRING, UNKNOWN
-  };
-
-  @NotNull
-  INPUT_TYPE type = INPUT_TYPE.STRING;
 
   /**
-   * This call ensures that type enum is set at setup time.
-   *
-   * @param ctype the type to set the operator to.
+   * This input port receives path of csv file containing field data.
    */
-  public void setType(Class<INPUT> ctype)
+  public final transient DefaultInputPort<String> input2 = new DefaultInputPort<String>()
   {
-    if (ctype == Double.class) {
-      type = INPUT_TYPE.DOUBLE;
+
+    @Override
+    public void process(String tuple)
+    {
+      ICsvMapReader csvReader = null;
+      CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
+      InputStream is = null;
+      Map<String,Object> fieldValueMapping = new HashMap<String, Object>();
+      try {
+        is = new FileInputStream(tuple);
+      }
+      catch (FileNotFoundException ex) {
+        logger.error("File Not found", ex);
+      }
+      BufferedReader br = null;
+      try {
+        br = new BufferedReader(new InputStreamReader(is, inputEncoding));
+      }
+      catch (UnsupportedEncodingException ex) {
+        logger.error("Encoding not supported", ex);
+      }
+
+      csvReader = new CsvMapReader(br, preference);
+
+      try {
+        // First line of csv file.
+        String[] header = csvReader.getHeader(true);
+        int len = header.length;
+        if (len > properties.length) {
+          logger.debug("More column values in csv file than user supplied field properties.");
+        }
+        else if (len < properties.length) {
+          logger.debug("Less column values in csv file than user supplied field properties.");
+        }
+        else {
+          for (int i = 0; i < len; i++) {
+            fieldValueMapping.put(properties[i], header[i]);
+          }
+          arrayMaps.add(fieldValueMapping);
+          while (true) {
+            fieldValueMapping = csvReader.read(properties, processors);
+            if (fieldValueMapping == null) {
+              break;
+            }
+            arrayMaps.add(fieldValueMapping);
+
+          }
+          logger.info("arrayMaps is {}", arrayMaps.toString());
+
+        }
+      }
+      catch (IOException ex) {
+        DTThrowable.rethrow(ex);
+      }
+      finally {
+        if (csvReader != null) {
+          try {
+            csvReader.close();
+          }
+          catch (IOException ex) {
+            DTThrowable.rethrow(ex);
+          }
+        }
+      }
+
     }
-    else if (ctype == Integer.class) {
-      type = INPUT_TYPE.INTEGER;
-    }
-    else if (ctype == Float.class) {
-      type = INPUT_TYPE.FLOAT;
-    }
-    else if (ctype == Long.class) {
-      type = INPUT_TYPE.LONG;
-    }
-    else if (ctype == Short.class) {
-      type = INPUT_TYPE.SHORT;
-    }
-    else if (ctype == String.class) {
-      type = INPUT_TYPE.STRING;
-    }
-    else {
-      type = INPUT_TYPE.UNKNOWN;
-    }
+
+  };
+
+  @Override
+  public void setup(OperatorContext context)
+  {
+    int countKeyValue = listKeyValue.size();
+    properties = new String[countKeyValue];
+    processors = new CellProcessor[countKeyValue];
+    initialise(properties, processors);
   }
 
-  private class Field
+  // Still need to handle unknown data types.
+  public void initialise(String[] properties, CellProcessor[] processors)
+  {
+    for (int i = 0; i < listKeyValue.size(); i++) {
+      INPUT_TYPE type = listKeyValue.get(i).type;
+      properties[i] = listKeyValue.get(i).name;
+      if (type == INPUT_TYPE.DOUBLE) {
+      }
+      else if (type == INPUT_TYPE.INTEGER) {
+        processors[i] = new Optional(new ParseInt());
+      }
+      else if (type == INPUT_TYPE.FLOAT) {
+        processors[i] = new Optional(new ParseDouble());
+      }
+      else if (type == INPUT_TYPE.LONG) {
+        processors[i] = new Optional(new ParseLong());
+      }
+      else if (type == INPUT_TYPE.SHORT) {
+        processors[i] = new Optional(new ParseInt());
+      }
+      else if (type == INPUT_TYPE.STRING) {
+        processors[i] = new Optional();
+      }
+      else if (type == INPUT_TYPE.CHARACTER) {
+        processors[i] = new Optional(new ParseChar());
+      }
+      else if (type == INPUT_TYPE.BOOLEAN) {
+        processors[i] = new Optional(new ParseChar());
+      }
+      else if (type == INPUT_TYPE.DATE) {
+        processors[i] = new Optional(new ParseDate("dd/MM/yyyy"));
+      }
+      else {
+        type = INPUT_TYPE.UNKNOWN;
+      }
+    }
+
+  }
+
+  @Override
+  public void teardown()
+  {
+    super.teardown(); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  public void setType(INPUT_TYPE type)
+  {
+    this.type = type;
+  }
+
+  public INPUT_TYPE getType()
+  {
+    return type;
+  }
+
+  public static class Field
   {
     String name;
     INPUT_TYPE type;
-  }
 
-  public String getDelimiter()
-  {
-    return fieldDelimiter;
-  }
+    public String getName()
+    {
+      return name;
+    }
 
-  public void setDelimiter(String delimiter)
-  {
-    this.fieldDelimiter = delimiter;
+    public void setName(String name)
+    {
+      this.name = name;
+    }
+
+    public INPUT_TYPE getType()
+    {
+      return type;
+    }
+
+    public void setType(INPUT_TYPE type)
+    {
+      this.type = type;
+    }
+
   }
 
   public ArrayList<Field> getListKeyValue()
@@ -149,6 +333,16 @@ public class Parser<INPUT> extends BaseOperator
   public void setLineDelimiter(String lineDelimiter)
   {
     this.lineDelimiter = lineDelimiter;
+  }
+
+  public int getFieldDelimiter()
+  {
+    return fieldDelimiter;
+  }
+
+  public void setFieldDelimiter(int fieldDelimiter)
+  {
+    this.fieldDelimiter = fieldDelimiter;
   }
 
   private static final Logger logger = LoggerFactory.getLogger(Parser.class);
