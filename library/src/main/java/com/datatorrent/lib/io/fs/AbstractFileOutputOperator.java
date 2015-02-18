@@ -48,6 +48,9 @@ import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.StreamCodec;
 import com.datatorrent.api.annotation.OperatorAnnotation;
 
+import com.datatorrent.lib.counters.BasicCounters;
+import org.apache.hadoop.fs.permission.FsPermission;
+
 /**
  * This base implementation for a fault tolerant HDFS output operator,
  * which can handle outputting to multiple files when the output file depends on the tuple.
@@ -99,6 +102,9 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
    * Size of the copy buffer used to restore files to checkpointed state.
    */
   private static final int COPY_BUFFER_SIZE = 1024;
+
+  @Nonnull
+  protected int filePermission = 0777;
 
   /**
    * The default number of max open files.
@@ -158,7 +164,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
   /**
    * The file rotation window interval.
    * The files are rotated periodically after the specified value of windows have ended. If set to 0 this feature is
-   * disabled. 
+   * disabled.
    */
   @Min(0)
   protected int rotationWindows = 0;
@@ -201,7 +207,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
   protected StreamCodec<INPUT> streamCodec;
 
   /**
-   * Number of windows since the last rotation 
+   * Number of windows since the last rotation
    */
   private int rotationCount;
 
@@ -227,7 +233,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
       }
     }
   };
-  
+
   private static class RotationState {
     boolean notEmpty;
     boolean rotated;
@@ -356,9 +362,11 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
             fsOutput = fs.create(lfilepath, (short) replication);
           }
 
+          fs.setPermission(lfilepath, FsPermission.createImmutable((short)filePermission));
+
           //Get the end offset of the file.
 
-          LOG.info("opened: {}", fs.getFileStatus(lfilepath).getPath());
+          LOG.debug("opened: {}", fs.getFileStatus(lfilepath).getPath());
           return fsOutput;
         }
         catch (IOException e) {
@@ -387,7 +395,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
             FileStatus status = fs.getFileStatus(seenPartFilePath);
 
             if (status.getLen() != offset) {
-              LOG.info("file corrupted {} {} {}", seenFileNamePart, offset, status.getLen());
+              LOG.debug("file corrupted {} {} {}", seenFileNamePart, offset, status.getLen());
               byte[] buffer = new byte[COPY_BUFFER_SIZE];
 
               Path tmpFilePath = new Path(filePath + Path.SEPARATOR + seenFileNamePart + TMP_EXTENSION);
@@ -658,7 +666,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
    * @param fileName The base name of the files you are rolling over.
    * @return The name of the current rolling file.
    */
-  private String getPartFileNamePri(String fileName)
+  protected String getPartFileNamePri(String fileName)
   {
     if (!rollingFile) {
       return fileName;
@@ -701,7 +709,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
     catch (IOException e) {
       throw new RuntimeException(e);
     }
-    
+
     if (rotationWindows > 0) {
       if (++rotationCount == rotationWindows) {
         rotationCount = 0;
@@ -798,7 +806,7 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
 
   /**
    * Gets the file rotation window interval.
-   * The files are rotated periodically after the specified number of windows have ended. 
+   * The files are rotated periodically after the specified number of windows have ended.
    * @return The number of windows
    */
   public int getRotationWindows()
@@ -832,6 +840,42 @@ public abstract class AbstractFileOutputOperator<INPUT> extends BaseOperator
   public int getMaxOpenFiles()
   {
     return this.maxOpenFiles;
+  }
+
+  /**
+   * Get the permission on the file which is being written.
+   * @return filePermission
+   */
+  public int getFilePermission()
+  {
+    return filePermission;
+  }
+
+  /**
+   * Set the permission on the file which is being written.
+   * @param filePermission
+   */
+  public void setFilePermission(int filePermission)
+  {
+    this.filePermission = filePermission;
+  }
+
+  /*
+   * Sets the stream codec on the input port.
+   *
+   * @param streamCodec
+   */
+  public void setStreamCodec(StreamCodec<INPUT> streamCodec)
+  {
+    this.streamCodec = streamCodec;
+  }
+
+  /**
+   * @return the stream codec on input port.
+   */
+  public StreamCodec<INPUT> getStreamCodec()
+  {
+    return this.streamCodec;
   }
 
   public static enum Counters
