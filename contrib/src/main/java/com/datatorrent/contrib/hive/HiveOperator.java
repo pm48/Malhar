@@ -42,6 +42,11 @@ import org.apache.hadoop.fs.Path;
  * No changes will be made to the input file once its given to HiveOperator.
  * This is a fault tolerant implementation of HiveOperator which assumes that load operation
  * is an atomic operation in Hive.
+ * BenchMark Results
+ * -----------------
+ * This operator loads 187 files in 120 seconds with following configuration.
+ * Tuple byte size of 32, file size 512.
+ *
  */
 @OperatorAnnotation(checkpointableWithinAppWindow = false)
 public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMapping, HiveStore>

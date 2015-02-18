@@ -179,7 +179,6 @@ public class HiveMockTest extends HiveTestService
     fsRolling.setFilePath(testMeta.getDir());
     fsRolling.setFilePermission(511);
     fsRolling.setMaxLength(128);
-    fsRolling.setStreamCodec(codec);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
