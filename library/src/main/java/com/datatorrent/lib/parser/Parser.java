@@ -108,6 +108,7 @@ public class Parser<INPUT> extends BaseOperator
         for (int i = 0; i < len; i++) {
           logger.info("header is {}", header[i]);
           fieldValueMapping.put(properties[i], header[i]);
+          output.emit(fieldValueMapping);
         }
         logger.debug("fieldValueMapping is {}", fieldValueMapping.toString());
         //arrayMaps.add(fieldValueMapping);
