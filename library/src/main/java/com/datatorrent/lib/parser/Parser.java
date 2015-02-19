@@ -50,6 +50,7 @@ public class Parser<INPUT> extends BaseOperator
   protected String lineDelimiter;
   protected transient String[] properties;
   protected transient CellProcessor[] processors;
+  Map<String, Object> fieldValueMapping = new HashMap<String, Object>();
   protected ArrayList<Map<String, Object>> arrayMaps = new ArrayList<Map<String, Object>>();
 
   public enum INPUT_TYPE
@@ -70,18 +71,8 @@ public class Parser<INPUT> extends BaseOperator
   /**
    * The output is a map with key being the field name and value being the value of the field.
    */
-  public final transient DefaultOutputPort<Map<String, Object>> output = new DefaultOutputPort<Map<String, Object>>()
-  {
-    @Override
-    public void emit(Map<String, Object> tuple)
-    {
-      for(int i=0;i<arrayMaps.size();i++){
-      logger.debug("map output is {}" ,arrayMaps.get(i).toString());
-      output.emit(arrayMaps.get(i));
-      }
-    }
+  public final transient DefaultOutputPort<Map<String, Object>> output = new DefaultOutputPort<Map<String, Object>>();
 
-  };
   /**
    * This input port receives incoming tuples.
    */
@@ -94,7 +85,6 @@ public class Parser<INPUT> extends BaseOperator
       CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
       InputStream in;
       BufferedReader br = null;
-      Map<String,Object> fieldValueMapping = new HashMap<String, Object>();
 
       try {
         in = new ByteArrayInputStream(tuple.toString().getBytes(inputEncoding));
@@ -114,23 +104,21 @@ public class Parser<INPUT> extends BaseOperator
         else if (len < properties.length) {
           logger.debug("Less column values in csv string than user supplied field properties.");
         }
-       // else {
-          for (int i = 0; i < len; i++) {
-            logger.info("header is {}", header[i]);
-            fieldValueMapping.put(properties[i], header[i]);
+        // else {
+        for (int i = 0; i < len; i++) {
+          logger.info("header is {}", header[i]);
+          fieldValueMapping.put(properties[i], header[i]);
+        }
+        logger.debug("fieldValueMapping is {}", fieldValueMapping.toString());
+        //arrayMaps.add(fieldValueMapping);
+        while (true) {
+          fieldValueMapping = csvReader.read(properties, processors);
+          if (fieldValueMapping == null) {
+            break;
           }
-          logger.debug("fieldValueMapping is {}", fieldValueMapping.toString());
-          arrayMaps.add(fieldValueMapping);
-          while (true) {
-            fieldValueMapping = csvReader.read(properties, processors);
-            if (fieldValueMapping == null) {
-              break;
-            }
-            arrayMaps.add(fieldValueMapping);
-
-          }
-          logger.info("arrayMaps is {}", arrayMaps.toString());
-       // }
+          logger.debug("fieldValueMapping in loop is {}", fieldValueMapping.toString());
+          output.emit(fieldValueMapping);
+        }
       }
       catch (IOException ex) {
         throw new RuntimeException(ex);
@@ -162,7 +150,7 @@ public class Parser<INPUT> extends BaseOperator
       ICsvMapReader csvReader = null;
       CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
       InputStream is = null;
-      Map<String,Object> fieldValueMapping = new HashMap<String, Object>();
+      Map<String, Object> fieldValueMapping = new HashMap<String, Object>();
       try {
         is = new FileInputStream(tuple);
       }
@@ -192,10 +180,12 @@ public class Parser<INPUT> extends BaseOperator
         else {
           for (int i = 0; i < len; i++) {
             fieldValueMapping.put(properties[i], header[i]);
+            output.emit(fieldValueMapping);
           }
           arrayMaps.add(fieldValueMapping);
           while (true) {
             fieldValueMapping = csvReader.read(properties, processors);
+            output.emit(fieldValueMapping);
             if (fieldValueMapping == null) {
               break;
             }

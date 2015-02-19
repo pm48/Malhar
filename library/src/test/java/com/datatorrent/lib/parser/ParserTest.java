@@ -7,11 +7,13 @@ package com.datatorrent.lib.parser;
 import com.datatorrent.lib.parser.Parser.Field;
 import com.datatorrent.lib.parser.Parser.INPUT_TYPE;
 import java.util.ArrayList;
-
+import org.junit.Test;
 
 public class ParserTest
 {
-  public static void main(String[] args){
+  @Test
+  public void TestParser()
+  {
     Parser<String> parser = new Parser<String>();
     parser.setFieldDelimiter(',');
     parser.setLineDelimiter("\n");
@@ -30,8 +32,9 @@ public class ParserTest
     listKeyValue.add(field3);
     parser.setListKeyValue(listKeyValue);
     parser.setup(null);
-    parser.input1.process("123,prerna,567777\n321,abhinav,7777000");
-   // parser.input2.process("/tmp/parse.txt");
+    parser.input1.process("123,prerna,567777\n321,abhinav,7777000\n456,gaurav,5454545454");
+    // parser.input2.process("/tmp/parse.txt");
 
   }
+
 }
