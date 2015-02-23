@@ -150,6 +150,18 @@
           <groupId>*</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>javax.jms</groupId>
+          <artifactId>jms-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-core</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -171,6 +183,38 @@
         <exclusion>
           <groupId>*</groupId>
           <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>jline</groupId>
+          <artifactId>jline</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-json</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-core-asl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-mapper-asl</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -232,32 +276,12 @@
       <artifactId>cassandra-driver-core</artifactId>
       <version>2.0.2</version>
       <optional>true</optional>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.aerospike</groupId>
       <artifactId>aerospike-client</artifactId>
       <version>3.0.26</version>
       <optional>true</optional>
-      <exclusions>
-        <exclusion>
-          <groupId>org.gnu</groupId>
-          <artifactId>gnu-crypto</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hbase</groupId>
@@ -317,34 +341,6 @@
         <exclusion>
           <artifactId>hadoop-common</artifactId>
           <groupId>org.apache.hadoop</groupId>
-        </exclusion>
-        <exclusion>
-          <groupId>io.netty</groupId>
-          <artifactId>netty</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -415,10 +411,6 @@
           <artifactId>hadoop-client</artifactId>
           <groupId>org.apache.hadoop</groupId>
         </exclusion>
-        <exclusion>
-          <artifactId>jaxb-impl</artifactId>
-          <groupId>com.sun.xml.bind</groupId>
-        </exclusion>
 
         <!-- Needed for running local server for tests -->
         <!--exclusion>
@@ -430,56 +422,24 @@
           <groupId>org.mortbay.jetty</groupId>
         </exclusion-->
         <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>servlet-api-2.5</artifactId>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-core</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>asm</groupId>
-          <artifactId>asm</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>javax.activation</groupId>
-          <artifactId>activation</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.github.stephenc.high-scale-lib</groupId>
-          <artifactId>high-scale-lib</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.jamon</groupId>
-          <artifactId>jamon-runtime</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>tomcat</groupId>
-          <artifactId>jasper-compiler</artifactId>
+          <groupId>org.codehaus.jettison</groupId>
+          <artifactId>jettison</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.mortbay.jetty</groupId>
-          <artifactId>jetty-sslengine</artifactId>
+          <artifactId>jetty</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.mortbay.jetty</groupId>
           <artifactId>jetty-util</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.mortbay.jetty</groupId>
-          <artifactId>jsp-api-2.1</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>jsp-2.1</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.sun.jersey</groupId>
-          <artifactId>jersey-json</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>jetty</artifactId>
+          <artifactId>jetty-sslengine</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.sun.jersey</groupId>
@@ -487,35 +447,11 @@
         </exclusion>
         <exclusion>
           <groupId>com.sun.jersey</groupId>
-          <artifactId>jersey-core</artifactId>
+          <artifactId>jersey-json</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>commons-logging</groupId>
-          <artifactId>commons-logging</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.commons</groupId>
-          <artifactId>commons-math</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-lang</groupId>
-          <artifactId>commons-lang</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-httpclient</groupId>
-          <artifactId>commons-httpclient</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>commons-collections</groupId>
-          <artifactId>commons-collections</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
+          <groupId>org.jamon</groupId>
+          <artifactId>jamon-runtime</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -595,6 +531,10 @@
           <groupId>io.netty</groupId>
           <artifactId>netty</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jettison</groupId>
+          <artifactId>jettison</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -602,12 +542,128 @@
       <artifactId>dt-engine</artifactId>
       <version>2.1.0-SNAPSHOT</version>
       <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>jline</groupId>
+          <artifactId>jline</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-xml</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.jms</groupId>
+          <artifactId>jms-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-websocket</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey.contribs</groupId>
+          <artifactId>jersey-apache-client4</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-grizzly2</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey.jersey-test-framework</groupId>
+          <artifactId>jersey-test-framework-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey.contribs</groupId>
+          <artifactId>jersey-guice</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-webapp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-servlets</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-http</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-security</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-servlet</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey.jersey-test-framework</groupId>
+          <artifactId>jersey-test-framework-grizzly2</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-json</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-core-asl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-jaxrs</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-mapper-asl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-xc</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.datatorrent</groupId>
       <artifactId>dt-api</artifactId>
       <version>2.1.0-SNAPSHOT</version>
       <scope>provided</scope>
+      <exclusions>
+         <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
@@ -620,12 +676,36 @@
       <artifactId>hive-exec</artifactId>
       <version>0.13.1</version>
       <optional>true</optional>
+      <exclusions>
+        <exclusion>
+          <groupId>jline</groupId>
+          <artifactId>jline</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-core-asl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-mapper-asl</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-service</artifactId>
       <version>0.13.1</version>
       <optional>true</optional>
+      <exclusions>
+        <exclusion>
+          <groupId>org.eclipse.jetty.aggregate</groupId>
+          <artifactId>jetty-all</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.thrift</groupId>
@@ -638,7 +718,33 @@
      <artifactId>hadoop-hdfs</artifactId>
      <version>2.2.0</version>
      <scope>test</scope>
-    </dependency> 
+      <exclusions>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.mortbay.jetty</groupId>
+          <artifactId>jetty-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.sun.jersey</groupId>
+          <artifactId>jersey-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-core-asl</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.codehaus.jackson</groupId>
+          <artifactId>jackson-mapper-asl</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
 
 </project>
