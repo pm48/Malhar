@@ -15,27 +15,30 @@
  */
 package com.datatorrent.lib.parser;
 
-import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvMapReader;
 import org.supercsv.io.ICsvMapReader;
 import org.supercsv.prefs.CsvPreference;
 
+/*
+ * An implementation of AbstractParser which emits a map.
+ * The output is a map with key being the field name supplied by user and value being the value of that field
+ * from input stream.
+ */
 public class Parser extends AbstractParser<Map<String, Object>>
 {
   protected transient ICsvMapReader csvReader = null;
-  /**
-   * The output is a map with key being the field name and value being the value of the field.
-   */
-  public final transient DefaultOutputPort<Map<String, Object>> output = new DefaultOutputPort<Map<String, Object>>();
 
+  /**
+   * This method creates an instance of csvMapReader.
+   * @param br
+   * @param preference
+   * @return CSV Map Reader
+   */
   @Override
   public ICsvMapReader getReader(BufferedReader br, CsvPreference preference)
   {
@@ -44,6 +47,10 @@ public class Parser extends AbstractParser<Map<String, Object>>
 
   }
 
+  /**
+   * This method reads input stream data values into a map.
+   * @return Map containing key as field name given by user and value of the field.
+   */
   @Override
   public Map<String, Object> readData(String[] properties, CellProcessor[] processors)
   {

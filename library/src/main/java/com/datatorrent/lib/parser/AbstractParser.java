@@ -17,7 +17,6 @@ package com.datatorrent.lib.parser;
 
 import java.util.ArrayList;
 
-import javax.annotation.Nonnull;
 import javax.validation.constraints.NotNull;
 
 import org.slf4j.Logger;
@@ -30,51 +29,62 @@ import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.*;
-import java.util.Map;
 import org.supercsv.cellprocessor.*;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.*;
 
 /*
+ *  This is a base implementation of Delimited data parser which can be extended to output
+ *  field values in desired data structure.
+ *  Assumption is that each field in the delimited data should map to a simple java type.
+ *  Delimited records can be supplied in file or message based sources like kafka.
+ *  User can specify the name of the field , data type of the field as list of key value pairs
+ *  and delimiter as properties on the parsing operator.
+ *  Other properties to be specified
+ *        - Input Stream encoding - default value should be UTF-8
+ *        - End of line character - default should be ‘\r\n’
+ *
  * @param <T> This is the output tuple type.
  */
 public abstract class AbstractParser<T> extends BaseOperator
 {
   // List of key value pairs which has name of the field as key , data type of the field as value.
-  @Nonnull
+  @NotNull
   protected ArrayList<Field> fields;
 
   protected String inputEncoding;
-  @Nonnull
+  @NotNull
   protected int fieldDelimiter;
   protected String lineDelimiter;
   protected transient String[] properties;
   protected transient CellProcessor[] processors;
   protected boolean isHeader;
 
-  public enum INPUT_TYPE
+  public enum FIELD_TYPE
   {
     BOOLEAN, DOUBLE, INTEGER, FLOAT, LONG, SHORT, CHARACTER, STRING, DATE, UNKNOWN
   };
 
   @NotNull
-  INPUT_TYPE type;
+  FIELD_TYPE type;
 
   public AbstractParser()
   {
+    fieldDelimiter = ',';
     inputEncoding = "UTF8";
     lineDelimiter = "\r\n";
-    type = INPUT_TYPE.STRING;
+    type = FIELD_TYPE.STRING;
     isHeader = false;
   }
 
   /**
-   * The output is a map with key being the field name and value being the value of the field.
+   * Output port that emits value of the fields.
+   * Output data type can be configured in the implementation of this operator.
    */
   public final transient DefaultOutputPort<T> output = new DefaultOutputPort<T>();
 
   /**
-   * This input port receives incoming tuples.
+   * This input port receives byte array as tuple.
    */
   public final transient DefaultInputPort<byte[]> input = new DefaultInputPort<byte[]>()
   {
@@ -91,19 +101,13 @@ public abstract class AbstractParser<T> extends BaseOperator
       }
       catch (UnsupportedEncodingException ex) {
         logger.error("Encoding not supported", ex);
+        DTThrowable.rethrow(ex);
       }
       csvReader = getReader(br, preference);
       try {
         if (isHeader) {
           String[] header = csvReader.getHeader(true);
           int len = header.length;
-          if (len > properties.length) {
-            logger.debug("More column values in csv string than user supplied field properties.");
-          }
-          else if (len < properties.length) {
-            logger.debug("Less column values in csv string than user supplied field properties.");
-          }
-
           for (int i = 0; i < len; i++) {
             logger.debug("header is {}", header[i]);
             T headerData = (T)header[i];
@@ -151,36 +155,37 @@ public abstract class AbstractParser<T> extends BaseOperator
   public void initialise(String[] properties, CellProcessor[] processors)
   {
     for (int i = 0; i < fields.size(); i++) {
-      INPUT_TYPE type = fields.get(i).type;
+      FIELD_TYPE type = fields.get(i).type;
       properties[i] = fields.get(i).name;
-      if (type == INPUT_TYPE.DOUBLE) {
+      if (type == FIELD_TYPE.DOUBLE) {
       }
-      else if (type == INPUT_TYPE.INTEGER) {
+      else if (type == FIELD_TYPE.INTEGER) {
         processors[i] = new Optional(new ParseInt());
       }
-      else if (type == INPUT_TYPE.FLOAT) {
+      else if (type == FIELD_TYPE.FLOAT) {
         processors[i] = new Optional(new ParseDouble());
       }
-      else if (type == INPUT_TYPE.LONG) {
+      else if (type == FIELD_TYPE.LONG) {
         processors[i] = new Optional(new ParseLong());
       }
-      else if (type == INPUT_TYPE.SHORT) {
+      else if (type == FIELD_TYPE.SHORT) {
         processors[i] = new Optional(new ParseInt());
       }
-      else if (type == INPUT_TYPE.STRING) {
+      else if (type == FIELD_TYPE.STRING) {
         processors[i] = new Optional();
       }
-      else if (type == INPUT_TYPE.CHARACTER) {
+      else if (type == FIELD_TYPE.CHARACTER) {
         processors[i] = new Optional(new ParseChar());
       }
-      else if (type == INPUT_TYPE.BOOLEAN) {
+      else if (type == FIELD_TYPE.BOOLEAN) {
         processors[i] = new Optional(new ParseChar());
       }
-      else if (type == INPUT_TYPE.DATE) {
+      else if (type == FIELD_TYPE.DATE) {
         processors[i] = new Optional(new ParseDate("dd/MM/yyyy"));
       }
       else {
-        type = INPUT_TYPE.UNKNOWN;
+        type = FIELD_TYPE.UNKNOWN;
+        logger.debug("This type is not known");
       }
     }
 
@@ -192,14 +197,29 @@ public abstract class AbstractParser<T> extends BaseOperator
     super.teardown();
   }
 
+  /**
+   * Any concrete class derived from AbstractParser has to implement this method.
+   * It returns an instance of specific CsvReader required to read field values into a specific data type.
+   *
+   * @param br
+   * @param preference
+   * @return CsvReader
+   */
   public abstract ICsvReader getReader(BufferedReader br, CsvPreference preference);
 
+  /**
+   * Any concrete class derived from AbstractParser has to implement this method.
+   * It returns the specific data type in which field values are being read to.
+   *
+   * @param properties
+   * @param processors
+   */
   public abstract T readData(String[] properties, CellProcessor[] processors);
 
   public static class Field
   {
     String name;
-    INPUT_TYPE type;
+    FIELD_TYPE type;
 
     public String getName()
     {
@@ -211,24 +231,24 @@ public abstract class AbstractParser<T> extends BaseOperator
       this.name = name;
     }
 
-    public INPUT_TYPE getType()
+    public FIELD_TYPE getType()
     {
       return type;
     }
 
-    public void setType(INPUT_TYPE type)
+    public void setType(FIELD_TYPE type)
     {
       this.type = type;
     }
 
   }
 
-  public void setType(INPUT_TYPE type)
+  public void setType(FIELD_TYPE type)
   {
     this.type = type;
   }
 
-  public INPUT_TYPE getType()
+  public FIELD_TYPE getType()
   {
     return type;
   }

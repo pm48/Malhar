@@ -17,12 +17,19 @@ package com.datatorrent.demos.dimensions.ads;
 
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
+import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.contrib.kafka.AbstractKafkaSinglePortInputOperator;
+import com.datatorrent.lib.parser.AbstractParser.FIELD_TYPE;
+import com.datatorrent.lib.parser.AbstractParser.Field;
 import com.datatorrent.lib.parser.Parser;
+import com.datatorrent.lib.stream.DevNull;
 import org.apache.hadoop.conf.Configuration;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Map;
 import kafka.message.Message;
 
+@ApplicationAnnotation(name="ParserApplication")
 public class ParserApplication implements StreamingApplication
 {
 
@@ -31,17 +38,61 @@ public class ParserApplication implements StreamingApplication
   {
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
 
-    KafkaSinglePortStringInputOperator kafkaStringInput = dag.addOperator("KafkaStringInput", KafkaSinglePortStringInputOperator.class);
+    KafkaSinglePortStringInputOperator kafkaStringInput = dag.addOperator("KafkaStringInput", new KafkaSinglePortStringInputOperator());
     Parser parser = dag.addOperator("Parser", Parser.class);
 
+    ArrayList<Parser.Field> fields= new ArrayList<Parser.Field>();
+    Field field1 = new Field();
+    field1.setName("publisherId");
+    field1.setType(FIELD_TYPE.INTEGER);
+    fields.add(field1);
+    Field field2 = new Field();
+    field2.setName("advertiserId");
+    field2.setType(FIELD_TYPE.INTEGER);
+    fields.add(field2);
+    Field field3 = new Field();
+    field3.setName("adUnit");
+    field3.setType(FIELD_TYPE.INTEGER);
+    fields.add(field3);
+    Field field4 = new Field();
+    field4.setName("timestamp");
+    field4.setType(FIELD_TYPE.LONG);
+    fields.add(field4);
+    Field field5 = new Field();
+    field5.setName("cost");
+    field5.setType(FIELD_TYPE.DOUBLE);
+    fields.add(field5);
+    Field field6 = new Field();
+    field6.setName("revenue");
+    field6.setType(FIELD_TYPE.DOUBLE);
+    fields.add(field6);
+    Field field7 = new Field();
+    field7.setName("impressions");
+    field7.setType(FIELD_TYPE.LONG);
+    fields.add(field7);
+    Field field8 = new Field();
+    field8.setName("clicks");
+    field8.setType(FIELD_TYPE.LONG);
+    fields.add(field8);
+
+    parser.setFields(fields);
+    parser.setIsHeader(false);
+    parser.setFieldDelimiter(',');
+    parser.setLineDelimiter("\n");
+    @SuppressWarnings("unchecked")
+    DevNull<Map<String,Object>> devNull = dag.addOperator("DevNull", DevNull.class);
+
     dag.addStream("Kafka2Parser", kafkaStringInput.outputPort, parser.input);
+    dag.addStream("Parser2DevNull",parser.output,devNull.data);
   }
 
-  public class KafkaSinglePortStringInputOperator extends AbstractKafkaSinglePortInputOperator<byte[]>
+  public static class KafkaSinglePortStringInputOperator extends AbstractKafkaSinglePortInputOperator<byte[]>
   {
 
     /**
-     * Implement abstract method of AbstractActiveMQSinglePortInputOperator
+     * Implement abstract method of AbstractKafkaSinglePortInputOperator
+     * @param message
+     * @return byte Array
      */
     @Override
     public byte[] getTuple(Message message)
