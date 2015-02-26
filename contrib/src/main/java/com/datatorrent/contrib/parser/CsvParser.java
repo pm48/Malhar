@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.lib.parser;
+package com.datatorrent.contrib.parser;
 
 import com.datatorrent.common.util.DTThrowable;
 import java.io.BufferedReader;
@@ -29,7 +29,7 @@ import org.supercsv.prefs.CsvPreference;
  * The output is a map with key being the field name supplied by user and value being the value of that field
  * from input stream.
  */
-public class Parser extends AbstractParser<Map<String, Object>>
+public class CsvParser extends AbstractCsvParser<Map<String, Object>>
 {
   protected transient ICsvMapReader csvReader = null;
 

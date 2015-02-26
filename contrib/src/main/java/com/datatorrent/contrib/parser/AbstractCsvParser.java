@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.lib.parser;
+package com.datatorrent.contrib.parser;
 
 import java.util.ArrayList;
 
@@ -46,7 +46,7 @@ import org.supercsv.io.*;
  *
  * @param <T> This is the output tuple type.
  */
-public abstract class AbstractParser<T> extends BaseOperator
+public abstract class AbstractCsvParser<T> extends BaseOperator
 {
   // List of key value pairs which has name of the field as key , data type of the field as value.
   @NotNull
@@ -62,13 +62,13 @@ public abstract class AbstractParser<T> extends BaseOperator
 
   public enum FIELD_TYPE
   {
-    BOOLEAN, DOUBLE, INTEGER, FLOAT, LONG, SHORT, CHARACTER, STRING, DATE, UNKNOWN
+    BOOLEAN, DOUBLE, INTEGER, FLOAT, LONG, SHORT, CHARACTER, STRING, DATE
   };
 
   @NotNull
   FIELD_TYPE type;
 
-  public AbstractParser()
+  public AbstractCsvParser()
   {
     fieldDelimiter = ',';
     inputEncoding = "UTF8";
@@ -158,6 +158,7 @@ public abstract class AbstractParser<T> extends BaseOperator
       FIELD_TYPE type = fields.get(i).type;
       properties[i] = fields.get(i).name;
       if (type == FIELD_TYPE.DOUBLE) {
+        processors[i] = new Optional(new ParseDouble());
       }
       else if (type == FIELD_TYPE.INTEGER) {
         processors[i] = new Optional(new ParseInt());
@@ -182,10 +183,6 @@ public abstract class AbstractParser<T> extends BaseOperator
       }
       else if (type == FIELD_TYPE.DATE) {
         processors[i] = new Optional(new ParseDate("dd/MM/yyyy"));
-      }
-      else {
-        type = FIELD_TYPE.UNKNOWN;
-        logger.debug("This type is not known");
       }
     }
 
@@ -293,6 +290,6 @@ public abstract class AbstractParser<T> extends BaseOperator
     this.fields = fields;
   }
 
-  private static final Logger logger = LoggerFactory.getLogger(AbstractParser.class);
+  private static final Logger logger = LoggerFactory.getLogger(AbstractCsvParser.class);
 
 }

@@ -19,10 +19,11 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.contrib.kafka.AbstractKafkaSinglePortInputOperator;
-import com.datatorrent.lib.parser.AbstractParser.FIELD_TYPE;
-import com.datatorrent.lib.parser.AbstractParser.Field;
-import com.datatorrent.lib.parser.Parser;
+import com.datatorrent.contrib.parser.AbstractCsvParser.FIELD_TYPE;
+import com.datatorrent.contrib.parser.AbstractCsvParser.Field;
+import com.datatorrent.contrib.parser.CsvParser;
 import com.datatorrent.lib.stream.DevNull;
+
 import org.apache.hadoop.conf.Configuration;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -39,9 +40,9 @@ public class ParserApplication implements StreamingApplication
     dag.setAttribute(DAG.STREAMING_WINDOW_SIZE_MILLIS, 1000);
 
     KafkaSinglePortStringInputOperator kafkaStringInput = dag.addOperator("KafkaStringInput", new KafkaSinglePortStringInputOperator());
-    Parser parser = dag.addOperator("Parser", Parser.class);
+    CsvParser parser = dag.addOperator("Parser", CsvParser.class);
 
-    ArrayList<Parser.Field> fields= new ArrayList<Parser.Field>();
+    ArrayList<CsvParser.Field> fields= new ArrayList<CsvParser.Field>();
     Field field1 = new Field();
     field1.setName("publisherId");
     field1.setType(FIELD_TYPE.INTEGER);
