@@ -172,14 +172,6 @@
           <groupId>*</groupId>
           <artifactId>*</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
-        </exclusion>
-         <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -189,13 +181,9 @@
       <classifier>tests</classifier>
       <scope>test</scope>
       <exclusions>
-         <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpcore</artifactId>
-        </exclusion>
-         <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -490,6 +478,12 @@
       <artifactId>couchbase-client</artifactId>
       <version>1.4.4</version>
       <optional>true</optional>
+      <exclusions>
+      <exclusion>
+         <groupId>org.apache.httpcomponents</groupId>
+         <artifactId>httpcore</artifactId>
+       </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.datatorrent</groupId>
@@ -508,6 +502,16 @@
       <artifactId>hive-jdbc</artifactId>
       <version>0.13.1</version>
       <optional>true</optional>
+       <exclusions>
+         <exclusion>
+           <groupId>org.apache.httpcomponents</groupId>
+           <artifactId>httpclient</artifactId>
+         </exclusion>
+         <exclusion>
+           <groupId>org.apache.httpcomponents</groupId>
+           <artifactId>httpcore</artifactId>
+         </exclusion>
+       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>
@@ -550,6 +554,16 @@
       <artifactId>libthrift</artifactId>
       <version>0.9.0</version>
       <optional>true</optional>
+      <exclusions>
+         <exclusion>
+           <groupId>org.apache.httpcomponents</groupId>
+           <artifactId>httpclient</artifactId>
+         </exclusion>
+         <exclusion>
+           <groupId>org.apache.httpcomponents</groupId>
+           <artifactId>httpcore</artifactId>
+         </exclusion>
+       </exclusions>
     </dependency>
     <dependency>
      <groupId>org.apache.hadoop</groupId>
