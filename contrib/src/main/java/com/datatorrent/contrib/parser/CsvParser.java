@@ -35,16 +35,15 @@ public class CsvParser extends AbstractCsvParser<Map<String, Object>>
 
   /**
    * This method creates an instance of csvMapReader.
-   * @param br
+   * @param reader
    * @param preference
    * @return CSV Map Reader
    */
   @Override
-  public ICsvMapReader getReader(BufferedReader br, CsvPreference preference)
+  public ICsvMapReader getReader(ReusableStringReader reader, CsvPreference preference)
   {
-    csvReader = new CsvMapReader(br, preference);
+    csvReader = new CsvMapReader(reader, preference);
     return csvReader;
-
   }
 
   /**

@@ -50,6 +50,7 @@ public class ParserTest
     parser.setup(null);
     String input = "Eid,Name,Salary\n123,xyz,567777\n321,abc,7777000\n456,pqr,5454545454";
     parser.input.process(input.getBytes());
+    parser.teardown();
     Assert.assertEquals("Tuples read should be same ", 6, sink.collectedTuples.size());
     Assert.assertEquals("Eid", sink.collectedTuples.get(0));
     Assert.assertEquals("Name", sink.collectedTuples.get(1));
@@ -87,6 +88,8 @@ public class ParserTest
     parser.setup(null);
     String input = "123,xyz,567777\n321,abc,7777000\n456,pqr,5454545454";
     parser.input.process(input.getBytes());
+    parser.teardown();
+
     Assert.assertEquals("Tuples read should be same ", 3, sink.collectedTuples.size());
     Assert.assertEquals("{Name=xyz, Salary=567777, Eid=123}", sink.collectedTuples.get(0).toString());
     Assert.assertEquals("{Name=abc, Salary=7777000, Eid=321}", sink.collectedTuples.get(1).toString());

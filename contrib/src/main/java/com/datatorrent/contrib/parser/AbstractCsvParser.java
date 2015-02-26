@@ -29,6 +29,7 @@ import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.*;
+import java.util.logging.Level;
 import org.supercsv.cellprocessor.*;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.*;
@@ -59,6 +60,7 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
   protected transient String[] properties;
   protected transient CellProcessor[] processors;
   protected boolean isHeader;
+  private transient ICsvReader csvReader;
 
   public enum FIELD_TYPE
   {
@@ -67,6 +69,9 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
 
   @NotNull
   FIELD_TYPE type;
+
+  @NotNull
+  private transient ReusableStringReader csvStringReader = new ReusableStringReader();
 
   public AbstractCsvParser()
   {
@@ -91,20 +96,20 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
     @Override
     public void process(byte[] tuple)
     {
-      ICsvReader csvReader = null;
-      CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
-      InputStream in;
-      BufferedReader br = null;
+      //InputStream in;
+      /*BufferedReader br = null;
+       try {
+       in = new ByteArrayInputStream(tuple);
+       br = new BufferedReader(new InputStreamReader(in, inputEncoding));
+       }
+       catch (UnsupportedEncodingException ex) {
+       logger.error("Encoding not supported", ex);
+       DTThrowable.rethrow(ex);
+       }
+       csvReader = getReader(br, preference);*/
+
       try {
-        in = new ByteArrayInputStream(tuple);
-        br = new BufferedReader(new InputStreamReader(in, inputEncoding));
-      }
-      catch (UnsupportedEncodingException ex) {
-        logger.error("Encoding not supported", ex);
-        DTThrowable.rethrow(ex);
-      }
-      csvReader = getReader(br, preference);
-      try {
+        csvStringReader.open(new String(tuple, inputEncoding));
         if (isHeader) {
           String[] header = csvReader.getHeader(true);
           int len = header.length;
@@ -127,16 +132,6 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
       catch (IOException ex) {
         throw new RuntimeException(ex);
       }
-      finally {
-        if (csvReader != null) {
-          try {
-            csvReader.close();
-          }
-          catch (IOException ex) {
-            DTThrowable.rethrow(ex);
-          }
-        }
-      }
 
     }
 
@@ -149,6 +144,8 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
     properties = new String[countKeyValue];
     processors = new CellProcessor[countKeyValue];
     initialise(properties, processors);
+    CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
+    csvReader = getReader(csvStringReader, preference);
   }
 
   // Initialise the properties and processors.
@@ -191,18 +188,23 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
   @Override
   public void teardown()
   {
-    super.teardown();
+    try {
+      csvReader.close();
+    }
+    catch (IOException e) {
+      logger.error("Parsing csv error", e);
+    }
   }
 
   /**
    * Any concrete class derived from AbstractParser has to implement this method.
    * It returns an instance of specific CsvReader required to read field values into a specific data type.
    *
-   * @param br
+   * @param reader
    * @param preference
    * @return CsvReader
    */
-  public abstract ICsvReader getReader(BufferedReader br, CsvPreference preference);
+  public abstract ICsvReader getReader(ReusableStringReader reader, CsvPreference preference);
 
   /**
    * Any concrete class derived from AbstractParser has to implement this method.
@@ -236,6 +238,81 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
     public void setType(FIELD_TYPE type)
     {
       this.type = type;
+    }
+
+  }
+
+  public static class ReusableStringReader extends Reader
+  {
+    private String str;
+    private int length;
+    private int next = 0;
+
+    @Override
+    public int read(char[] cbuf, int off, int len) throws IOException
+    {
+      ensureOpen();
+      if ((off < 0) || (off > cbuf.length) || (len < 0) || ((off + len) > cbuf.length) || ((off + len) < 0)) {
+        throw new IndexOutOfBoundsException();
+      }
+      else if (len == 0) {
+        return 0;
+      }
+      if (next >= length) {
+        return -1;
+      }
+      int n = Math.min(length - next, len);
+      str.getChars(next, next + n, cbuf, off);
+      next += n;
+      return n;
+    }
+
+    /**
+     * Reads a single character.
+     *
+     * @return The character read, or -1 if the end of the stream has been reached
+     *
+     * @exception IOException
+     * If an I/O error occurs
+     */
+    @Override
+    public int read() throws IOException
+    {
+      ensureOpen();
+      if (next >= length) {
+        return -1;
+      }
+      return str.charAt(next++);
+    }
+
+    @Override
+    public boolean ready() throws IOException
+    {
+      ensureOpen();
+      return true;
+    }
+
+    @Override
+    public void close() throws IOException
+    {
+      str = null;
+    }
+
+    /**
+     * Check to make sure that the stream has not been closed
+     */
+    private void ensureOpen() throws IOException
+    {
+      if (str == null) {
+        throw new IOException("Stream closed");
+      }
+    }
+
+    public void open(String str) throws IOException
+    {
+      this.str = str;
+      this.length = this.str.length();
+      this.next = 0;
     }
 
   }
