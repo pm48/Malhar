@@ -30,6 +30,9 @@ import com.datatorrent.api.DefaultOutputPort;
 import com.datatorrent.common.util.DTThrowable;
 import java.io.*;
 import java.util.logging.Level;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.supercsv.cellprocessor.*;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.*;
@@ -39,7 +42,7 @@ import org.supercsv.io.*;
  *  field values in desired data structure.
  *  Assumption is that each field in the delimited data should map to a simple java type.
  *  Delimited records can be supplied in file or message based sources like kafka.
- *  User can specify the name of the field , data type of the field as list of key value pairs
+ *  User can specify the name of the field , data type of the field as list of key value pairs or in a hdfs file
  *  and delimiter as properties on the parsing operator.
  *  Other properties to be specified
  *        - Input Stream encoding - default value should be UTF-8
@@ -50,13 +53,17 @@ import org.supercsv.io.*;
 public abstract class AbstractCsvParser<T> extends BaseOperator
 {
   // List of key value pairs which has name of the field as key , data type of the field as value.
-  @NotNull
   protected ArrayList<Field> fields;
 
   protected String inputEncoding;
   @NotNull
   protected int fieldDelimiter;
   protected String lineDelimiter;
+  //User gets an option to specify filename containing name of the field and data type of the field.
+  protected String fieldmappingFile;
+  //Field and its data type can be separated by a user defined delimiter in the file.
+  protected String fieldmappingFileDelimiter;
+
   protected transient String[] properties;
   protected transient CellProcessor[] processors;
   protected boolean isHeader;
@@ -75,7 +82,9 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
 
   public AbstractCsvParser()
   {
+    fields = new ArrayList<Field>();
     fieldDelimiter = ',';
+    fieldmappingFileDelimiter = ":";
     inputEncoding = "UTF8";
     lineDelimiter = "\r\n";
     type = FIELD_TYPE.STRING;
@@ -140,12 +149,42 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
   @Override
   public void setup(OperatorContext context)
   {
-    int countKeyValue = fields.size();
-    properties = new String[countKeyValue];
-    processors = new CellProcessor[countKeyValue];
-    initialise(properties, processors);
-    CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
-    csvReader = getReader(csvStringReader, preference);
+    if (fieldmappingFile != null) {
+      Configuration conf = new Configuration();
+      try {
+        FileSystem fs = FileSystem.get(conf);
+        Path filepath = new Path(fieldmappingFile);
+        if(fs.exists(filepath)){
+        BufferedReader bfr = new BufferedReader(new InputStreamReader(fs.open(filepath)));
+        String str;
+
+        while ((str = bfr.readLine()) != null) {
+          logger.debug("string is {}", str);
+          String[] temp = str.split(fieldmappingFileDelimiter);
+          Field field = new Field();
+          field.setName(temp[0]);
+          field.setType(temp[1]);
+          fields.add(field);
+        }
+      }
+      else
+        {
+          logger.debug("File containing fields and their data types does not exist.Please specify the fields and data type through properties of this operator.");
+        }
+      }
+      catch (IOException ex) {
+        DTThrowable.rethrow(ex);
+      }
+
+    }
+
+      int countKeyValue = fields.size();
+      properties = new String[countKeyValue];
+      processors = new CellProcessor[countKeyValue];
+      initialise(properties, processors);
+      CsvPreference preference = new CsvPreference.Builder('"', fieldDelimiter, lineDelimiter).build();
+      csvReader = getReader(csvStringReader, preference);
+
   }
 
   // Initialise the properties and processors.
@@ -235,9 +274,9 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
       return type;
     }
 
-    public void setType(FIELD_TYPE type)
+    public void setType(String type)
     {
-      this.type = type;
+      this.type = FIELD_TYPE.valueOf(type);
     }
 
   }
@@ -367,6 +406,25 @@ public abstract class AbstractCsvParser<T> extends BaseOperator
     this.fields = fields;
   }
 
+  public String getFieldmappingFile()
+  {
+    return fieldmappingFile;
+  }
+
+  public void setFieldmappingFile(String fieldmappingFile)
+  {
+    this.fieldmappingFile = fieldmappingFile;
+  }
+
+  public String getFieldmappingFileDelimiter()
+  {
+    return fieldmappingFileDelimiter;
+  }
+
+  public void setFieldmappingFileDelimiter(String fieldmappingFileDelimiter)
+  {
+    this.fieldmappingFileDelimiter = fieldmappingFileDelimiter;
+  }
   private static final Logger logger = LoggerFactory.getLogger(AbstractCsvParser.class);
 
 }
