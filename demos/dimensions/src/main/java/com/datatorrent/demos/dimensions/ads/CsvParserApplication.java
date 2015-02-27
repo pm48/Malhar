@@ -19,7 +19,6 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.StreamingApplication;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
 import com.datatorrent.contrib.kafka.AbstractKafkaSinglePortInputOperator;
-import com.datatorrent.contrib.parser.AbstractCsvParser.FIELD_TYPE;
 import com.datatorrent.contrib.parser.AbstractCsvParser.Field;
 import com.datatorrent.contrib.parser.CsvParser;
 import com.datatorrent.lib.stream.DevNull;
