@@ -153,9 +153,12 @@ public class SmtpOutputOperatorTest
 
   }
 
+<<<<<<< Updated upstream:library/src/test/java/com/datatorrent/lib/io/smtp/SmtpOutputOperatorTest.java
 
   private class SMPTPIdempotentOperator extends SMTPWriter
   {
 
   }
+=======
+>>>>>>> Stashed changes:library/src/test/java/com/datatorrent/lib/io/SmtpOutputOperatorTest.java
 }
