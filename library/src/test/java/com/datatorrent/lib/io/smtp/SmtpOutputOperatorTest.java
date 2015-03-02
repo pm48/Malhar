@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.lib.io;
+package com.datatorrent.lib.io.smtp;
 
+import com.datatorrent.lib.io.*;
 import com.datatorrent.lib.io.SMTP.SmtpOutputOperator;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,13 +48,13 @@ public class SmtpOutputOperatorTest
   String to = "jenkins@datatorrent.com";
   String cc = "jenkinsCC@datatorrent.com";
   GreenMail greenMail = null;
-  SmtpOutputOperator node;
+  SMPTPIdempotentOperator node;
   Map<String, String> data;
 
   @Before
   public void setup() throws Exception
   {
-    node = new SmtpOutputOperator();
+    node = new SMPTPIdempotentOperator();
     greenMail = new GreenMail(ServerSetupTest.ALL);
     greenMail.start();
     node.setFrom(from);
@@ -149,6 +150,12 @@ public class SmtpOutputOperatorTest
     lma.prepareDAG(app, conf);
     Assert.assertEquals("checking TO list", to + "," + cc, o1.get().getRecipients().get("TO"));
     Assert.assertEquals("checking CC list", cc, o1.get().getRecipients().get("CC"));
+
+  }
+
+
+  private class SMPTPIdempotentOperator extends SMTPWriter
+  {
 
   }
 }

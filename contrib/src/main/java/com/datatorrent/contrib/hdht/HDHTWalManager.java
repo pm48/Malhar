@@ -59,7 +59,7 @@ import com.datatorrent.contrib.hdht.HDHT.WALWriter;
  *   This will not cause problem now, because file write is idempotent with
  *   duplicate tuples.
  *
- * @since 2.0.0 
+ * @since 2.0.0
  */
 public class HDHTWalManager implements Closeable
 {
@@ -324,7 +324,7 @@ public class HDHTWalManager implements Closeable
 
   /* Location of the WAL */
   public static class WalPosition {
-    long fileId;
+    public long fileId;
     long offset;
 
     private WalPosition() {
