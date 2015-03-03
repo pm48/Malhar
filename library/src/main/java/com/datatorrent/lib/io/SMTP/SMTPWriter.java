@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.datatorrent.lib.io.SMTP;
+package com.datatorrent.lib.io.smtp;
 
 import com.datatorrent.api.BaseOperator;
 import com.datatorrent.api.Context.OperatorContext;
@@ -50,9 +50,22 @@ import com.google.common.collect.Sets;
 import java.io.OutputStream;
 import org.apache.commons.io.IOUtils;
 
-public abstract class SMTPWriter extends BaseOperator implements CheckpointListener, HDHT.Writer
+public class SMTPWriter extends BaseOperator implements CheckpointListener, HDHT.Writer
 {
   public static final String FNAME_META = "_META";
+  private Map<String, String> recipients = Maps.newHashMap();
+
+
+  @NotNull
+  private String subject;
+  @NotNull
+  private String content;
+  @NotNull
+  private String from;
+
+
+  private int smtpPort = 1100;
+
 
   @Override
   public void put(long bucketKey, Slice key, byte[] value) throws IOException
@@ -94,16 +107,9 @@ public abstract class SMTPWriter extends BaseOperator implements CheckpointListe
   @NotNull
   protected static HDHTFileAccess store;
   private static final Logger LOG = LoggerFactory.getLogger(SmtpOutputOperator.class);
-  @NotNull
-  private String subject;
-  @NotNull
-  private String content;
-  @NotNull
-  private String from;
 
-  private Map<String, String> recipients = Maps.newHashMap();
 
-  private int smtpPort = 587;
+
   @NotNull
   private String smtpHost;
   private String smtpUserName;
@@ -142,12 +148,13 @@ public abstract class SMTPWriter extends BaseOperator implements CheckpointListe
     public void process(Object t)
     {
       try {
-        String mailContent = content.replace("{}", t.toString());
+        String mailContent = t.toString();
+        LOG.debug("message is {}" ,mailContent);
         message.setContent(mailContent, contentType);
         index++;
         long bucketKey = index;
         // Decide on slice key , value can be message converted to byte array.
-        byte[] key = getKeyBytes(message);
+        byte[] key = message.getSubject().getBytes();
         byte[] value = message.toString().getBytes();
         processMessage(bucketKey, new Slice(key), value);
         Transport.send(message);
@@ -170,7 +177,6 @@ public abstract class SMTPWriter extends BaseOperator implements CheckpointListe
     }
   }
 
-  protected abstract byte[] getKeyBytes(Message message);
 
   /**
    * Meta data about bucket, persisted in store
@@ -255,6 +261,41 @@ public abstract class SMTPWriter extends BaseOperator implements CheckpointListe
       }
     }
     return bucket;
+  }
+
+   /**
+   * Lookup in write cache (data not flushed/committed to files).
+   * @param bucketKey
+   * @param key
+   * @return uncommitted.
+   */
+  @Override
+  public byte[] getUncommitted(long bucketKey, Slice key)
+  {
+    Bucket bucket = this.buckets.get(bucketKey);
+    if (bucket != null) {
+      byte[] v = bucket.writeCache.get(key);
+      if (v != null) {
+        return v != HDHT.WALReader.DELETED ? v : null;
+      }
+      for (Map.Entry<Long, HashMap<Slice, byte[]>> entry : bucket.checkpointedWriteCache.entrySet()) {
+        byte[] v2 = entry.getValue().get(key);
+        // find most recent entry
+        if (v2 != null) {
+          v = v2;
+        }
+      }
+      if (v != null) {
+        return v != HDHT.WALReader.DELETED ? v : null;
+      }
+      v = bucket.committedWriteCache.get(key);
+      if (v != null) {
+        return v != HDHT.WALReader.DELETED ? v : null;
+      }
+      v = bucket.frozenWriteCache.get(key);
+      return v != null && v != HDHT.WALReader.DELETED ? v : null;
+    }
+    return null;
   }
 
   public void delete(long bucketKey, Slice key) throws IOException
@@ -348,7 +389,7 @@ public abstract class SMTPWriter extends BaseOperator implements CheckpointListe
       message = new MimeMessage(session);
       message.setFrom(new InternetAddress(from));
       for (Map.Entry<String, String> entry: recipients.entrySet()) {
-        com.datatorrent.lib.io.SMTP.SmtpOutputOperator.RecipientType type = com.datatorrent.lib.io.SMTP.SmtpOutputOperator.RecipientType.valueOf(entry.getKey().toUpperCase());
+        com.datatorrent.lib.io.smtp.SmtpOutputOperator.RecipientType type = com.datatorrent.lib.io.smtp.SmtpOutputOperator.RecipientType.valueOf(entry.getKey().toUpperCase());
         Message.RecipientType recipientType;
         switch (type) {
           case TO:
@@ -635,5 +676,97 @@ public abstract class SMTPWriter extends BaseOperator implements CheckpointListe
     writeExecutor.shutdown();
     super.teardown();
   }
+
+  public String getFrom()
+  {
+    return from;
+  }
+
+  public void setFrom(String from)
+  {
+    this.from = from;
+    resetMessage();
+  }
+
+   public String getContent()
+  {
+    return content;
+  }
+
+  public void setContent(String content)
+  {
+    this.content = content;
+    resetMessage();
+  }
+
+   public int getSmtpPort()
+  {
+    return smtpPort;
+  }
+
+  public void setSmtpPort(int smtpPort)
+  {
+    this.smtpPort = smtpPort;
+    reset();
+  }
+
+  public String getSmtpHost()
+  {
+    return smtpHost;
+  }
+
+  public void setSmtpHost(String smtpHost)
+  {
+    this.smtpHost = smtpHost;
+    reset();
+  }
+
+  public String getSmtpUserName()
+  {
+    return smtpUserName;
+  }
+
+  public void setSmtpUserName(String smtpUserName)
+  {
+    this.smtpUserName = smtpUserName;
+    reset();
+  }
+
+  public String getSmtpPassword()
+  {
+    return smtpPassword;
+  }
+
+  public void setSmtpPassword(String smtpPassword)
+  {
+    this.smtpPassword = smtpPassword;
+    reset();
+  }
+
+  public Map<String, String> getRecipients()
+  {
+    return recipients;
+  }
+
+  /**
+   * @param recipients : map from recipient type to coma separated list of addresses for e.g. to->abc@xyz.com,def@xyz.com
+   */
+  public void setRecipients(Map<String, String> recipients)
+  {
+    this.recipients = recipients;
+    resetMessage();
+  }
+
+   public String getSubject()
+  {
+    return subject;
+  }
+
+  public void setSubject(String subject)
+  {
+    this.subject = subject;
+    resetMessage();
+  }
+
 
 }

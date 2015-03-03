@@ -15,8 +15,6 @@
  */
 package com.datatorrent.lib.io.smtp;
 
-import com.datatorrent.lib.io.*;
-import com.datatorrent.lib.io.SMTP.SmtpOutputOperator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,17 +46,19 @@ public class SmtpOutputOperatorTest
   String to = "jenkins@datatorrent.com";
   String cc = "jenkinsCC@datatorrent.com";
   GreenMail greenMail = null;
-  SMPTPIdempotentOperator node;
+  SMTPWriter node;
+
   Map<String, String> data;
 
   @Before
   public void setup() throws Exception
   {
-    node = new SMPTPIdempotentOperator();
+    node = new SMTPWriter();
     greenMail = new GreenMail(ServerSetupTest.ALL);
     greenMail.start();
     node.setFrom(from);
     node.setContent(content);
+    node.setSubject("hello");
     node.setSmtpHost("127.0.0.1");
     node.setSmtpPort(ServerSetupTest.getPortOffset() + ServerSetup.SMTP.getPort());
     node.setSmtpUserName(from);
@@ -85,8 +85,10 @@ public class SmtpOutputOperatorTest
     recipients.put("to", to + "," + cc);
     recipients.put("cc", cc);
     node.setRecipients(recipients);
+    node.setSubject("hello");
     node.setup(null);
     node.beginWindow(1000);
+    String data = "First test message";
     node.input.process(data);
     node.endWindow();
     Assert.assertTrue(greenMail.waitForIncomingEmail(5000, 1));
@@ -153,12 +155,11 @@ public class SmtpOutputOperatorTest
 
   }
 
-<<<<<<< Updated upstream:library/src/test/java/com/datatorrent/lib/io/smtp/SmtpOutputOperatorTest.java
 
-  private class SMPTPIdempotentOperator extends SMTPWriter
-  {
 
-  }
-=======
->>>>>>> Stashed changes:library/src/test/java/com/datatorrent/lib/io/SmtpOutputOperatorTest.java
+
+
+
+
+
 }
