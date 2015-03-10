@@ -22,7 +22,7 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.annotation.ApplicationAnnotation;
 
 import com.datatorrent.lib.io.ConsoleOutputOperator;
-import com.datatorrent.lib.io.SmtpOutputOperator;
+import com.datatorrent.lib.io.smtp.SmtpOutputOperator;
 import com.datatorrent.lib.streamquery.DerbySqlStreamOperator;
 
 import org.apache.hadoop.conf.Configuration;

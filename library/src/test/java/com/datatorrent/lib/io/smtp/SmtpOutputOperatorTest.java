@@ -18,7 +18,6 @@ package com.datatorrent.lib.io.smtp;
 import com.datatorrent.api.*;
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import com.datatorrent.lib.io.IdempotentStorageManager;
-import com.datatorrent.lib.io.SmtpOutputOperator;
 import com.datatorrent.lib.util.TestUtils;
 import com.esotericsoftware.kryo.Kryo;
 import java.util.HashMap;
@@ -182,7 +181,6 @@ public class SmtpOutputOperatorTest
     lma.prepareDAG(app, conf);
     Assert.assertEquals("checking TO list", to + "," + cc, o1.get().getRecipients().get("TO"));
     Assert.assertEquals("checking CC list", cc, o1.get().getRecipients().get("CC"));
-    node.teardown();
   }
 
   @Test
