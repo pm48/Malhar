@@ -18,7 +18,7 @@ package com.datatorrent.lib.io.smtp;
 import com.datatorrent.api.*;
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import com.datatorrent.lib.io.IdempotentStorageManager;
-import com.datatorrent.lib.io.SMTP.SmtpOutputOperator;
+import com.datatorrent.lib.io.SmtpOutputOperator;
 import com.datatorrent.lib.util.TestUtils;
 import com.esotericsoftware.kryo.Kryo;
 import java.util.HashMap;
