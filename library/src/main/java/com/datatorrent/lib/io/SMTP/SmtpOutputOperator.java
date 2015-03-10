@@ -215,21 +215,23 @@ public class SmtpOutputOperator extends BaseOperator implements Operator.Checkpo
           return;
         }
         else {
-          String mailContent = content.replace("{}", t.toString());
-          LOG.debug("Sending email for tuple {}", t.toString());
-          waiting.add(mailContent);
-          smtpSenderThread.messageRcvdQueue.add(mailContent);
+          processMessage(t.toString());
         }
       }
       else {
-        String mailContent = content.replace("{}", t.toString());
-        LOG.debug("Sending email for tuple {}", t.toString());
-        waiting.add(mailContent);
-        smtpSenderThread.messageRcvdQueue.add(mailContent);
+        processMessage(t.toString());
       }
     }
 
   };
+
+  public void processMessage(String t)
+  {
+    String mailContent = content.replace("{}", t);
+    LOG.debug("Sending email for tuple {}", t);
+    waiting.add(mailContent);
+    smtpSenderThread.messageRcvdQueue.add(mailContent);
+  }
 
   public String getSubject()
   {
