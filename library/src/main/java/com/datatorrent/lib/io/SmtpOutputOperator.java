@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2015 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,12 @@
 package com.datatorrent.lib.io;
 
 import com.datatorrent.api.BaseOperator;
+import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.Context.OperatorContext;
+import com.datatorrent.api.Operator;
+import com.datatorrent.common.util.DTThrowable;
+import com.datatorrent.lib.io.IdempotentStorageManager;
 
 import java.util.*;
 
@@ -32,24 +36,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
+import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This operator outputs data to an smtp server.
- * <p></p>
+ * <p>
+ * </p>
  * @displayName Smtp Output
  * @category Output
  * @tags stmp, output operator
  *
  * @since 0.3.2
  */
-public class SmtpOutputOperator extends BaseOperator
+public class SmtpOutputOperator extends BaseOperator implements Operator.CheckpointListener, Operator.IdleTimeHandler
 {
   public enum RecipientType
   {
     TO, CC, BCC
   }
 
-  private static final Logger LOG = LoggerFactory.getLogger(SmtpOutputOperator.class);
   @NotNull
   private String subject;
   @NotNull
@@ -59,7 +67,8 @@ public class SmtpOutputOperator extends BaseOperator
 
   private Map<String, String> recipients = Maps.newHashMap();
 
-  private int smtpPort = 587;
+  private int smtpPort = 689;
+  private transient long sleepTimeMillis;
   @NotNull
   private String smtpHost;
   private String smtpUserName;
@@ -67,11 +76,104 @@ public class SmtpOutputOperator extends BaseOperator
   private String contentType = "text/plain";
   private boolean useSsl = false;
   private boolean setupCalled = false;
-
+  private transient Queue<String> messagesSent;
+  private transient SMTPSenderThread smtpSenderThread;
   protected transient Properties properties = System.getProperties();
   protected transient Authenticator auth;
   protected transient Session session;
   protected transient Message message;
+  private final transient AtomicReference<Throwable> throwable;
+  protected IdempotentStorageManager idempotentStorageManager = new IdempotentStorageManager.FSIdempotentStorageManager();
+  protected Queue<String> waiting;
+  protected int countMessageSent;
+  private transient int countMessagesToBeSkipped;
+
+  private transient long currentWindowId;
+  private transient int operatorId;
+  private transient long largestRecoveryWindow;
+  private transient int countOfTuples;
+  private transient int numWaiting;
+  private transient final Object sync;
+
+  public SmtpOutputOperator()
+  {
+    throwable = new AtomicReference<Throwable>();
+    waiting = new LinkedList<String>();
+    sync = new Object();
+  }
+
+  @Override
+  public void setup(OperatorContext context)
+  {
+    setupCalled = true;
+    operatorId = context.getId();
+    idempotentStorageManager.setup(context);
+    sleepTimeMillis = context.getValue(Context.OperatorContext.SPIN_MILLIS);
+    smtpSenderThread = new SMTPSenderThread();
+    messagesSent = new LinkedList<String>();
+    reset();
+  }
+
+  @Override
+  public void beginWindow(long windowId)
+  {
+    countOfTuples = 0;
+    largestRecoveryWindow = idempotentStorageManager.getLargestRecoveryWindow();
+    currentWindowId = windowId;
+    if (windowId <= largestRecoveryWindow) {
+      numWaiting = waiting.size();
+      countMessagesToBeSkipped = restore(windowId);
+      if (countMessagesToBeSkipped > numWaiting) {
+        // These messages were already sent in this window, so remove them from waiting.numWaiting could be size of waiting from previous window.
+        for (int i = 0; i < numWaiting; i++) {
+          waiting.poll();
+        }
+        // This diff could be number of tuples coming in this window, check in processTuple.
+        countMessagesToBeSkipped = countMessagesToBeSkipped - numWaiting;
+
+      }
+      else if (countMessagesToBeSkipped <= numWaiting) //It is possible that rest of waiting messages were sent in next window.
+      {
+        for (int i = 0; i < countMessagesToBeSkipped; i++) {
+          waiting.poll();
+        }
+        countMessagesToBeSkipped = 0;
+      }
+    }
+
+  }
+
+  protected void completed(String sentMessage)
+  {
+    messagesSent.add(sentMessage);
+  }
+
+  @Override
+  public void teardown()
+  {
+    idempotentStorageManager.teardown();
+
+    try {
+      smtpSenderThread.stopService();
+    }
+    catch (IOException ex) {
+      throw new RuntimeException(ex);
+    }
+
+    super.teardown();
+
+  }
+
+  @Override
+  public void committed(long windowId)
+  {
+    try {
+      idempotentStorageManager.deleteUpTo(operatorId, windowId);
+    }
+    catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   /**
    * This is the port which receives the tuples that will be output to an smtp server.
@@ -81,17 +183,53 @@ public class SmtpOutputOperator extends BaseOperator
     @Override
     public void process(Object t)
     {
-      try {
-        String mailContent = content.replace("{}", t.toString());
-        message.setContent(mailContent, contentType);
-        LOG.info("Sending email for tuple {}", t.toString());
-        Transport.send(message);
+      String mailContent = content.replace("{}", t.toString());
+      // Recovery case
+      if (currentWindowId <= largestRecoveryWindow) {
+        countOfTuples++;
+        /*There could be more duplicate messages coming in this window, we are not sure of state in waiting queue yet,
+         hence add these to waiting queue. If they are already sent, then they will be removed in next or further
+         windows according to logic implemented in beginwindow.*/
+        if (countOfTuples > countMessagesToBeSkipped) {
+          waiting.add(mailContent);
+        }
+        else {
+          return;
+        }
       }
-      catch (MessagingException ex) {
-        LOG.error("Something wrong with sending email.", ex);
+      else {
+        waiting.add(mailContent);
+        smtpSenderThread.messageRcvdQueue.add(mailContent);
       }
     }
+
   };
+
+  @Override
+  public void handleIdleTime()
+  {
+    if (messagesSent.isEmpty() && throwable.get() == null) {
+      try {
+        Thread.sleep(sleepTimeMillis);
+      }
+      catch (InterruptedException ex) {
+        throw new RuntimeException(ex);
+      }
+    }
+    else if (throwable.get() != null) {
+      DTThrowable.rethrow(throwable.get());
+    }
+    else {
+      /**
+       * Remove all the messages from waiting which have been sent.
+       */
+      if (!waiting.isEmpty()) {
+        while (!messagesSent.isEmpty()) {
+          waiting.remove(messagesSent.poll());
+        }
+      }
+    }
+  }
 
   public String getSubject()
   {
@@ -192,13 +330,6 @@ public class SmtpOutputOperator extends BaseOperator
     reset();
   }
 
-  @Override
-  public void setup(OperatorContext context)
-  {
-    setupCalled = true;
-    reset();
-  }
-
   private void reset()
   {
     if (!setupCalled) {
@@ -238,7 +369,7 @@ public class SmtpOutputOperator extends BaseOperator
     try {
       message = new MimeMessage(session);
       message.setFrom(new InternetAddress(from));
-      for (Map.Entry<String, String> entry : recipients.entrySet()) {
+      for (Map.Entry<String, String> entry: recipients.entrySet()) {
         RecipientType type = RecipientType.valueOf(entry.getKey().toUpperCase());
         Message.RecipientType recipientType;
         switch (type) {
@@ -254,7 +385,7 @@ public class SmtpOutputOperator extends BaseOperator
             break;
         }
         String[] addresses = entry.getValue().split(",");
-        for (String address : addresses) {
+        for (String address: addresses) {
           message.addRecipient(recipientType, new InternetAddress(address));
         }
       }
@@ -286,7 +417,7 @@ public class SmtpOutputOperator extends BaseOperator
     if (recipients.isEmpty()) {
       return false;
     }
-    for (Map.Entry<String, String> entry : recipients.entrySet()) {
+    for (Map.Entry<String, String> entry: recipients.entrySet()) {
       if (entry.getKey().toUpperCase().equalsIgnoreCase(RecipientType.TO.toString())) {
         if (entry.getValue() != null && entry.getValue().length() > 0) {
           return true;
@@ -296,4 +427,122 @@ public class SmtpOutputOperator extends BaseOperator
     }
     return false;
   }
+
+  @Override
+  public void endWindow()
+  {
+    if (currentWindowId == largestRecoveryWindow) {
+      if (!waiting.isEmpty()) {
+        smtpSenderThread.messageRcvdQueue.addAll(waiting);
+      }
+    }
+    else if (currentWindowId > largestRecoveryWindow) {
+      try {
+        synchronized (sync) {
+          idempotentStorageManager.save(countMessageSent, operatorId, currentWindowId);
+          LOG.debug("idempotent manager saves count {}", countMessageSent);
+          countMessageSent = 0;
+        }
+      }
+      catch (IOException e) {
+        throw new RuntimeException("saving recovery", e);
+      }
+
+    }
+    if (!waiting.isEmpty()) {
+      while (!messagesSent.isEmpty()) {
+        waiting.remove(messagesSent.poll());
+      }
+    }
+  }
+
+  protected int restore(long windowId)
+  {
+    try {
+      Map<Integer, Object> recoveryDataPerOperator = idempotentStorageManager.load(windowId);
+      for (Object recovery: recoveryDataPerOperator.values()) {
+        countMessagesToBeSkipped = (Integer)recovery;
+      }
+    }
+    catch (IOException ex) {
+      throw new RuntimeException("replay", ex);
+    }
+    return countMessagesToBeSkipped;
+  }
+
+  @Override
+  public void checkpointed(long windowId)
+  {
+  }
+
+  /**
+   * Sets the idempotent storage manager on the operator.
+   *
+   * @param idempotentStorageManager an {@link IdempotentStorageManager}
+   */
+  public void setIdempotentStorageManager(IdempotentStorageManager idempotentStorageManager)
+  {
+    this.idempotentStorageManager = idempotentStorageManager;
+  }
+
+  /**
+   * Returns the idempotent storage manager which is being used by the operator.
+   *
+   * @return the idempotent storage manager.
+   */
+  public IdempotentStorageManager getIdempotentStorageManager()
+  {
+    return idempotentStorageManager;
+  }
+
+  private class SMTPSenderThread implements Runnable
+  {
+    private transient final BlockingQueue<String> messageRcvdQueue;
+    private transient volatile boolean running;
+
+    SMTPSenderThread()
+    {
+      messageRcvdQueue = new LinkedBlockingQueue<String>();
+      Thread messageServiceThread = new Thread(this, "SMTPSenderThread");
+      messageServiceThread.start();
+    }
+
+    private void stopService() throws IOException
+    {
+      running = false;
+    }
+
+    @Override
+    public void run()
+    {
+      running = true;
+      while (running) {
+        String mailContent = messageRcvdQueue.poll();
+        if (mailContent != null) {
+          try {
+            message.setContent(mailContent, contentType);
+            synchronized (sync) {
+              Transport.send(message);
+            }
+          }
+          catch (MessagingException ex) {
+            running = false;
+            throwable.set(ex);
+          }
+          synchronized (sync) {
+            countMessageSent++;
+          }
+
+          LOG.debug("message is {}", message);
+          completed(mailContent);
+
+        }
+      }
+
+    }
+
+  }
+
+  private static final Logger LOG = LoggerFactory.getLogger(SmtpOutputOperator.class);
+
 }
