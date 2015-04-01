@@ -60,7 +60,7 @@ import com.datatorrent.lib.counters.BasicCounters;
  * @param <T> event type
  * @since 0.9.4
  */
-public interface BucketManager<T extends Bucketable>
+public interface BucketManager<T extends Bucketable> extends Cloneable
 {
   void setBucketStore(@Nonnull BucketStore<T> bucketStore);
 
@@ -140,8 +140,9 @@ public interface BucketManager<T extends Bucketable>
    * Constructs a new {@link BucketManager} with only the settings and not the data.
    *
    * @return newly created manager without any data.
+   * @throws java.lang.CloneNotSupportedException
    */
-  BucketManager<T> cloneWithProperties();
+  //BucketManager<T> cloneWithProperties() throws CloneNotSupportedException;
 
   void setBucketCounters(@Nonnull BasicCounters<MutableLong> stats);
 
@@ -155,6 +156,7 @@ public interface BucketManager<T extends Bucketable>
    * @param partitionMask           partition mask to find which partition an event belongs to.
    */
   void definePartitions(List<BucketManager<T>> oldManagers, Map<Integer, BucketManager<T>> partitionKeysToManagers, int partitionMask);
+  BucketManager<T> clone() throws CloneNotSupportedException;
 
   /**
    * Callback interface for {@link BucketManager} for load and off-load operations.
