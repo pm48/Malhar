@@ -42,11 +42,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
-import com.datatorrent.lib.io.IdempotentStorageManager;
 import com.datatorrent.lib.util.TestUtils;
 
 import com.datatorrent.api.*;
-import java.util.logging.Level;
 
 public class SmtpOutputOperatorTest
 {
@@ -214,7 +212,8 @@ public class SmtpOutputOperatorTest
        node.input.process(input);
       }
       node.endWindow();
-      Thread.sleep(10000);
+    //  Thread.sleep(10000);
+
       if (wid == 7) {
         SmtpOutputOperator newOp = TestUtils.clone(new Kryo(), node);
         node.teardown();
@@ -224,7 +223,6 @@ public class SmtpOutputOperatorTest
         newOp.input.process(inputTest);
         inputTest = 5 +"hello"+"test message";
         newOp.endWindow();
-        Thread.sleep(5000);
 
         newOp.beginWindow(6);
         inputTest = 6 + "test message";
@@ -232,7 +230,6 @@ public class SmtpOutputOperatorTest
         inputTest = 6 +"hello"+"test message";
         newOp.input.process(inputTest);
         newOp.endWindow();
-        Thread.sleep(5000);
 
         newOp.beginWindow(7);
         inputTest = 7 + "test message";
@@ -240,7 +237,6 @@ public class SmtpOutputOperatorTest
         inputTest = 7 +"hello"+"test message";
         newOp.input.process(inputTest);
         newOp.endWindow();
-        Thread.sleep(5000);
         //normal processing
         newOp.beginWindow(8);
         inputTest = 8 + "test message";

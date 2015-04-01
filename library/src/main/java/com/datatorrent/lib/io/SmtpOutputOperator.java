@@ -431,12 +431,12 @@ public class SmtpOutputOperator extends BaseOperator implements Operator.Checkpo
   @Override
   public void endWindow()
   {
-    if (currentWindowId == largestRecoveryWindow) {
+  /*  if (currentWindowId == largestRecoveryWindow) {
       if (!waiting.isEmpty()) {
         smtpSenderThread.messageRcvdQueue.addAll(waiting);
       }
-    }
-    else if (currentWindowId > largestRecoveryWindow) {
+    }*/
+     if (currentWindowId > largestRecoveryWindow) {
       try {
         synchronized (sync) {
           idempotentStorageManager.save(countMessageSent, operatorId, currentWindowId);
