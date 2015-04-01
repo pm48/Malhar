@@ -142,7 +142,7 @@ public interface BucketManager<T extends Bucketable> extends Cloneable
    * @return newly created manager without any data.
    * @throws java.lang.CloneNotSupportedException
    */
-  //BucketManager<T> cloneWithProperties() throws CloneNotSupportedException;
+  BucketManager<T> clone() throws CloneNotSupportedException;
 
   void setBucketCounters(@Nonnull BasicCounters<MutableLong> stats);
 
@@ -156,7 +156,6 @@ public interface BucketManager<T extends Bucketable> extends Cloneable
    * @param partitionMask           partition mask to find which partition an event belongs to.
    */
   void definePartitions(List<BucketManager<T>> oldManagers, Map<Integer, BucketManager<T>> partitionKeysToManagers, int partitionMask);
-  BucketManager<T> clone() throws CloneNotSupportedException;
 
   /**
    * Callback interface for {@link BucketManager} for load and off-load operations.
