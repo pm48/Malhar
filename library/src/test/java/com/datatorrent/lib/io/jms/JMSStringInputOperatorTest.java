@@ -176,7 +176,7 @@ public class JMSStringInputOperatorTest
     connection.start();
 
     // Create a Session
-    Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+    Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
     // Create the destination (Topic or Queue)
     Destination destination = session.createQueue("TEST.FOO");
