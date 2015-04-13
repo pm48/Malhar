@@ -282,7 +282,16 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
 
     Message msg;
     while (emitCount < bufferSize && (msg = holdingBuffer.poll()) != null) {
-      processMessage(msg);
+      try {
+      T payload = convert(msg);
+      if (payload != null) {
+        currentWindowRecoveryState.put(msg.getJMSMessageID(), payload);
+        emit(payload);
+      }
+    }
+    catch (JMSException e) {
+      throw new RuntimeException("processing msg", e);
+    }
       emitCount++;
       lastMsg = msg;
     }

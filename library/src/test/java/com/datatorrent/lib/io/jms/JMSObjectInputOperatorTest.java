@@ -198,7 +198,7 @@ public class JMSObjectInputOperatorTest
 
   private void createStreamMsgs(int numMessages) throws Exception
   {
-    Long value = (long)1013;
+    Long value = 1013L;
     StreamMessage message=testMeta.session.createStreamMessage();
     message.writeObject(value);
     for (int i = 0; i < numMessages; i++) {
@@ -209,7 +209,6 @@ public class JMSObjectInputOperatorTest
   private void createByteMsgs(int numMessages) throws Exception
   {
     BytesMessage message=testMeta.session.createBytesMessage();
-    //message.writeBytes(new byte[1024]);
     for (int i = 0; i < numMessages; i++) {
       message.writeBytes(("Message: " + i).getBytes());
       message.setIntProperty("counter",i);
@@ -224,7 +223,7 @@ public class JMSObjectInputOperatorTest
   private void createObjectMsgs(int numMessages) throws Exception
   {
     ObjectMessage message=testMeta.session.createObjectMessage();
-    message.setObject("Hi");
+    message.setObject("Test for Object Messages");
     for (int i = 0; i < numMessages; i++) {
       testMeta.producer.send(message);
     }
