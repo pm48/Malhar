@@ -15,6 +15,7 @@
  */
 package com.datatorrent.lib.io.jms;
 
+import com.datatorrent.api.DefaultOutputPort;
 import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -25,6 +26,10 @@ import org.slf4j.LoggerFactory;
 
 public class JMSObjectInputOperator extends AbstractJMSInputOperator<Object>
 {
+  public final transient DefaultOutputPort<String> outputString = new DefaultOutputPort<String>();
+  public final transient DefaultOutputPort<byte[]> outputBytes = new DefaultOutputPort<byte[]>();
+  public final transient DefaultOutputPort<Map<String,Object>> outputMap = new DefaultOutputPort<Map<String,Object>>();
+
   /**
    * This implementation converts a TextMessage back to a String, a
    * ByteMessage back to a byte array, a MapMessage back to a Map,
@@ -68,7 +73,6 @@ public class JMSObjectInputOperator extends AbstractJMSInputOperator<Object>
   {
     byte[] bytes = new byte[(int)message.getBodyLength()];
     message.readBytes(bytes);
-    logger.debug("bytes are {}", bytes);
     return bytes;
   }
 
@@ -79,9 +83,9 @@ public class JMSObjectInputOperator extends AbstractJMSInputOperator<Object>
    * @return the resulting Map
    * @throws JMSException if thrown by JMS methods
    */
-  protected Map extractMapFromMessage(MapMessage message) throws JMSException
+  protected Map<String,Object> extractMapFromMessage(MapMessage message) throws JMSException
   {
-    Map map = new HashMap();
+    Map<String,Object> map = new HashMap<String,Object>();
     Enumeration en = message.getMapNames();
     while (en.hasMoreElements()) {
       String key = (String)en.nextElement();
@@ -102,6 +106,21 @@ public class JMSObjectInputOperator extends AbstractJMSInputOperator<Object>
     return message.getObject();
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  protected void emit(Object payload)
+  {
+    if(outputString.isConnected())
+      outputString.emit((String)payload);
+    else if(outputMap.isConnected())
+      outputMap.emit((Map<String, Object>)payload);
+    else if(outputBytes.isConnected())
+      outputBytes.emit((byte[])payload);
+    else
+      output.emit(payload);
+  }
+
   private static transient final Logger logger = LoggerFactory.getLogger(JMSObjectInputOperator.class);
+
 
 }

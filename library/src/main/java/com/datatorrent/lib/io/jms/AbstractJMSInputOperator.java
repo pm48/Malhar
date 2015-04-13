@@ -265,7 +265,7 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
       }
       for (Map.Entry<String, T> recoveredEntry : recoveredData.entrySet()) {
         pendingAck.add(recoveredEntry.getKey());
-        output.emit(recoveredEntry.getValue());
+        emit(recoveredEntry.getValue());
       }
     }
     catch (IOException e) {
@@ -299,7 +299,7 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
       T payload = convert(message);
       if (payload != null) {
         currentWindowRecoveryState.put(message.getJMSMessageID(), payload);
-        output.emit(payload);
+        emit(payload);
       }
     }
     catch (JMSException e) {
@@ -508,6 +508,9 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
   {
     return this.idempotentStorageManager;
   }
+
+  protected abstract void emit(T payload);
+
 
   public static enum CounterKeys
   {
