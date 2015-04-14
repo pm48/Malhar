@@ -208,6 +208,7 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
    *
    * @param message
    * @return message is accepted.
+   * @throws javax.jms.JMSException
    */
   protected boolean messageConsumed(Message message) throws JMSException
   {
@@ -225,6 +226,7 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
 
   /**
    * Implement ActivationListener Interface.
+   * @param ctx
    */
   @Override
   public void activate(OperatorContext ctx)
@@ -282,16 +284,7 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
 
     Message msg;
     while (emitCount < bufferSize && (msg = holdingBuffer.poll()) != null) {
-      try {
-      T payload = convert(msg);
-      if (payload != null) {
-        currentWindowRecoveryState.put(msg.getJMSMessageID(), payload);
-        emit(payload);
-      }
-    }
-    catch (JMSException e) {
-      throw new RuntimeException("processing msg", e);
-    }
+      processMessage(msg);
       emitCount++;
       lastMsg = msg;
     }
@@ -400,6 +393,7 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
 
   /**
    * Commit/Acknowledge messages that have been received.<br/>
+   * @throws javax.jms.JMSException
    */
   protected void acknowledge() throws JMSException
   {
@@ -461,6 +455,7 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
    *
    * @param message
    * @return newly constructed tuple from the message.
+   * @throws javax.jms.JMSException
    */
   protected abstract T convert(Message message) throws JMSException;
 
@@ -519,7 +514,6 @@ public abstract class AbstractJMSInputOperator<T> extends JMSBase implements Inp
   }
 
   protected abstract void emit(T payload);
-
 
   public static enum CounterKeys
   {
