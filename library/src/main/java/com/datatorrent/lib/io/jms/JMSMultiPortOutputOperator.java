@@ -16,6 +16,7 @@
 package com.datatorrent.lib.io.jms;
 
 import com.datatorrent.api.DefaultInputPort;
+import com.datatorrent.api.annotation.InputPortFieldAnnotation;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,12 +39,13 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
   /**
    * This is an input port which receives map tuples to be written out to an JMS message bus.
    */
+  @InputPortFieldAnnotation(optional = true)
   public final transient DefaultInputPort<Map> inputMapPort = new DefaultInputPort<Map>()
   {
     @Override
     public void process(Map tuple)
     {
-      processTuple(tuple);
+      sendMessage(tuple);
     }
 
   };
@@ -51,12 +53,13 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
   /**
    * This is an input port which receives byte array tuples to be written out to an JMS message bus.
    */
+  @InputPortFieldAnnotation(optional = true)
   public final transient DefaultInputPort<byte[]> inputByteArrayPort = new DefaultInputPort<byte[]>()
   {
     @Override
     public void process(byte[] tuple)
     {
-      processTuple(tuple);
+      sendMessage(tuple);
     }
 
   };
@@ -64,12 +67,13 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
   /**
    * This is an input port which receives Serializable tuples to be written out to an JMS message bus.
    */
+  @InputPortFieldAnnotation(optional = true)
   public final transient DefaultInputPort<Serializable> inputObjectPort = new DefaultInputPort<Serializable>()
   {
     @Override
     public void process(Serializable tuple)
     {
-      processTuple(tuple);
+      sendMessage(tuple);
     }
 
   };
@@ -77,16 +81,20 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
   /**
    * This is an input port which receives string tuples to be written out to an JMS message bus.
    */
+  @InputPortFieldAnnotation(optional = true)
   public final transient DefaultInputPort<String> inputStringTypePort = new DefaultInputPort<String>()
   {
     @Override
     public void process(String tuple)
     {
-      processTuple(tuple);
+      sendMessage(tuple);
     }
 
   };
 
+  /**
+   * Create a JMS Message for the given tuple.
+   */
   @Override
   protected Message createMessage(Object tuple)
   {
@@ -95,26 +103,18 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
         return (Message)tuple;
       }
       else if (tuple instanceof String) {
-        return createMessageForString((String)tuple);
+        return getSession().createTextMessage((String)tuple);
       }
-      /*else if(tuple.getClass().isArray()){
-         Class<?> componentType;
-        componentType = tuple.getClass().getComponentType();
-        if(byte.class.isAssignableFrom(componentType)) {
-        return createMessageForByteArray((byte[])tuple);
-      }
-        else
-          return (Message)tuple;
-      }*/
-      else if(tuple instanceof byte[]){
-        return createMessageForByteArray((byte[])tuple);
+      else if (tuple instanceof byte[]) {
+        BytesMessage message = getSession().createBytesMessage();
+        message.writeBytes((byte[])tuple);
+        return message;
       }
       else if (tuple instanceof Map) {
         return createMessageForMap((Map)tuple);
       }
       else if (tuple instanceof Serializable) {
-        logger.debug("serializable integer {}", tuple);
-        return createMessageForSerializable(((Serializable)tuple));
+        return getSession().createObjectMessage((Serializable)tuple);
       }
       else {
         throw new RuntimeException("Cannot convert object of type "
@@ -129,40 +129,9 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
   }
 
   /**
-   * Create a JMS TextMessage for the given String.
-   *
-   * @param text the String to convert
-   * @param session current JMS session
-   * @return the resulting message
-   * @throws JMSException if thrown by JMS methods
-   */
-  private Message createMessageForString(String text) throws JMSException
-  {
-    logger.debug("text is {}", text);
-    return getSession().createTextMessage(text);
-  }
-
-  /**
-   * Create a JMS BytesMessage for the given byte array.
-   *
-   * @param bytes the byte array to convert
-   * @param session current JMS session
-   * @return the resulting message
-   * @throws JMSException if thrown by JMS methods
-   */
-  private Message createMessageForByteArray(byte[] bytes) throws JMSException
-  {
-    BytesMessage message = getSession().createBytesMessage();
-    message.writeBytes(bytes);
-    logger.debug("bytes message is {}", message);
-    return message;
-  }
-
-  /**
    * Create a JMS MapMessage for the given Map.
    *
    * @param map the Map to convert
-   * @param session current JMS session
    * @return the resulting message
    * @throws JMSException if thrown by JMS methods
    */
@@ -178,19 +147,6 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
       message.setObject((String)entry.getKey(), entry.getValue());
     }
     return message;
-  }
-
-  /**
-   * Create a JMS ObjectMessage for the given Serializable object.
-   *
-   * @param object the Serializable object to convert
-   * @param session current JMS session
-   * @return the resulting message
-   * @throws JMSException if thrown by JMS methods
-   */
-  private Message createMessageForSerializable(Serializable object) throws JMSException
-  {
-    return getSession().createObjectMessage(object);
   }
 
   private static final Logger logger = LoggerFactory.getLogger(JMSMultiPortOutputOperator.class);
