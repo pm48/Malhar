@@ -33,7 +33,7 @@ import org.junit.rules.TestWatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-  /**
+/**
  * Test to verify JMS output operator adapter.
  */
 public class JMSMultiPortOutputOperatorTest extends JMSTestBase

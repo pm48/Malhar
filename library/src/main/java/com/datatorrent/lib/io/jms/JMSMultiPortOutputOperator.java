@@ -18,7 +18,6 @@ package com.datatorrent.lib.io.jms;
 import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.annotation.InputPortFieldAnnotation;
 import java.io.Serializable;
-import java.util.Iterator;
 import java.util.Map;
 import javax.jms.*;
 import org.slf4j.Logger;
@@ -40,10 +39,10 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
    * This is an input port which receives map tuples to be written out to an JMS message bus.
    */
   @InputPortFieldAnnotation(optional = true)
-  public final transient DefaultInputPort<Map> inputMapPort = new DefaultInputPort<Map>()
+  public final transient DefaultInputPort<Map<?,?>> inputMapPort = new DefaultInputPort<Map<?,?>>()
   {
     @Override
-    public void process(Map tuple)
+    public void process(Map<?,?> tuple)
     {
       sendMessage(tuple);
     }
@@ -94,6 +93,7 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
 
   /**
    * Create a JMS Message for the given tuple.
+   * @return Message
    */
   @Override
   protected Message createMessage(Object tuple)
@@ -135,11 +135,10 @@ public class JMSMultiPortOutputOperator extends AbstractJMSOutputOperator
    * @return the resulting message
    * @throws JMSException if thrown by JMS methods
    */
-  private Message createMessageForMap(Map map) throws JMSException
+  private Message createMessageForMap(Map<?,?> map) throws JMSException
   {
     MapMessage message = getSession().createMapMessage();
-    for (Iterator it = map.entrySet().iterator(); it.hasNext();) {
-      Map.Entry entry = (Map.Entry)it.next();
+    for (Map.Entry<?,?> entry: map.entrySet()) {
       if (!(entry.getKey() instanceof String)) {
         throw new RuntimeException("Cannot convert non-String key of type ["
                 + entry.getKey().getClass() + "] to JMS MapMessage entry");
