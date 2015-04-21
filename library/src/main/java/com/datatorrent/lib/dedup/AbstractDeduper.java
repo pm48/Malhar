@@ -90,7 +90,7 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
     {
       long bucketKey = bucketManager.getBucketKeyFor(tuple);
       if (bucketKey < 0) {
-        outputIgnoredEvents.emit(getEventKey(tuple));
+        ignored.emit(getEventKey(tuple));
         return;
       } //ignore event
 
@@ -98,7 +98,7 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
 
       if (bucket != null && bucket.containsEvent(tuple)) {
         counters.getCounter(CounterKeys.DUPLICATE_EVENTS).increment();
-        outputDuplicates.emit(convert(tuple));
+        duplicates.emit(tuple);
         return;
       } //ignore event
 
@@ -136,11 +136,11 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
   /**
    * The output port on which duplicate events are emitted.
    */
-  public final transient DefaultOutputPort<OUTPUT> outputDuplicates = new DefaultOutputPort<OUTPUT>();
+  public final transient DefaultOutputPort<Object> duplicates = new DefaultOutputPort<Object>();
   /*
    * The output port on which keys to be ignored are emitted.
    */
-  public final transient DefaultOutputPort<Object> outputIgnoredEvents = new DefaultOutputPort<Object>();
+  public final transient DefaultOutputPort<Object> ignored = new DefaultOutputPort<Object>();
 
   //Check-pointed state
   @NotNull
@@ -251,7 +251,7 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
             }
             else {
               counters.getCounter(CounterKeys.DUPLICATE_EVENTS).increment();
-              outputDuplicates.emit(convert(event));
+              duplicates.emit(event);
             }
           }
         }
