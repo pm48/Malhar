@@ -90,6 +90,7 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
     {
       long bucketKey = bucketManager.getBucketKeyFor(tuple);
       if (bucketKey < 0) {
+        outputIgnoredEvents.emit(getEventKey(tuple));
         return;
       } //ignore event
 
@@ -97,6 +98,7 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
 
       if (bucket != null && bucket.containsEvent(tuple)) {
         counters.getCounter(CounterKeys.DUPLICATE_EVENTS).increment();
+        outputDuplicates.emit(convert(tuple));
         return;
       } //ignore event
 
@@ -131,6 +133,15 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
    * The output port on which deduped events are emitted.
    */
   public final transient DefaultOutputPort<OUTPUT> output = new DefaultOutputPort<OUTPUT>();
+  /**
+   * The output port on which duplicate events are emitted.
+   */
+  public final transient DefaultOutputPort<OUTPUT> outputDuplicates = new DefaultOutputPort<OUTPUT>();
+  /*
+   * The output port on which keys to be ignored are emitted.
+   */
+  public final transient DefaultOutputPort<Object> outputIgnoredEvents = new DefaultOutputPort<Object>();
+
   //Check-pointed state
   @NotNull
   protected BucketManager<INPUT> bucketManager;
@@ -240,6 +251,7 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
             }
             else {
               counters.getCounter(CounterKeys.DUPLICATE_EVENTS).increment();
+              outputDuplicates.emit(convert(event));
             }
           }
         }
@@ -453,7 +465,8 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
                 cs.getCounter(BucketManager.CounterKeys.EVICTED_BUCKETS),
                 cs.getCounter(BucketManager.CounterKeys.EVENTS_IN_MEMORY),
                 cs.getCounter(BucketManager.CounterKeys.EVENTS_COMMITTED_LAST_WINDOW),
-                cs.getCounter(TimeBasedBucketManagerImpl.CounterKeys.IGNORED_EVENTS), cs.getCounter(CounterKeys.DUPLICATE_EVENTS),
+                cs.getCounter(TimeBasedBucketManagerImpl.CounterKeys.IGNORED_EVENTS),
+                cs.getCounter(CounterKeys.DUPLICATE_EVENTS),
                 cs.getCounter(TimeBasedBucketManagerImpl.CounterKeys.LOW),
                 cs.getCounter(TimeBasedBucketManagerImpl.CounterKeys.HIGH));
             }
