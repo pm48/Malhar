@@ -20,45 +20,46 @@ import com.datatorrent.api.DefaultInputPort;
 import com.datatorrent.api.DefaultOutputPort;
 import java.nio.charset.Charset;
 
+/*
+ * This operator converts Byte Array to String. User gets the option of providing character Encoding.
+ */
 public class ByteArrayToStringConverterOperator extends BaseOperator
 {
   private Charset characterEncoding;
 
-  public ByteArrayToStringConverterOperator()
+  public String getCharacterEncoding()
   {
-    characterEncoding = Charset.forName("UTF-8");
+    return characterEncoding.name();
   }
 
-  public Charset getCharacterEncoding()
+  public void setCharacterEncoding(String characterEncoding)
   {
-    return characterEncoding;
+    this.characterEncoding = Charset.forName(characterEncoding);
   }
 
-  public void setCharacterEncoding(Charset characterEncoding)
-  {
-    this.characterEncoding = characterEncoding;
-  }
+
+
   /**
-   * Accepts byte arrays
+   * Input port which accepts byte array.
    */
   public final transient DefaultInputPort<byte[]> input = new DefaultInputPort<byte[]>()
   {
     @Override
     public void process(byte[] message)
     {
-      if (message != null) {
-        outputString.emit(new String(message,characterEncoding));
+      if (characterEncoding != null) {
+        output.emit(new String(message, characterEncoding));
       }
       else {
-        outputString.emit(null);
+        output.emit(new String(message));
       }
     }
 
   };
 
   /**
-   * Output byte array converted to String
+   * Output port which outputs String converted from byte array.
    */
-  public final transient DefaultOutputPort<String> outputString = new DefaultOutputPort<String>();
+  public final transient DefaultOutputPort<String> output = new DefaultOutputPort<String>();
 
 }
