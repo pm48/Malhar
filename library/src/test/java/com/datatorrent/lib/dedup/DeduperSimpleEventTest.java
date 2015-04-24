@@ -137,8 +137,8 @@ public class DeduperSimpleEventTest
     CollectorTestSink<SimpleEvent> collectorTestSinkIgnored = new CollectorTestSink<SimpleEvent>();
 
     TestUtils.setSink(deduper.output, collectorTestSink);
-    TestUtils.setSink(deduper.outputDuplicates, collectorTestSinkDuplicates);
-    TestUtils.setSink(deduper.outputIgnoredEvents, collectorTestSinkIgnored);
+    TestUtils.setSink(deduper.duplicates, collectorTestSinkDuplicates);
+    TestUtils.setSink(deduper.ignored, collectorTestSinkIgnored);
 
     logger.debug("start round 0");
     deduper.beginWindow(0);
