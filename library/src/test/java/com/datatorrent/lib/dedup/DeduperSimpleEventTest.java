@@ -151,6 +151,7 @@ public class DeduperSimpleEventTest
 
     collectorTestSink.clear();
     collectorTestSinkDuplicates.clear();
+    collectorTestSinkIgnored.clear();
     logger.debug("end round 0");
 
     logger.debug("start round 1");
