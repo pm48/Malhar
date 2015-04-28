@@ -138,7 +138,7 @@ public class DeduperSimpleEventTest
 
     TestUtils.setSink(deduper.output, collectorTestSink);
     TestUtils.setSink(deduper.duplicates, collectorTestSinkDuplicates);
-     TestUtils.setSink(timeManager.ignored, collectorTestSinkIgnored);
+    TestUtils.setSink(timeManager.ignored, collectorTestSinkIgnored);
 
     logger.debug("start round 0");
     deduper.beginWindow(0);
