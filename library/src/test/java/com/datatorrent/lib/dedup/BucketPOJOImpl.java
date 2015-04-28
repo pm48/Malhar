@@ -18,29 +18,18 @@ package com.datatorrent.lib.dedup;
 import com.datatorrent.lib.bucket.AbstractBucket;
 
 
-public final class BucketPOJOImpl extends AbstractBucket<Object>
+public final class BucketPOJOImpl extends AbstractBucket<SimpleEvent>
 {
-  private Object deduperKey;
 
-  public void setDeduperKey(Object deduperKey)
-  {
-    this.deduperKey = deduperKey;
-  }
-
-  public Object getDeduperKey()
-  {
-    return deduperKey;
-  }
   protected BucketPOJOImpl(long bucketKey)
   {
     super(bucketKey);
   }
 
   @Override
-  protected Object getEventKey(Object event)
+  protected Object getEventKey(SimpleEvent event)
   {
-    throw new UnsupportedOperationException();
-    //return event.getId();
+    return event.getId();
   }
 
 }

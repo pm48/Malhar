@@ -22,19 +22,8 @@ import com.datatorrent.lib.bucket.AbstractTimeBasedBucketManager;
  *
  * @since 0.9.4
  */
-public class TimeBasedBucketManagerPOJOImpl extends AbstractTimeBasedBucketManager<Object>
+public class TimeBasedBucketManagerPOJOImpl extends AbstractTimeBasedBucketManager<SimpleEvent>
 {
-  private Long time;
-
-  public Long getTime()
-  {
-    return time;
-  }
-
-  public void setTime(Long time)
-  {
-    this.time = time;
-  }
   @Override
   protected BucketPOJOImpl createBucket(long bucketKey)
   {
@@ -42,10 +31,8 @@ public class TimeBasedBucketManagerPOJOImpl extends AbstractTimeBasedBucketManag
   }
 
   @Override
-  protected long getTime(Object event)
+  protected long getTime(SimpleEvent event)
   {
-    //extract from POJO
-    throw new UnsupportedOperationException("This operation is not supported yet");
-    //return Long.parseLong(event.getHhmm());
+    return Long.parseLong(event.getHhmm());
   }
 }
