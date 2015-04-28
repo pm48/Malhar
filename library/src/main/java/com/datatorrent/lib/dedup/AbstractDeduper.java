@@ -34,7 +34,6 @@ import org.apache.commons.lang.mutable.MutableLong;
 
 import com.datatorrent.lib.bucket.AbstractBucket;
 import com.datatorrent.lib.bucket.BucketManager;
-import com.datatorrent.lib.bucket.TimeBasedBucketManagerImpl;
 import com.datatorrent.lib.counters.BasicCounters;
 import com.datatorrent.api.*;
 import com.datatorrent.api.Context.OperatorContext;
@@ -90,7 +89,6 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
     {
       long bucketKey = bucketManager.getBucketKeyFor(tuple);
       if (bucketKey < 0) {
-        ignored.emit(getEventKey(tuple));
         return;
       } //ignore event
 
@@ -136,11 +134,7 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
   /**
    * The output port on which duplicate events are emitted.
    */
-  public final transient DefaultOutputPort<Object> duplicates = new DefaultOutputPort<Object>();
-  /*
-   * The output port on which keys to be ignored are emitted.
-   */
-  public final transient DefaultOutputPort<Object> ignored = new DefaultOutputPort<Object>();
+  public final transient DefaultOutputPort<INPUT> duplicates = new DefaultOutputPort<INPUT>();
 
   //Check-pointed state
   @NotNull
@@ -459,16 +453,13 @@ public abstract class AbstractDeduper<INPUT, OUTPUT> implements Operator, Bucket
               @SuppressWarnings("unchecked")
               BasicCounters<MutableLong> cs = (BasicCounters<MutableLong>) os.counters;
               logger.debug("operatorId:{} buckets:[in-memory:{} deleted:{} evicted:{}] events:[in-memory:{} committed-last-window:{} " +
-                  "ignored:{} duplicates:{}] low:{} high:{}", batchedOperatorStats.getOperatorId(),
+                  "duplicates:{}] low:{} high:{}", batchedOperatorStats.getOperatorId(),
                 cs.getCounter(BucketManager.CounterKeys.BUCKETS_IN_MEMORY),
                 cs.getCounter(BucketManager.CounterKeys.DELETED_BUCKETS),
                 cs.getCounter(BucketManager.CounterKeys.EVICTED_BUCKETS),
                 cs.getCounter(BucketManager.CounterKeys.EVENTS_IN_MEMORY),
                 cs.getCounter(BucketManager.CounterKeys.EVENTS_COMMITTED_LAST_WINDOW),
-                cs.getCounter(TimeBasedBucketManagerImpl.CounterKeys.IGNORED_EVENTS),
-                cs.getCounter(CounterKeys.DUPLICATE_EVENTS),
-                cs.getCounter(TimeBasedBucketManagerImpl.CounterKeys.LOW),
-                cs.getCounter(TimeBasedBucketManagerImpl.CounterKeys.HIGH));
+                cs.getCounter(CounterKeys.DUPLICATE_EVENTS));
             }
           }
         }

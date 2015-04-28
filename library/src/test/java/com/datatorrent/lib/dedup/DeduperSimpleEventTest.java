@@ -49,37 +49,26 @@ public class DeduperSimpleEventTest
   private final static String APPLICATION_PATH_PREFIX = "target/DeduperPOJOTest";
   private final static String APP_ID = "DeduperPOJOTest";
   private final static int OPERATOR_ID = 0;
-
+  private static TimeBasedBucketManagerPOJOImpl timeManager;
   private final static Exchanger<Long> eventBucketExchanger = new Exchanger<Long>();
 
-  private static class DummyDeduper extends AbstractDeduper<Object, Object>
+  private static class DummyDeduper extends AbstractDeduper<SimpleEvent, SimpleEvent>
   {
-    private int id;
-
-    public int getId()
-    {
-      return id;
-    }
-
-    public void setId(int id)
-    {
-      this.id = id;
-    }
     @Override
     public void setup(Context.OperatorContext context)
     {
       boolean stateless = context.getValue(Context.OperatorContext.STATELESS);
       if (stateless) {
-        bucketManager.setBucketStore(new NonOperationalBucketStore<Object>());
+        bucketManager.setBucketStore(new NonOperationalBucketStore<SimpleEvent>());
       }
       else {
-        ((HdfsBucketStore<Object>)bucketManager.getBucketStore()).setConfiguration(context.getId(), context.getValue(DAG.APPLICATION_PATH), partitionKeys, partitionMask);
+        ((HdfsBucketStore<SimpleEvent>)bucketManager.getBucketStore()).setConfiguration(context.getId(), context.getValue(DAG.APPLICATION_PATH), partitionKeys, partitionMask);
       }
       super.setup(context);
     }
 
     @Override
-    public void bucketLoaded(AbstractBucket<Object> bucket)
+    public void bucketLoaded(AbstractBucket<SimpleEvent> bucket)
     {
       try {
         super.bucketLoaded(bucket);
@@ -90,21 +79,21 @@ public class DeduperSimpleEventTest
       }
     }
 
-    public void addEventManuallyToWaiting(Object event)
+    public void addEventManuallyToWaiting(SimpleEvent event)
     {
       waitingEvents.put(bucketManager.getBucketKeyFor(event), Lists.newArrayList(event));
     }
 
     @Override
-    protected Object convert(Object input)
+    protected SimpleEvent convert(SimpleEvent input)
     {
       return input;
     }
 
     @Override
-    protected Object getEventKey(Object event)
+    protected Object getEventKey(SimpleEvent event)
     {
-      return id;
+      return event.getId();
     }
 
   }
@@ -149,7 +138,7 @@ public class DeduperSimpleEventTest
 
     TestUtils.setSink(deduper.output, collectorTestSink);
     TestUtils.setSink(deduper.duplicates, collectorTestSinkDuplicates);
-    TestUtils.setSink(deduper.ignored, collectorTestSinkIgnored);
+     TestUtils.setSink(timeManager.ignored, collectorTestSinkIgnored);
 
     logger.debug("start round 0");
     deduper.beginWindow(0);
@@ -158,10 +147,10 @@ public class DeduperSimpleEventTest
     deduper.endWindow();
     Assert.assertEquals("output tuples", 10, collectorTestSink.collectedTuples.size());
     Assert.assertEquals("deduper duplicates", 1,collectorTestSinkDuplicates.collectedTuples.size());
-    Assert.assertEquals("ignored events are",1,collectorTestSinkIgnored.collectedTuples.size());
+    Assert.assertEquals("ignored events", 1,collectorTestSinkIgnored.collectedTuples.size());
+
     collectorTestSink.clear();
     collectorTestSinkDuplicates.clear();
-    collectorTestSinkIgnored.clear();
     logger.debug("end round 0");
 
     logger.debug("start round 1");
@@ -237,9 +226,9 @@ public class DeduperSimpleEventTest
   public static void setup()
   {
     applicationPath = OperatorContextTestHelper.getUniqueApplicationPath(APPLICATION_PATH_PREFIX);
-    ExpirableHdfsBucketStore<Object> bucketStore = new ExpirableHdfsBucketStore<Object>();
+    ExpirableHdfsBucketStore<SimpleEvent> bucketStore = new ExpirableHdfsBucketStore<SimpleEvent>();
     deduper = new DummyDeduper();
-    TimeBasedBucketManagerPOJOImpl timeManager = new TimeBasedBucketManagerPOJOImpl();
+    timeManager = new TimeBasedBucketManagerPOJOImpl();
     timeManager.setBucketSpanInMillis(60000);
     timeManager.setMillisPreventingBucketEviction(60000);
     timeManager.setBucketStore(bucketStore);
