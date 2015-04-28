@@ -50,7 +50,17 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   //This Property is user configurable.
   protected ArrayList<String> hivePartitionColumns = new ArrayList<String>();
   private transient String localString = "";
+  protected HiveStore store;
 
+  public HiveStore getStore()
+  {
+    return store;
+  }
+
+  public void setStore(HiveStore store)
+  {
+    this.store = store;
+  }
   /**
    * The file system used to write to.
    */

@@ -6,7 +6,7 @@ import com.datatorrent.lib.bucket.AbstractBucketManager;
  * A {@link BucketManager} that creates buckets based on time.<br/>
  *
  * @since 0.9.4
- */
+
 public class BucketManagerPOJOImpl extends AbstractBucketManager<SimpleEvent>
 {
   @Override
@@ -24,7 +24,7 @@ public class BucketManagerPOJOImpl extends AbstractBucketManager<SimpleEvent>
 
   /*
    * This method has been deprecated.Use clone instead.
-   */
+   
   @Deprecated
   @Override
   public BucketManagerPOJOImpl cloneWithProperties()
@@ -32,3 +32,4 @@ public class BucketManagerPOJOImpl extends AbstractBucketManager<SimpleEvent>
     return null;
   }
 }
+*/

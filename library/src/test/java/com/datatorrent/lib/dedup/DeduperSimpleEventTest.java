@@ -52,23 +52,34 @@ public class DeduperSimpleEventTest
 
   private final static Exchanger<Long> eventBucketExchanger = new Exchanger<Long>();
 
-  private static class DummyDeduper extends AbstractDeduper<SimpleEvent, SimpleEvent>
+  private static class DummyDeduper extends AbstractDeduper<Object, Object>
   {
+    private int id;
+
+    public int getId()
+    {
+      return id;
+    }
+
+    public void setId(int id)
+    {
+      this.id = id;
+    }
     @Override
     public void setup(Context.OperatorContext context)
     {
       boolean stateless = context.getValue(Context.OperatorContext.STATELESS);
       if (stateless) {
-        bucketManager.setBucketStore(new NonOperationalBucketStore<SimpleEvent>());
+        bucketManager.setBucketStore(new NonOperationalBucketStore<Object>());
       }
       else {
-        ((HdfsBucketStore<SimpleEvent>)bucketManager.getBucketStore()).setConfiguration(context.getId(), context.getValue(DAG.APPLICATION_PATH), partitionKeys, partitionMask);
+        ((HdfsBucketStore<Object>)bucketManager.getBucketStore()).setConfiguration(context.getId(), context.getValue(DAG.APPLICATION_PATH), partitionKeys, partitionMask);
       }
       super.setup(context);
     }
 
     @Override
-    public void bucketLoaded(AbstractBucket<SimpleEvent> bucket)
+    public void bucketLoaded(AbstractBucket<Object> bucket)
     {
       try {
         super.bucketLoaded(bucket);
@@ -79,21 +90,21 @@ public class DeduperSimpleEventTest
       }
     }
 
-    public void addEventManuallyToWaiting(SimpleEvent event)
+    public void addEventManuallyToWaiting(Object event)
     {
       waitingEvents.put(bucketManager.getBucketKeyFor(event), Lists.newArrayList(event));
     }
 
     @Override
-    protected SimpleEvent convert(SimpleEvent input)
+    protected Object convert(Object input)
     {
       return input;
     }
 
     @Override
-    protected Object getEventKey(SimpleEvent event)
+    protected Object getEventKey(Object event)
     {
-      return event.getId();
+      return id;
     }
 
   }
@@ -226,7 +237,7 @@ public class DeduperSimpleEventTest
   public static void setup()
   {
     applicationPath = OperatorContextTestHelper.getUniqueApplicationPath(APPLICATION_PATH_PREFIX);
-    ExpirableHdfsBucketStore<SimpleEvent> bucketStore = new ExpirableHdfsBucketStore<SimpleEvent>();
+    ExpirableHdfsBucketStore<Object> bucketStore = new ExpirableHdfsBucketStore<Object>();
     deduper = new DummyDeduper();
     TimeBasedBucketManagerPOJOImpl timeManager = new TimeBasedBucketManagerPOJOImpl();
     timeManager.setBucketSpanInMillis(60000);
