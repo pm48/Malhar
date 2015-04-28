@@ -47,12 +47,7 @@ public class ByteArrayToStringConverterOperator extends BaseOperator
     @Override
     public void process(byte[] message)
     {
-      if (characterEncoding != null) {
-        output.emit(new String(message, characterEncoding));
-      }
-      else {
-        output.emit(new String(message));
-      }
+      output.emit(characterEncoding == null? new String(message): new String(message, characterEncoding));
     }
 
   };
