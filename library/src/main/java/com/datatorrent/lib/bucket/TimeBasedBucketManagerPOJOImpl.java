@@ -47,8 +47,14 @@ public class TimeBasedBucketManagerPOJOImpl extends AbstractTimeBasedBucketManag
     this.keyExpression = keyExpression;
   }
 
-  private boolean isFirstTuple = true;
+  private transient boolean isFirstTuple = true;
   private transient GetterLong getter;
+
+  public TimeBasedBucketManagerPOJOImpl()
+  {
+    super();
+    isFirstTuple = true;
+  }
 
   /*
    * A Java expression that will yield the timestamp value from the POJO.

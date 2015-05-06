@@ -27,12 +27,13 @@ import org.slf4j.LoggerFactory;
 public class BucketPOJOImpl extends AbstractBucket<Object>
 {
   private String expression;
-  private boolean isFirstTuple = true;
-  private GetterObject getter;
+  private transient boolean isFirstTuple;
+  private transient GetterObject getter;
 
   protected BucketPOJOImpl(long bucketKey,String expression)
   {
     super(bucketKey);
+    isFirstTuple = true;
     this.expression = expression;
   }
 
