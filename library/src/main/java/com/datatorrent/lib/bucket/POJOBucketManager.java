@@ -15,7 +15,9 @@
  */
 package com.datatorrent.lib.bucket;
 
-
+/*
+ *  Marker interface for bucket manager that can process POJOs
+ */
 public interface POJOBucketManager<INPUT> extends BucketManager<INPUT>
 {
 

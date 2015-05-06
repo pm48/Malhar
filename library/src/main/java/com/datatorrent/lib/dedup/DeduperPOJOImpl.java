@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class DeduperPOJOImpl extends AbstractDeduper<Object, Object>
 {
   private boolean isFirstTuple = true;
-  private GetterObject getter;
+  private transient GetterObject getter;
 
   @Override
   public void processTuple(Object event)

@@ -48,16 +48,21 @@ public class TimeBasedBucketManagerPOJOImpl extends AbstractTimeBasedBucketManag
   }
 
   private boolean isFirstTuple = true;
-  private GetterLong getter;
+  private transient GetterLong getter;
 
   /*
    * A Java expression that will yield the timestamp value from the POJO.
+   * This expression needs to evaluate to long
    */
   public String getTimeExpression()
   {
     return timeExpression;
   }
 
+  /*
+   * Sets the Java expression that will yield the timestamp value from the POJO.
+   * This expression needs to evaluate to long
+   */
   public void setTimeExpression(String timeExpression)
   {
     this.timeExpression = timeExpression;
