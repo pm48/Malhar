@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,46 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.datatorrent.contrib.memsql;
 
 import com.datatorrent.api.Context.OperatorContext;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
-/*
- * A generic implementation of AbstractMemsqlInputOperator which can emit any POJO.
- */
-public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
+public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Integer>
 {
+  private int blastSize = 1000;
   private int currentRow = 1;
   private int inputSize = 0;
+  @NotNull
   private String tablename;
+  @NotNull
   private String primaryKeyColumn;
-  private Long currentPrimaryKey;
-  @Min(1)
-  private int batchsize = 10;
-
-  /*
-   * Records are read in batches of this size.
-   * Gets the batch size.
-   * @return batchsize
-   */
-  public int getBatchsize()
-  {
-    return batchsize;
-  }
-
-  /*
-   * Records are read in batches of this size.
-   * Sets the batch size.
-   * @param: batchsize;
-   */
-  public void setBatchsize(int batchsize)
-  {
-    this.batchsize = batchsize;
-  }
 
   /*
    * Primary Key Column of table.
@@ -72,7 +50,7 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
     this.primaryKeyColumn = primaryKeyColumn;
   }
 
-  /*
+   /*
    * Name of the table in Memsql Database.
    * Gets the Memsql Tablename.
    * @return tablename
@@ -82,11 +60,6 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
     return tablename;
   }
 
-  /*
-   * Name of the table in Memsql Database.
-   * Sets the Memsql Tablename.
-   * @param tablename
-   */
   public void setTablename(String tablename)
   {
     this.tablename = tablename;
@@ -101,13 +74,11 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
   {
     super.setup(context);
 
-    String minPrimaryKeyStmt = "select min " + primaryKeyColumn + " FROM " + tablename;
     try {
       Statement statement = store.getConnection().createStatement();
-      ResultSet resultSet = statement.executeQuery(minPrimaryKeyStmt);
-      if (resultSet.next()) {
-        currentPrimaryKey = (Long)resultSet.getObject(1);
-      }
+      ResultSet resultSet = statement.executeQuery("select count(*) from " + tablename);
+      resultSet.next();
+      inputSize = resultSet.getInt(1);
       statement.close();
     }
     catch (SQLException ex) {
@@ -116,22 +87,12 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
   }
 
   @Override
-  public Object getTuple(ResultSet result)
+  public Integer getTuple(ResultSet result)
   {
-    Long valueofprimarykeyid = 0L;
-    try {
-      valueofprimarykeyid = (Long)result.getObject(primaryKeyColumn);
-    }
-    catch (SQLException ex) {
-      throw new RuntimeException(ex);
-    }
-    if (valueofprimarykeyid >= currentPrimaryKey) {
-      currentPrimaryKey = valueofprimarykeyid + 1;
-    }
-    Object tuple = new Object();
+    Integer tuple = null;
 
     try {
-      tuple = result.getObject(2);
+      tuple = result.getInt(2);
     }
     catch (SQLException ex) {
       throw new RuntimeException(ex);
@@ -143,6 +104,10 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
   @Override
   public void emitTuples()
   {
+    if (currentRow >= inputSize) {
+      return;
+    }
+
     super.emitTuples();
   }
 
@@ -153,6 +118,12 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
       return null;
     }
 
+    int endRow = currentRow + blastSize;
+
+    if (endRow > inputSize + 1) {
+      endRow = inputSize + 1;
+    }
+
     StringBuilder sb = new StringBuilder();
     sb.append("select * from ");
     sb.append(tablename);
@@ -161,10 +132,27 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
     sb.append(" >= ");
     sb.append(currentRow);
     sb.append(" and ");
-    sb.append("LIMIT");
-    sb.append(batchsize);
+    sb.append(primaryKeyColumn);
+    sb.append(" < ");
+    sb.append(endRow);
+
+    currentRow = endRow;
 
     return sb.toString();
   }
 
+  public void setBlastSize(int blastSize)
+  {
+    this.blastSize = blastSize;
+  }
+
+  /*
+   * Records are read in batches of this size.
+   * Gets the batch size.
+   * @return batchsize
+   */
+  public int getBlastSize()
+  {
+    return blastSize;
+  }
 }

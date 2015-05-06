@@ -16,7 +16,6 @@
 
 package com.datatorrent.contrib.memsql;
 
-import static com.datatorrent.contrib.memsql.AbstractMemsqlOutputOperatorTest.*;
 import com.datatorrent.lib.db.jdbc.JdbcTransactionalStore;
 import com.datatorrent.lib.testbench.CollectorTestSink;
 import java.sql.SQLException;
@@ -40,6 +39,10 @@ public class AbstractMemsqlInputOperatorTest
   public static final String FQ_TABLE = DATABASE + "." + TABLE;
   public static final String INDEX_COLUMN = "data_index";
   public static final String DATA_COLUMN1 = "data1";
+  public static final int BLAST_SIZE = 10;
+  public static final int NUM_WINDOWS = 10;
+  public static final int DATABASE_SIZE = NUM_WINDOWS * BLAST_SIZE;
+
   public static void populateDatabase(MemsqlStore memsqlStore)
   {
     memsqlStore.connect();
@@ -49,7 +52,7 @@ public class AbstractMemsqlInputOperatorTest
       Statement statement = memsqlStore.getConnection().createStatement();
 
       for(int counter = 0;
-          counter < 95;
+          counter < DATABASE_SIZE;
           counter++) {
         statement.executeUpdate("insert into " +
                                 FQ_TABLE +
@@ -140,7 +143,7 @@ public class AbstractMemsqlInputOperatorTest
 
     MemsqlInputOperator inputOperator = new MemsqlInputOperator();
     createStore((MemsqlStore) inputOperator.getStore(), true);
-    inputOperator.setBatchsize(10);
+    inputOperator.setBlastSize(BLAST_SIZE);
     inputOperator.setTablename(FQ_TABLE);
     inputOperator.setPrimaryKeyCol(INDEX_COLUMN);
 
