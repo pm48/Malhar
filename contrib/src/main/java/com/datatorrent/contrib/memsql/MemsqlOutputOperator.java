@@ -139,14 +139,14 @@ public class MemsqlOutputOperator extends AbstractMemsqlOutputOperator<Object>
     }
     insertStatement = "INSERT INTO "
             + tablename
-            + " (" + dataColumns + ")"
-            + " values (" + values + ")";
+            + " (" + columns.toString() + ")"
+            + " VALUES (" + values.toString() + ")";
     super.setup(context);
     Connection conn = store.getConnection();
     LOG.debug("Got Connection.");
     try {
       Statement st = conn.createStatement();
-      ResultSet rs = st.executeQuery("select * from" + tablename);
+      ResultSet rs = st.executeQuery("select * from " + tablename);
 
       ResultSetMetaData rsMetaData = rs.getMetaData();
 
@@ -171,6 +171,8 @@ public class MemsqlOutputOperator extends AbstractMemsqlOutputOperator<Object>
 
   public MemsqlOutputOperator()
   {
+    columnDataTypes = new ArrayList<Integer>();
+    getters = new ArrayList<Object>();
   }
 
   @Override
@@ -250,6 +252,7 @@ public class MemsqlOutputOperator extends AbstractMemsqlOutputOperator<Object>
   @Override
   protected String getUpdateCommand()
   {
+    LOG.debug("insertstatement is {}", insertStatement);
     return insertStatement;
   }
 
@@ -268,43 +271,43 @@ public class MemsqlOutputOperator extends AbstractMemsqlOutputOperator<Object>
           getter = ((GetterString)getters.get(i)).get(tuple);
           break;
         case (Types.BOOLEAN):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterBoolean)getters.get(i)).get(tuple);
           break;
         case (Types.SMALLINT):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterShort)getters.get(i)).get(tuple);
           break;
         case (Types.INTEGER):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterInt)getters.get(i)).get(tuple);
           break;
         case (Types.BIGINT):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterLong)getters.get(i)).get(tuple);
           break;
         case (Types.DECIMAL):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = (Number)((GetterObject)getters.get(i)).get(tuple);
           break;
         case (Types.FLOAT):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterFloat)getters.get(i)).get(tuple);
           break;
         case (Types.DOUBLE):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterDouble)getters.get(i)).get(tuple);
           break;
         case (Types.DATE):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = (Date)((GetterObject)getters.get(i)).get(tuple);
           break;
         case (Types.TIME):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = (Timestamp)((GetterObject)getters.get(i)).get(tuple);
           break;
         case (Types.ARRAY):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = (Array)((GetterObject)getters.get(i)).get(tuple);
           break;
         case (Types.OTHER):
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterObject)getters.get(i)).get(tuple);
           break;
         default:
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          getter = ((GetterObject)getters.get(i)).get(tuple);
           break;
       }
-       statement.setObject(i + 1, getter);
+      statement.setObject(i + 1, getter);
     }
   }
 

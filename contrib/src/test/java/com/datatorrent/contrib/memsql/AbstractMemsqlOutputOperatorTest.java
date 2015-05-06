@@ -97,7 +97,7 @@ public class AbstractMemsqlOutputOperatorTest
     statement.executeUpdate("create table "
             + FQ_TABLE
             + "(" + DATA_COLUMN1
-            + " INTEGER , "
+            + " INTEGER PRIMARY KEY, "
             + DATA_COLUMN2
             + " VARCHAR(256))");
     String createMetaTable = "CREATE TABLE IF NOT EXISTS " + DATABASE + "." + JdbcTransactionalStore.DEFAULT_META_TABLE + " ( "
