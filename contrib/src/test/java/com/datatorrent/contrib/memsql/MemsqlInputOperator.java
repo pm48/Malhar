@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2015 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,84 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.datatorrent.contrib.memsql;
 
 import com.datatorrent.api.Context.OperatorContext;
-import static com.datatorrent.contrib.memsql.AbstractMemsqlOutputOperatorTest.*;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.validation.constraints.Min;
 
-public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Integer>
+/*
+ * A generic implementation of AbstractMemsqlInputOperator which can emit any POJO.
+ */
+public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
 {
-  private static final String SELECT_COUNT = "select count(*) from " + FQ_TABLE;
-  private int blastSize = 1000;
   private int currentRow = 1;
   private int inputSize = 0;
+  private String tablename;
+  private String primaryKeyColumn;
+  private Integer currentPrimaryKey;
+  @Min(1)
+  private int batchsize = 10;
+
+  /*
+   * Records are read in batches of this size.
+   * Gets the batch size.
+   * @return batchsize
+   */
+  public int getBatchsize()
+  {
+    return batchsize;
+  }
+
+  /*
+   * Records are read in batches of this size.
+   * Sets the batch size.
+   * @param: batchsize;
+   */
+  public void setBatchsize(int batchsize)
+  {
+    this.batchsize = batchsize;
+  }
+
+  /*
+   * Primary Key Column of table.
+   * Gets the primary key column of memsql table.
+   */
+  public String getPrimaryKeyColumn()
+  {
+    return primaryKeyColumn;
+  }
+
+  /*
+   * Primary Key Column of table.
+   * Sets the primary key column of memsql table.
+   */
+  public void setPrimaryKeyCol(String primaryKeyColumn)
+  {
+    this.primaryKeyColumn = primaryKeyColumn;
+  }
+
+  /*
+   * Name of the table in Memsql Database.
+   * Gets the Memsql Tablename.
+   * @return tablename
+   */
+  public String getTablename()
+  {
+    return tablename;
+  }
+
+  /*
+   * Name of the table in Memsql Database.
+   * Sets the Memsql Tablename.
+   * @param tablename
+   */
+  public void setTablename(String tablename)
+  {
+    this.tablename = tablename;
+  }
 
   public MemsqlInputOperator()
   {
@@ -38,11 +101,13 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Integer>
   {
     super.setup(context);
 
+    String minPrimaryKeyStmt = "select MIN(" + primaryKeyColumn + ") FROM " + tablename;
     try {
       Statement statement = store.getConnection().createStatement();
-      ResultSet resultSet = statement.executeQuery(SELECT_COUNT);
-      resultSet.next();
-      inputSize = resultSet.getInt(1);
+      ResultSet resultSet = statement.executeQuery(minPrimaryKeyStmt);
+      if (resultSet.next()) {
+        currentPrimaryKey = (Integer)resultSet.getObject(1);
+      }
       statement.close();
     }
     catch (SQLException ex) {
@@ -51,12 +116,22 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Integer>
   }
 
   @Override
-  public Integer getTuple(ResultSet result)
+  public Object getTuple(ResultSet result)
   {
-    Integer tuple = null;
+    Integer valueofprimarykeyid = 0;
+    try {
+      valueofprimarykeyid = (Integer)result.getObject(primaryKeyColumn);
+    }
+    catch (SQLException ex) {
+      throw new RuntimeException(ex);
+    }
+    if (valueofprimarykeyid >= currentPrimaryKey) {
+      currentPrimaryKey = valueofprimarykeyid + 1;
+    }
+    Object tuple = new Object();
 
     try {
-      tuple = result.getInt(2);
+      tuple = result.getObject(2);
     }
     catch (SQLException ex) {
       throw new RuntimeException(ex);
@@ -68,10 +143,6 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Integer>
   @Override
   public void emitTuples()
   {
-    if (currentRow >= inputSize) {
-      return;
-    }
-
     super.emitTuples();
   }
 
@@ -82,31 +153,18 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Integer>
       return null;
     }
 
-    int endRow = currentRow + blastSize;
-
-    if (endRow > inputSize + 1) {
-      endRow = inputSize + 1;
-    }
-
     StringBuilder sb = new StringBuilder();
     sb.append("select * from ");
-    sb.append(FQ_TABLE);
+    sb.append(tablename);
     sb.append(" where ");
-    sb.append(INDEX_COLUMN);
+    sb.append(primaryKeyColumn);
     sb.append(" >= ");
     sb.append(currentRow);
     sb.append(" and ");
-    sb.append(INDEX_COLUMN);
-    sb.append(" < ");
-    sb.append(endRow);
-
-    currentRow = endRow;
+    sb.append("LIMIT");
+    sb.append(batchsize);
 
     return sb.toString();
   }
 
-  public void setBlastSize(int blastSize)
-  {
-    this.blastSize = blastSize;
-  }
 }

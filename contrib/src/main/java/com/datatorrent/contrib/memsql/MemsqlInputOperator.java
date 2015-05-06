@@ -19,6 +19,7 @@ import com.datatorrent.api.Context.OperatorContext;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import javax.validation.constraints.Min;
 
 /*
  * A generic implementation of AbstractMemsqlInputOperator which can emit any POJO.
@@ -30,7 +31,8 @@ public class MemsqlInputOperator extends AbstractMemsqlInputOperator<Object>
   private String tablename;
   private String primaryKeyColumn;
   private Long currentPrimaryKey;
-  private int batchsize;
+  @Min(1)
+  private int batchsize = 10;
 
   /*
    * Records are read in batches of this size.
