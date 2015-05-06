@@ -15,6 +15,8 @@
  */
 package com.datatorrent.contrib.hive;
 
+import com.datatorrent.lib.util.PojoUtils;
+import com.datatorrent.lib.util.PojoUtils.GetterObject;
 import java.util.ArrayList;
 
 /*
@@ -23,28 +25,68 @@ import java.util.ArrayList;
  */
 public  class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator<Object>
 {
-  private ArrayList<String> hivePartitions;
- 
-  public ArrayList<String> getHivePartitions()
+  private ArrayList<String> hivePartitionColumnValues;
+  private String expression;
+  private GetterObject getter;
+  private boolean isfirstTuple = true;
+
+  /*
+   * A Java expression that will yield the specific column in hive table from the input POJO.
+   */
+  public String getExpression()
   {
-    return hivePartitions;
+    return expression;
   }
 
-  public void setHivePartitions(ArrayList<String> hivePartitions)
+  public void setExpression(String expression)
   {
-    this.hivePartitions = hivePartitions;
+    this.expression = expression;
+  }
+
+  /*
+   * Values for Partition Columns in Hive table.
+   * Example: If partition columns are date and country, then values can be 2015-12-12,USA
+   * OR 2015-12-12,UK etc.
+   */
+  public ArrayList<String> getHivePartitionColumnValues()
+  {
+    return hivePartitionColumnValues;
+  }
+
+  public void setHivePartitionColumnsValues(ArrayList<String> hivePartitionColumnsValues)
+  {
+    this.hivePartitionColumnValues = hivePartitionColumnsValues;
   }
 
   @Override
   public ArrayList<String> getHivePartition(Object tuple)
   {
-    return hivePartitions;
+    for(int i=0;i<hivePartitionColumnValues.size();i++)
+    {
+     // tuple.
+    }
+    return hivePartitionColumnValues;
   }
+
+  @Override
+  protected void processTuple(Object tuple)
+  {
+    if(isfirstTuple)
+    {
+      Class<?> fqcn = tuple.getClass();
+      getter = PojoUtils.createGetterObject(fqcn, expression);
+    }
+    isfirstTuple= false;
+    super.processTuple(tuple);
+  }
+
+
 
   @Override
   protected byte[] getBytesForTuple(Object tuple)
   {
-    return (tuple + "\n").getBytes();
+    //return (tuple + "\n").getBytes();
+    return (getter.get(tuple).toString() + "\n").getBytes();
   }
 
 }

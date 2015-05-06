@@ -40,6 +40,7 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Date;
 import java.util.HashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -56,6 +57,7 @@ public class HiveMockTest extends HiveTestService
   public static final int BLAST_SIZE = 10;
   public static final int DATABASE_SIZE = NUM_WINDOWS * BLAST_SIZE;
   public static final String tablename = "temp";
+  public static final String tablepojo = "temppojo";
   public static final String tablemap = "tempmap";
   public static String delimiterMap = ":";
   public static final String HOST = "localhost";
@@ -83,12 +85,12 @@ public class HiveMockTest extends HiveTestService
       new File(getDir()).mkdir();
     }
 
-    @Override
+   /* @Override
     protected void finished(Description description)
     {
       super.finished(description);
       FileUtils.deleteQuietly(new File(getDir()));
-    }
+    }*/
 
   }
 
@@ -137,7 +139,7 @@ public class HiveMockTest extends HiveTestService
       LOG.debug("tables are {}", res.getString(1));
     }
 
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 string) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablename + " (col1 String) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
     /*ResultSet res = stmt.execute("CREATE TABLE IF NOT EXISTS temp4 (col1 map<string,int>,col2 map<string,int>,col3  map<string,int>,col4 map<String,timestamp>, col5 map<string,double>,col6 map<string,double>,col7 map<string,int>,col8 map<string,int>) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','  \n"
      + "COLLECTION ITEMS TERMINATED BY '\n'  \n"
@@ -145,6 +147,25 @@ public class HiveMockTest extends HiveTestService
      + "LINES TERMINATED BY '\n' "
      + "STORED AS TEXTFILE");*/
 
+    hiveStore.disconnect();
+  }
+
+
+  public static void hiveInitializeDateDatabase(HiveStore hiveStore) throws SQLException
+  {
+    hiveStore.connect();
+    Statement stmt = hiveStore.getConnection().createStatement();
+    // show tables
+    String sql = "show tables";
+
+    LOG.debug(sql);
+    ResultSet res = stmt.executeQuery(sql);
+    if (res.next()) {
+      LOG.debug("tables are {}", res.getString(1));
+    }
+
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablepojo + " (col1 date) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+            + "STORED AS TEXTFILE ");
     hiveStore.disconnect();
   }
 
@@ -254,6 +275,78 @@ public class HiveMockTest extends HiveTestService
       Object[] records = (Object[])record;
       Assert.assertEquals("2014-12-11", records[1]);
     }
+  }
+
+  @Test
+  public void testInsertPOJO() throws Exception
+  {
+    HiveStore hiveStore = createStore(null);
+    hiveStore.setFilepath(testMeta.getDir());
+    ArrayList<String> hivePartitionColumns = new ArrayList<String>();
+    ArrayList<String> hivePartitionColumnValues = new ArrayList<String>();
+    hivePartitionColumns.add("dt");
+    hivePartitionColumnValues.add("2014-12-10");
+    hiveInitializeDateDatabase(createStore(null));
+    HiveOperator hiveOperator = new HiveOperator();
+    hiveOperator.setHivestore(hiveStore);
+    hiveOperator.setTablename(tablepojo);
+    hiveOperator.setHivePartitionColumns(hivePartitionColumns);
+
+    FSRollingPOJOImplementation fsRolling = new FSRollingPOJOImplementation();
+    fsRolling.setFilePath(testMeta.getDir());
+    fsRolling.setHivePartitions(hivePartitionColumnValues);
+    short permission = 511;
+    fsRolling.setFilePermission(permission);
+    fsRolling.setMaxLength(128);
+    fsRolling.setExpression("getDate()");
+    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
+    attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
+    attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
+    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
+    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
+
+    fsRolling.setup(context);
+    hiveOperator.setup(context);
+    FilePartitionMapping mapping1 = new FilePartitionMapping();
+    FilePartitionMapping mapping2 = new FilePartitionMapping();
+    mapping1.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "2014-12-10" + "/"+"0-transaction.out.part.0");
+    ArrayList<String> partitions1 = new ArrayList<String>();
+    partitions1.add("2014-12-10");
+    mapping1.setPartition(partitions1);
+    //ArrayList<String> partitions2 = new ArrayList<String>();
+    //partitions2.add("2014-12-10");
+    //partitions2.add("2014-12-11");
+    mapping2.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "2014-12-10" + "/" + "0-transaction.out.part.1");
+    mapping2.setPartition(partitions1);
+    for (int wid = 0, total = 0;
+            wid < NUM_WINDOWS;
+            wid++) {
+      fsRolling.beginWindow(wid);
+      for (int tupleCounter = 0;
+              tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
+              tupleCounter++, total++) {
+        innerObj.setDate(new Date(System.currentTimeMillis()));
+        fsRolling.input.process(innerObj);
+      }
+      if (wid == 7) {
+        fsRolling.committed(wid - 1);
+        hiveOperator.processTuple(mapping1);
+        hiveOperator.processTuple(mapping2);
+      }
+
+      fsRolling.endWindow();
+    }
+
+    fsRolling.teardown();
+    hiveStore.connect();
+    client.execute("select * from " + tablepojo + " where dt='2014-12-10'");
+    List<String> recordsInDatePartition1 = client.fetchAll();
+
+
+    client.execute("drop table " + tablepojo);
+    hiveStore.disconnect();
+
+    Assert.assertEquals(10, recordsInDatePartition1.size());
   }
 
   @Test
@@ -455,6 +548,51 @@ public class HiveMockTest extends HiveTestService
       Object[] records = (Object[])record;
       Assert.assertEquals("2014-12-12", records[1]);
     }
+
+  }
+  private InnerObj innerObj = new InnerObj();
+
+  /**
+   * @return the innerObj
+   */
+  public InnerObj getInnerObj()
+  {
+    return innerObj;
+  }
+
+  /**
+   * @param innerObj the innerObj to set
+   */
+  public void setInnerObj(InnerObj innerObj)
+  {
+    this.innerObj = innerObj;
+  }
+
+  public class InnerObj
+  {
+    public InnerObj()
+    {
+    }
+
+    private Date date;
+
+    public Date getDate()
+    {
+      return date;
+    }
+
+    public void setDate(Date date)
+    {
+      this.date = date;
+    }
+
+
+    private InnerObj(Date date)
+    {
+      this.date = date;
+    }
+
+
 
   }
 

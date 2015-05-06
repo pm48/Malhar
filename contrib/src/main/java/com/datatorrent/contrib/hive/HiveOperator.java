@@ -130,6 +130,7 @@ public class HiveOperator extends AbstractStoreOutputOperator<FilePartitionMappi
   public void processTuple(FilePartitionMapping tuple)
   {
     String command = processHiveFile(tuple);
+    logger.debug("commands is {}",command);
     if (command != null) {
       Statement stmt;
       try {

@@ -23,12 +23,27 @@ import java.util.ArrayList;
  */
 public  class FSRollingStringImpl extends AbstractFSRollingOutputOperator<String>
 {
-  private ArrayList<String> hivePartitions;
+  private ArrayList<String> hivePartitionColumnValues;
+
+  /*
+   * Values for Partition Columns in Hive table.
+   * Example: If partition columns are date and country, then values can be 2015-12-12,USA
+   * OR 2015-12-12,UK etc.
+   */
+  public ArrayList<String> getHivePartitionColumnsValues()
+  {
+    return hivePartitionColumnValues;
+  }
+
+  public void setHivePartitionColumnsValues(ArrayList<String> hivePartitionColumnsValues)
+  {
+    this.hivePartitionColumnValues = hivePartitionColumnsValues;
+  }
 
   @Override
   public ArrayList<String> getHivePartition(String tuple)
   {
-    return hivePartitions;
+    return hivePartitionColumnValues;
   }
 
   @Override
