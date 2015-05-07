@@ -36,64 +36,72 @@ import java.sql.Date;
 public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator<Object>
 {
   private ArrayList<String> hivePartitionColumns;
-  private ArrayList<String> hivePartitionColumnsDataTypes;
-
   private ArrayList<String> hiveColumns;
   private ArrayList<FIELD_TYPE> hiveColumnsDataTypes;
-
-  private ArrayList<String> expression;
   private transient ArrayList<Object> getters;
-  private transient boolean isFirstTuple;
+  private ArrayList<String> expression;
+
+  /*
+   * A list of Java expressions in which each expression yields the specific table column value and partition column value in hive table from the input POJO.
+   */
+  public ArrayList<String> getExpression()
+  {
+    return expression;
+  }
+
+  public void setExpression(ArrayList<String> expression)
+  {
+    this.expression = expression;
+  }
 
   public FSRollingPOJOImplementation()
   {
     super();
-    isFirstTuple = true;
     getters = new ArrayList<Object>();
   }
 
-  private Object getGetter(Object tuple,int index,FIELD_TYPE type)
+  private Object getGetter(Object tuple, int index, FIELD_TYPE type)
   {
     Object getter;
-     switch (type) {
-        case CHARACTER:
-          getter = ((GetterChar)getters.get(index)).get(tuple);
-          break;
-        case STRING:
-          getter = ((GetterString)getters.get(index)).get(tuple);
-          break;
-        case BOOLEAN:
-          getter = ((GetterBoolean)getters.get(index)).get(tuple);
-          break;
-        case SHORT:
-          getter = ((GetterShort)getters.get(index)).get(tuple);
-          break;
-        case INTEGER:
-          getter = ((GetterInt)getters.get(index)).get(tuple);
-          break;
-        case LONG:
-          getter = ((GetterLong)getters.get(index)).get(tuple);
-          break;
-        case FLOAT:
-          getter = ((GetterFloat)getters.get(index)).get(tuple);
-          break;
-        case DOUBLE:
-          getter = ((GetterDouble)getters.get(index)).get(tuple);
-          break;
-        case DATE:
-          getter = (Date)((GetterObject)getters.get(index)).get(tuple);
-          break;
-        case TIMESTAMP:
-          getter = (Timestamp)((GetterObject)getters.get(index)).get(tuple);
-          break;
-        case OTHER:
-          getter = (Timestamp)((GetterObject)getters.get(index)).get(tuple);
-          break;
-        default:
-          getter = ((GetterObject)getters.get(index)).get(tuple);
-          break;
-      }
-     return getter;
+    switch (type) {
+      case CHARACTER:
+        getter = ((GetterChar)getters.get(index)).get(tuple);
+        break;
+      case STRING:
+        getter = ((GetterString)getters.get(index)).get(tuple);
+        break;
+      case BOOLEAN:
+        getter = ((GetterBoolean)getters.get(index)).get(tuple);
+        break;
+      case SHORT:
+        getter = ((GetterShort)getters.get(index)).get(tuple);
+        break;
+      case INTEGER:
+        getter = ((GetterInt)getters.get(index)).get(tuple);
+        break;
+      case LONG:
+        getter = ((GetterLong)getters.get(index)).get(tuple);
+        break;
+      case FLOAT:
+        getter = ((GetterFloat)getters.get(index)).get(tuple);
+        break;
+      case DOUBLE:
+        getter = ((GetterDouble)getters.get(index)).get(tuple);
+        break;
+      case DATE:
+        getter = (Date)((GetterObject)getters.get(index)).get(tuple);
+        break;
+      case TIMESTAMP:
+        getter = (Timestamp)((GetterObject)getters.get(index)).get(tuple);
+        break;
+      case OTHER:
+        getter = (Timestamp)((GetterObject)getters.get(index)).get(tuple);
+        break;
+      default:
+        getter = ((GetterObject)getters.get(index)).get(tuple);
+        break;
+    }
+    return getter;
   }
 
   public enum FIELD_TYPE
@@ -115,19 +123,6 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
   }
 
   /*
-   * A Java expression that will yield the specific partition column in hive table from the input POJO.
-   */
-  public ArrayList<String> getExpression()
-  {
-    return expression;
-  }
-
-  public void setExpression(ArrayList<String> expression)
-  {
-    this.expression = expression;
-  }
-
-  /*
    * Partition Columns in Hive table.Example: dt for date,ts for timestamp
    */
   public ArrayList<String> getHivePartitionColumns()
@@ -135,13 +130,15 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     return hivePartitionColumns;
   }
 
-  public void setHivePartitionColumnsValues(ArrayList<String> hivePartitionColumns)
+  public void setHivePartitionColumns(ArrayList<String> hivePartitionColumns)
   {
     this.hivePartitionColumns = hivePartitionColumns;
   }
 
   /*
-   * Data Types of Partition Columns in Hive table.Example: date for dt column,timestamp for ts column.
+   * Data Types of Hive table data columns and Partition Columns.
+   * Example: If the Hive table has two columns of data type int and float and is partitioned by date of type String,
+   * then hiveColumnsDataTypes = {INTEGER,STRING,STRING}.
    * Particular Data Type can be chosen from the List of data types provided.
    */
   public ArrayList<FIELD_TYPE> getHiveColumnsDataTypes()
@@ -149,13 +146,23 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     return hiveColumnsDataTypes;
   }
 
+  public void setHiveColumnsDataTypes(ArrayList<FIELD_TYPE> hiveColumnsDataTypes)
+  {
+    this.hiveColumnsDataTypes = hiveColumnsDataTypes;
+  }
+
   @Override
   public ArrayList<String> getHivePartition(Object tuple)
   {
-    int size = hivePartitionColumns.size();
+    int sizeOfColumns = hiveColumns.size();
+    int sizeOfPartitionColumns = hivePartitionColumns.size();
+    int size = sizeOfColumns + sizeOfPartitionColumns;
     ArrayList<String> hivePartitionColumnValues = new ArrayList<String>();
-    for (int i = 0; i < size; i++) {
-      // tuple.
+    Object getter;
+    for (int i = sizeOfColumns; i < size; i++) {
+      FIELD_TYPE type = hiveColumnsDataTypes.get(i);
+      getter = getGetter(tuple, sizeOfColumns, type);
+      hivePartitionColumnValues.add(getter.toString());
     }
     return hivePartitionColumnValues;
   }
@@ -163,17 +170,16 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
   @Override
   public void processTuple(Object tuple)
   {
-    if (isFirstTuple) {
+    if (getters.isEmpty()) {
       processFirstTuple(tuple);
     }
-    isFirstTuple = false;
     super.processTuple(tuple);
   }
 
   public void processFirstTuple(Object tuple)
   {
     Class<?> fqcn = tuple.getClass();
-    int size = hiveColumns.size();
+    int size = hiveColumns.size() + hivePartitionColumns.size();
     for (int i = 0; i < size; i++) {
       FIELD_TYPE type = hiveColumnsDataTypes.get(i);
       String getterExpression = expression.get(i);
@@ -233,25 +239,10 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     Object getter;
     for (int i = 0; i < size; i++) {
       FIELD_TYPE type = hiveColumnsDataTypes.get(i);
-      getter = getGetter(tuple,i,type);
-      if (result.length() != 0) {
-        result.append("\n").append(getter);
-      }
-      else {
-        result.append(getter);
-      }
+      getter = getGetter(tuple, i, type);
+      result.append(getter).append("\n");
     }
     return (result.toString()).getBytes();
-  }
-
-  public ArrayList<String> getHivePartitionColumnsDataTypes()
-  {
-    return hivePartitionColumnsDataTypes;
-  }
-
-  public void setHivePartitionColumnsDataTypes(ArrayList<String> hivePartitionColumnsDataTypes)
-  {
-    this.hivePartitionColumnsDataTypes = hivePartitionColumnsDataTypes;
   }
 
 }
