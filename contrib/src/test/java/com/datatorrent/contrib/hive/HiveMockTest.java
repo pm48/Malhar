@@ -33,6 +33,7 @@ import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DAG;
 import com.datatorrent.api.Operator.ProcessingMode;
+import com.datatorrent.contrib.hive.FSRollingPOJOImplementation.FIELD_TYPE;
 import com.datatorrent.lib.util.TestUtils.TestInfo;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
@@ -40,7 +41,6 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Date;
 import java.util.HashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -85,12 +85,12 @@ public class HiveMockTest extends HiveTestService
       new File(getDir()).mkdir();
     }
 
-   /* @Override
+    @Override
     protected void finished(Description description)
     {
       super.finished(description);
       FileUtils.deleteQuietly(new File(getDir()));
-    }*/
+    }
 
   }
 
@@ -150,8 +150,7 @@ public class HiveMockTest extends HiveTestService
     hiveStore.disconnect();
   }
 
-
-  public static void hiveInitializeDateDatabase(HiveStore hiveStore) throws SQLException
+  public static void hiveInitializePOJODatabase(HiveStore hiveStore) throws SQLException
   {
     hiveStore.connect();
     Statement stmt = hiveStore.getConnection().createStatement();
@@ -164,7 +163,7 @@ public class HiveMockTest extends HiveTestService
       LOG.debug("tables are {}", res.getString(1));
     }
 
-    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablepojo + " (col1 date) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
+    stmt.execute("CREATE TABLE IF NOT EXISTS " + tablepojo + " (col1 int) PARTITIONED BY(dt STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n'  \n"
             + "STORED AS TEXTFILE ");
     hiveStore.disconnect();
   }
@@ -283,10 +282,10 @@ public class HiveMockTest extends HiveTestService
     HiveStore hiveStore = createStore(null);
     hiveStore.setFilepath(testMeta.getDir());
     ArrayList<String> hivePartitionColumns = new ArrayList<String>();
-    ArrayList<String> hivePartitionColumnValues = new ArrayList<String>();
     hivePartitionColumns.add("dt");
-    hivePartitionColumnValues.add("2014-12-10");
-    hiveInitializeDateDatabase(createStore(null));
+    ArrayList<String> hiveColumns = new ArrayList<String>();
+    hiveColumns.add("col1");
+    hiveInitializePOJODatabase(createStore(null));
     HiveOperator hiveOperator = new HiveOperator();
     hiveOperator.setHivestore(hiveStore);
     hiveOperator.setTablename(tablepojo);
@@ -294,11 +293,22 @@ public class HiveMockTest extends HiveTestService
 
     FSRollingPOJOImplementation fsRolling = new FSRollingPOJOImplementation();
     fsRolling.setFilePath(testMeta.getDir());
-    fsRolling.setHivePartitions(hivePartitionColumnValues);
+    fsRolling.setHiveColumns(hiveColumns);
+    ArrayList<FIELD_TYPE> fieldtypes = new ArrayList<FIELD_TYPE>();
+    fieldtypes.add(FIELD_TYPE.INTEGER);
+    fieldtypes.add(FIELD_TYPE.STRING);
+    fsRolling.setHiveColumnsDataTypes(fieldtypes);
+    //ArrayList<FIELD_TYPE> partitionColumnType = new ArrayList<FIELD_TYPE>();
+    //partitionColumnType.add(FIELD_TYPE.STRING);
+    fsRolling.setHivePartitionColumns(hivePartitionColumns);
+    // fsRolling.setHivePartitionColumnsDataTypes(partitionColumnType);
+    ArrayList<String> expressions = new ArrayList<String>();
+    expressions.add("getId()");
+    expressions.add("getDate()");
     short permission = 511;
     fsRolling.setFilePermission(permission);
     fsRolling.setMaxLength(128);
-    fsRolling.setExpression("getDate()");
+    fsRolling.setExpression(expressions);
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(OperatorContext.PROCESSING_MODE, ProcessingMode.AT_LEAST_ONCE);
     attributeMap.put(OperatorContext.ACTIVATION_WINDOW_ID, -1L);
@@ -309,23 +319,24 @@ public class HiveMockTest extends HiveTestService
     hiveOperator.setup(context);
     FilePartitionMapping mapping1 = new FilePartitionMapping();
     FilePartitionMapping mapping2 = new FilePartitionMapping();
-    mapping1.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "2014-12-10" + "/"+"0-transaction.out.part.0");
+    mapping1.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "2014-12-11" + "/" + "0-transaction.out.part.0");
     ArrayList<String> partitions1 = new ArrayList<String>();
-    partitions1.add("2014-12-10");
+    partitions1.add("2014-12-11");
     mapping1.setPartition(partitions1);
-    //ArrayList<String> partitions2 = new ArrayList<String>();
-    //partitions2.add("2014-12-10");
-    //partitions2.add("2014-12-11");
-    mapping2.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "2014-12-10" + "/" + "0-transaction.out.part.1");
-    mapping2.setPartition(partitions1);
+    ArrayList<String> partitions2 = new ArrayList<String>();
+    partitions2.add("2014-12-12");
+    mapping2.setFilename(APP_ID + "/" + OPERATOR_ID + "/" + "2014-12-12" + "/" + "0-transaction.out.part.0");
+    mapping2.setPartition(partitions2);
     for (int wid = 0, total = 0;
             wid < NUM_WINDOWS;
             wid++) {
       fsRolling.beginWindow(wid);
-      for (int tupleCounter = 0;
+      for (int tupleCounter = 1;
               tupleCounter < BLAST_SIZE && total < DATABASE_SIZE;
               tupleCounter++, total++) {
-        innerObj.setDate(new Date(System.currentTimeMillis()));
+        innerObj = new InnerObj();
+        innerObj.setId(tupleCounter);
+        innerObj.setDate("2014-12-1" + tupleCounter);
         fsRolling.input.process(innerObj);
       }
       if (wid == 7) {
@@ -339,14 +350,32 @@ public class HiveMockTest extends HiveTestService
 
     fsRolling.teardown();
     hiveStore.connect();
-    client.execute("select * from " + tablepojo + " where dt='2014-12-10'");
+    client.execute("select * from " + tablepojo + " where dt='2014-12-11'");
     List<String> recordsInDatePartition1 = client.fetchAll();
 
-
+     client.execute("select * from " + tablepojo + " where dt='2014-12-12'");
+    List<String> recordsInDatePartition2 = client.fetchAll();
     client.execute("drop table " + tablepojo);
     hiveStore.disconnect();
 
-    Assert.assertEquals(10, recordsInDatePartition1.size());
+    Assert.assertEquals(7, recordsInDatePartition1.size());
+    for (int i = 0; i < recordsInDatePartition1.size(); i++) {
+      LOG.debug("records in first date partition are {}", recordsInDatePartition1.get(i));
+      /*An array containing partition and data is returned as a string record, hence we need to upcast it to an object first
+       and then downcast to a string in order to use in Assert.*/
+      Object record = recordsInDatePartition1.get(i);
+      Object[] records = (Object[])record;
+      Assert.assertEquals(1, records[0]);
+      Assert.assertEquals("2014-12-11", records[1]);
+    }
+    Assert.assertEquals(7, recordsInDatePartition2.size());
+    for (int i = 0; i < recordsInDatePartition2.size(); i++) {
+      LOG.debug("records in second date partition are {}", recordsInDatePartition2.get(i));
+      Object record = recordsInDatePartition2.get(i);
+      Object[] records = (Object[])record;
+       Assert.assertEquals(2, records[0]);
+      Assert.assertEquals("2014-12-12", records[1]);
+    }
   }
 
   @Test
@@ -550,6 +579,7 @@ public class HiveMockTest extends HiveTestService
     }
 
   }
+
   private InnerObj innerObj = new InnerObj();
 
   /**
@@ -574,25 +604,28 @@ public class HiveMockTest extends HiveTestService
     {
     }
 
-    private Date date;
+    private int id;
+    private String date;
 
-    public Date getDate()
+    public String getDate()
     {
       return date;
     }
 
-    public void setDate(Date date)
+    public void setDate(String date)
     {
       this.date = date;
     }
 
-
-    private InnerObj(Date date)
+    public int getId()
     {
-      this.date = date;
+      return id;
     }
 
-
+    public void setId(int id)
+    {
+      this.id = id;
+    }
 
   }
 
