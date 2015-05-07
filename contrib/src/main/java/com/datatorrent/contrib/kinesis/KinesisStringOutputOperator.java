@@ -22,16 +22,18 @@ import com.datatorrent.common.util.Pair;
  *
  * @since 2.0.0
  */
-public class KinesisStringOutputOperator extends AbstractKinesisOutputOperator<String, String>
+public class KinesisStringOutputOperator extends AbstractKinesisOutputOperator<Object>
 {
   @Override
-  protected byte[] getRecord(String tuple)
+  protected byte[] getRecord(Object tuple)
   {
+    //pojoutil
     return tuple.getBytes();
   }
   @Override
   protected Pair<String, String> tupleToKeyValue(String tuple)
   {
+    //first fiedl is key and second is value
     return new Pair<String, String>(String.format("partitionKey-%d", sendCount), tuple);
   }
 }
