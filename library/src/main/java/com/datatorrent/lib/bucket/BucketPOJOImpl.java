@@ -27,25 +27,22 @@ import org.slf4j.LoggerFactory;
 public class BucketPOJOImpl extends AbstractBucket<Object>
 {
   private String expression;
-  private transient boolean isFirstTuple;
   private transient GetterObject getter;
 
   protected BucketPOJOImpl(long bucketKey,String expression)
   {
     super(bucketKey);
-    isFirstTuple = true;
     this.expression = expression;
   }
 
   @Override
   protected Object getEventKey(Object event)
   {
-    if(isFirstTuple){
+    if(getter==null){
       Class<?> fqcn = event.getClass();
       GetterObject getterObj = PojoUtils.createGetterObject(fqcn, expression);
       getter = getterObj;
     }
-    isFirstTuple = false;
     return getter.get(event);
   }
 

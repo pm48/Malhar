@@ -47,14 +47,7 @@ public class TimeBasedBucketManagerPOJOImpl extends AbstractTimeBasedBucketManag
     this.keyExpression = keyExpression;
   }
 
-  private transient boolean isFirstTuple = true;
   private transient GetterLong getter;
-
-  public TimeBasedBucketManagerPOJOImpl()
-  {
-    super();
-    isFirstTuple = true;
-  }
 
   /*
    * A Java expression that will yield the timestamp value from the POJO.
@@ -84,12 +77,11 @@ public class TimeBasedBucketManagerPOJOImpl extends AbstractTimeBasedBucketManag
   @Override
   protected long getTime(Object event)
   {
-    if(isFirstTuple){
+    if(getter==null){
     Class<?> fqcn = event.getClass();
     GetterLong getterTime = PojoUtils.createExpressionGetterLong(fqcn,timeExpression);
     getter = getterTime;
     }
-    isFirstTuple = false;
     return getter.get(event);
   }
 

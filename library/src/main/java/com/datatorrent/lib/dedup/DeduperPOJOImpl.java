@@ -15,7 +15,6 @@
  */
 package com.datatorrent.lib.dedup;
 
-import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.bucket.BucketManager;
 import com.datatorrent.lib.bucket.POJOBucketManager;
 import com.datatorrent.lib.bucket.TimeBasedBucketManagerPOJOImpl;
@@ -32,26 +31,17 @@ import org.slf4j.LoggerFactory;
  */
 public class DeduperPOJOImpl extends AbstractDeduper<Object, Object>
 {
-  private transient boolean isFirstTuple;
   private transient GetterObject getter;
-
-  public DeduperPOJOImpl()
-  {
-    super();
-    isFirstTuple = true;
-  }
 
   @Override
   public void processTuple(Object event)
   {
-     if(isFirstTuple){
+     if(getter==null){
      Class<?> fqcn = event.getClass();
      GetterObject getterObj = PojoUtils.createGetterObject(fqcn, ((TimeBasedBucketManagerPOJOImpl)bucketManager).getKeyExpression());
      getter = getterObj;
      }
-     isFirstTuple = false;
     super.processTuple(event);
-
   }
 
   @Override
