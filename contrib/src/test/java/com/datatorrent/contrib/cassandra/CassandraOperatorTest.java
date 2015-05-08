@@ -28,7 +28,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -95,32 +94,6 @@ public class CassandraOperatorTest
 
   private static class TestOutputOperator extends CassandraOutputOperator
   {
-    //private static final String INSERT_STMT = "INSERT INTO " + KEYSPACE+"." +TABLE_NAME + " (ID) VALUES (?);";
-
-    /*TestOutputOperator()
-    {
-      cleanTable();
-    }
-
-    @Nonnull
-    @Override
-    protected PreparedStatement getUpdateCommand()
-    {
-      try {
-        return store.getSession().prepare(INSERT_STMT);
-      }
-      catch (DriverException e) {
-        throw new RuntimeException("preparing", e);
-      }
-    }
-
-    @Override
-    protected Statement setStatementParameters(PreparedStatement statement, TestEvent tuple) throws DriverException
-    {
-      BoundStatement boundStatement = new BoundStatement(statement);
-      Statement stmnt = boundStatement.bind(tuple.id);
-      return stmnt;
-    }*/
 
     public long getNumOfEventsInStore()
     {
@@ -206,7 +179,7 @@ public class CassandraOperatorTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     TestOutputOperator outputOperator = new TestOutputOperator();
-   // outputOperator.setKeyspace(KEYSPACE);
+
     outputOperator.setTablename(TABLE_NAME);
     ArrayList<String> columns = new ArrayList<String>();
     columns.add("ID");
@@ -232,7 +205,7 @@ public class CassandraOperatorTest
     Assert.assertEquals("rows in db", 10, outputOperator.getNumOfEventsInStore());
   }
 
-  //@Test
+  @Test
   public void TestCassandraInputOperator()
   {
     CassandraStore store = new CassandraStore();
