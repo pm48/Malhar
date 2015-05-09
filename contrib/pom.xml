@@ -15,7 +15,7 @@
   <properties>
     <!-- skip tests by default as they depend on manual setup -->
     <skip.contrib.module.tests>false</skip.contrib.module.tests>
-    <skipTests>false</skipTests>
+    <skipTests>true</skipTests>
   </properties>
   <repositories>
     <repository>
@@ -658,12 +658,6 @@
       <artifactId>jriengine</artifactId>
       <version>1.0</version>
       <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>com.datatorrent</groupId>
-      <artifactId>malhar-contrib</artifactId>
-      <version>2.1.0-SNAPSHOT</version>
-      <type>jar</type>
     </dependency>
   </dependencies>
 </project>

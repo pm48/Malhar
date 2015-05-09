@@ -52,7 +52,6 @@ public class CassandraOperatorTest
     {
       this.id = id;
     }
-
   }
 
   @BeforeClass
@@ -60,7 +59,7 @@ public class CassandraOperatorTest
   {
     try {
       Cluster cluster = Cluster.builder()
-              .addContactPoint(NODE).build();
+          .addContactPoint(NODE).build();
       Session session = cluster.connect(KEYSPACE);
 
       String createMetaTable = "CREATE TABLE IF NOT EXISTS " + CassandraTransactionalStore.DEFAULT_META_TABLE + " ( "
@@ -79,15 +78,14 @@ public class CassandraOperatorTest
     }
   }
 
-  //@AfterClass
-  public static void cleanTable()
+  private static void cleanTable()
   {
     try {
       Cluster cluster = Cluster.builder()
-              .addContactPoint(NODE).build();
+          .addContactPoint(NODE).build();
       Session session = cluster.connect(KEYSPACE);
 
-      String cleanTable = "DROP " + TABLE_NAME + ";";
+      String cleanTable = "TRUNCATE " + TABLE_NAME + ";";
       session.execute(cleanTable);
     }
     catch (DriverException e) {
@@ -98,17 +96,23 @@ public class CassandraOperatorTest
   private static class TestOutputOperator extends CassandraOutputOperator
   {
 
+    TestOutputOperator()
+    {
+      cleanTable();
+    }
+
     public long getNumOfEventsInStore()
     {
 
       try {
         Cluster cluster = Cluster.builder()
-                .addContactPoint(NODE).build();
+            .addContactPoint(NODE).build();
         Session session = cluster.connect(KEYSPACE);
 
         String countQuery = "SELECT count(*) from " + TABLE_NAME + ";";
         ResultSet resultSet = session.execute(countQuery);
-        for (Row row: resultSet) {
+        for(Row row: resultSet)
+        {
           return row.getLong(0);
         }
         return 0;
@@ -117,13 +121,12 @@ public class CassandraOperatorTest
         throw new RuntimeException("fetching count", e);
       }
     }
-
   }
 
   private static class TestInputOperator extends AbstractCassandraInputOperator<TestEvent>
   {
 
-    private static final String retrieveQuery = "SELECT * FROM " + KEYSPACE + "." + TABLE_NAME + ";";
+    private static final String retrieveQuery = "SELECT * FROM " +KEYSPACE +"."+TABLE_NAME + ";";
 
     TestInputOperator()
     {
@@ -151,10 +154,10 @@ public class CassandraOperatorTest
     {
       try {
         Cluster cluster = Cluster.builder()
-                .addContactPoint(NODE).build();
+            .addContactPoint(NODE).build();
         Session session = cluster.connect(KEYSPACE);
 
-        String insert = "INSERT INTO " + TABLE_NAME + " (ID)" + " VALUES (?);";
+        String insert = "INSERT INTO " + TABLE_NAME +" (ID)"+ " VALUES (?);";
         PreparedStatement stmt = session.prepare(insert);
         BoundStatement boundStatement = new BoundStatement(stmt);
         Statement statement;
@@ -167,8 +170,8 @@ public class CassandraOperatorTest
         throw new RuntimeException(e);
       }
     }
-
   }
+
 
   @Test
   public void testCassandraOutputOperator()
@@ -210,11 +213,11 @@ public class CassandraOperatorTest
       outputOperator.input.process(event);
     }
     outputOperator.endWindow();
-    System.out.println("rows in db are " + outputOperator.getNumOfEventsInStore());
+
     Assert.assertEquals("rows in db", 10, outputOperator.getNumOfEventsInStore());
   }
 
- // @Test
+  @Test
   public void TestCassandraInputOperator()
   {
     CassandraStore store = new CassandraStore();

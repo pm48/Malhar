@@ -19,7 +19,6 @@ import com.datastax.driver.core.*;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.exceptions.DriverException;
-import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.GetterBoolean;
 import com.datatorrent.lib.util.PojoUtils.GetterDouble;
@@ -39,8 +38,9 @@ import org.slf4j.LoggerFactory;
  * <p>
  * CassandraOutputOperator class.</p>
  * A Generic implementation of AbstractCassandraTransactionableOutputOperatorPS which takes in any POJO.
- *
- * @since 1.0.3
+ * @displayName Cassandra Output Operator
+ * @category Output
+ * @tags output operator
  */
 public class CassandraOutputOperator extends AbstractCassandraTransactionableOutputOperatorPS<Object>
 {
@@ -117,7 +117,6 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
     int size = columnDataTypes.size();
     for (int i = 0; i < size; i++) {
       DataType type = columnDataTypes.get(i);
-      LOG.debug("type is {}",type.getName());
       String getterExpression = PojoUtils.getSingleFieldExpression(fqcn, expressions.get(i));
       if (type.equals(DataType.ascii()) || type.equals(DataType.text()) || type.equals(DataType.varchar())) {
         GetterString getVarchar = PojoUtils.createGetterString(fqcn, getterExpression);
@@ -175,8 +174,6 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
         values.append(",").append("?");
       }
     }
-    LOG.debug("queryfields are", queryfields.toString());
-    LOG.debug("values are ",values.toString());
     String statement
             = "INSERT INTO " + store.keyspace + "."
             + tablename
@@ -196,10 +193,9 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
     BoundStatement boundStmnt = new BoundStatement(updateCommand);
     int size = columnDataTypes.size();
     Object getter = new Object();
-    UUID id = (UUID)(((GetterObject)getters.get(0)).get(tuple));;
+    UUID id = (UUID)(((GetterObject)getters.get(0)).get(tuple));
     for (int i = 1; i < size; i++) {
       DataType type = columnDataTypes.get(i);
-      LOG.debug("type before switch is {}",type.getName());
        switch (type.getName()) {
         case UUID:
           id = (UUID)(((GetterObject)getters.get(i)).get(tuple));
@@ -241,10 +237,6 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
           getter = (((GetterObject)getters.get(i)).get(tuple));
           break;
       }
-       /*if(i==0)
-       {
-         id = getter;
-       }*/
         boundStmnt.bind(id,getter);
     }
 

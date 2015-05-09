@@ -53,6 +53,7 @@ public class MemsqlOutputOperator extends AbstractMemsqlOutputOperator<Object>
   /*
    * An ArrayList of Java expressions that will yield the field value from the POJO.
    * Each expression corresponds to one column in the memsql table.
+   * Example:
    */
   public ArrayList<String> getExpression()
   {
