@@ -43,6 +43,7 @@ public class CassandraOperatorTest
   private static final String TABLE_NAME = "test";
   private static String APP_ID = "CassandraOperatorTest";
   private static int OPERATOR_ID = 0;
+  private static Cluster cluster = null;
 
   private static class TestEvent
   {
@@ -58,7 +59,7 @@ public class CassandraOperatorTest
   public static void setup()
   {
     try {
-      Cluster cluster = Cluster.builder()
+       cluster = Cluster.builder()
           .addContactPoint(NODE).build();
       Session session = cluster.connect(KEYSPACE);
 
@@ -73,9 +74,14 @@ public class CassandraOperatorTest
       session.execute(createTable);
     }
     catch (Throwable e) {
-
       DTThrowable.rethrow(e);
     }
+  }
+
+  @AfterClass
+  public void cleanup()
+  {
+    cluster.close();
   }
 
   private static void cleanTable()
@@ -110,8 +116,8 @@ public class CassandraOperatorTest
         Session session = cluster.connect(KEYSPACE);
 
         String countQuery = "SELECT count(*) from " + TABLE_NAME + ";";
-        ResultSet resultSet = session.execute(countQuery);
-        for(Row row: resultSet)
+        ResultSet resultSetCount = session.execute(countQuery);
+        for(Row row: resultSetCount)
         {
           return row.getLong(0);
         }
@@ -119,6 +125,26 @@ public class CassandraOperatorTest
       }
       catch (DriverException e) {
         throw new RuntimeException("fetching count", e);
+      }
+    }
+
+    public String getEventsInStore()
+    {
+      try {
+        Cluster cluster = Cluster.builder()
+            .addContactPoint(NODE).build();
+        Session session = cluster.connect(KEYSPACE);
+
+        String recordsQuery = "SELECT * from " + TABLE_NAME + ";";
+        ResultSet resultSetRecords = session.execute(recordsQuery);
+         for(Row row: resultSetRecords)
+        {
+          return row.getString("firstname") + "," + row.getString("lastname");
+        }
+        return null;
+      }
+      catch (DriverException e) {
+        throw new RuntimeException("fetching records", e);
       }
     }
   }
@@ -215,6 +241,11 @@ public class CassandraOperatorTest
     outputOperator.endWindow();
 
     Assert.assertEquals("rows in db", 10, outputOperator.getNumOfEventsInStore());
+    for (int i = 0; i < 10; i++) {
+      StringBuilder firstlastname = new StringBuilder("abc"+i+","+"abclast"+i);
+      Assert.assertEquals(firstlastname.toString(),outputOperator.getEventsInStore());
+     }
+
   }
 
   @Test
@@ -245,9 +276,9 @@ public class CassandraOperatorTest
 
   public static class TestPojo
   {
-    public String firstname = "xyz";
-    public String lastname = "hello";
-    public UUID id;
+    private String firstname = "xyz";
+    private String lastname = "hello";
+    private UUID id;
 
     public UUID getId()
     {
