@@ -149,7 +149,7 @@ public class CassandraOperatorTest
             Map<String,Integer> map = new HashMap<String, Integer>();
             set.add(0);
             list.add(0);
-            map.put("key0", 2);
+            map.put("key0", 0);
             Assert.assertEquals(set, row.getSet("set1", Integer.class));
             Assert.assertEquals(map, row.getMap("map1", String.class, Integer.class));
             Assert.assertEquals(list,row.getList("list1", Integer.class));
@@ -163,7 +163,7 @@ public class CassandraOperatorTest
             Map<String,Integer> map = new HashMap<String, Integer>();
             set.add(1);
             list.add(1);
-            map.put("key1", 2);
+            map.put("key1", 1);
             Assert.assertEquals(set, row.getSet("set1", Integer.class));
             Assert.assertEquals(map, row.getMap("map1", String.class, Integer.class));
             Assert.assertEquals(list,row.getList("list1", Integer.class));
