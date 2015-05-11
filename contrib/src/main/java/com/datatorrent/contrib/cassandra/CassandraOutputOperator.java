@@ -27,9 +27,8 @@ import com.datatorrent.lib.util.PojoUtils.GetterInt;
 import com.datatorrent.lib.util.PojoUtils.GetterLong;
 import com.datatorrent.lib.util.PojoUtils.GetterObject;
 import com.datatorrent.lib.util.PojoUtils.GetterString;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.*;
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +64,9 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
     this.expressions = expressions;
   }
 
+  /*
+   * An ArrayList of Columns in the Cassandra Table.
+   */
   public ArrayList<String> getColumns()
   {
     return columns;
@@ -146,13 +148,10 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
         GetterDouble getDouble = PojoUtils.createGetterDouble(fqcn, getterExpression);
         getters.add(getDouble);
       }
-      else if (type.equals(DataType.timestamp())) {
-        GetterObject getObject = PojoUtils.createGetterObject(fqcn, getterExpression);
-        getters.add(getObject);
-      }
       else
       {
-        throw new UnsupportedOperationException("this type is not supported "+type);
+        GetterObject getObject = PojoUtils.createGetterObject(fqcn, getterExpression);
+        getters.add(getObject);
       }
 
     }
@@ -180,7 +179,6 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
             + " (" + queryfields.toString() + ") "
             + "VALUES (" + values.toString() + ");";
     LOG.debug("statement is {}", statement);
-
     return store.getSession().prepare(statement);
   }
 
@@ -192,52 +190,70 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
     }
     BoundStatement boundStmnt = new BoundStatement(updateCommand);
     int size = columnDataTypes.size();
-    Object getter = new Object();
-    UUID id = (UUID)(((GetterObject)getters.get(0)).get(tuple));
-    for (int i = 1; i < size; i++) {
+    for (int i = 0; i < size; i++) {
       DataType type = columnDataTypes.get(i);
        switch (type.getName()) {
         case UUID:
-          id = (UUID)(((GetterObject)getters.get(i)).get(tuple));
+         UUID id = (UUID)(((GetterObject)getters.get(i)).get(tuple));
+         boundStmnt.setUUID(i, id);
           break;
         case ASCII:
-         getter = ((GetterString)getters.get(i)).get(tuple);
+         String ascii= ((GetterString)getters.get(i)).get(tuple);
+         boundStmnt.setString(i, ascii);
           break;
         case VARCHAR:
-          getter = ((GetterString)getters.get(i)).get(tuple);
+         String varchar = ((GetterString)getters.get(i)).get(tuple);
+         boundStmnt.setString(i, varchar);
           break;
         case TEXT:
-          getter = ((GetterString)getters.get(i)).get(tuple);
+          String text= ((GetterString)getters.get(i)).get(tuple);
+          boundStmnt.setString(i, text);
           break;
         case BOOLEAN:
-          getter = ((GetterBoolean)getters.get(i)).get(tuple);
+          Boolean bool = ((GetterBoolean)getters.get(i)).get(tuple);
+          boundStmnt.setBool(i, bool);
           break;
         case INT:
-          getter = ((GetterInt)getters.get(i)).get(tuple);
+          Integer intValue = ((GetterInt)getters.get(i)).get(tuple);
+          boundStmnt.setInt(i, intValue);
           break;
         case BIGINT:
-          getter = ((GetterLong)getters.get(i)).get(tuple);
+          Long longValue = ((GetterLong)getters.get(i)).get(tuple);
+          boundStmnt.setLong(i, longValue);
           break;
         case COUNTER:
-          getter = ((GetterLong)getters.get(i)).get(tuple);
+          Long counter = ((GetterLong)getters.get(i)).get(tuple);
+          boundStmnt.setLong(i, counter);
           break;
         case FLOAT:
-          getter = ((GetterFloat)getters.get(i)).get(tuple);
+          Float floatValue = ((GetterFloat)getters.get(i)).get(tuple);
+          boundStmnt.setFloat(i, floatValue);
           break;
         case DOUBLE:
-          getter = ((GetterDouble)getters.get(i)).get(tuple);
+          Double doubleValue = ((GetterDouble)getters.get(i)).get(tuple);
+          boundStmnt.setDouble(i, doubleValue);
+          break;
+        case DECIMAL:
+          BigDecimal decimal = (BigDecimal)((GetterObject)getters.get(i)).get(tuple);
+          boundStmnt.setDecimal(i, decimal);
+          break;
+        case SET:
+          Set set = (Set)((GetterObject)getters.get(i)).get(tuple);
+          boundStmnt.setSet(i, set);
+          break;
+        case MAP:
+          Map map = (Map)((GetterObject)getters.get(i)).get(tuple);
+          boundStmnt.setMap(i, map);
+          break;
+        case LIST:
+          List list = (List)((GetterObject)getters.get(i)).get(tuple);
+          boundStmnt.setList(i, list);
           break;
         case TIMESTAMP:
-          getter = (Date)((GetterObject)getters.get(i)).get(tuple);
-          break;
-        case CUSTOM:
-          getter = ((GetterObject)getters.get(i)).get(tuple);
-          break;
-        default:
-          getter = (((GetterObject)getters.get(i)).get(tuple));
+          Date date = (Date)((GetterObject)getters.get(i)).get(tuple);
+          boundStmnt.setDate(i, date);
           break;
       }
-        boundStmnt.bind(id,getter);
     }
 
     return boundStmnt;
@@ -245,4 +261,3 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
 
   private static transient final Logger LOG = LoggerFactory.getLogger(CassandraOutputOperator.class);
 }
-
