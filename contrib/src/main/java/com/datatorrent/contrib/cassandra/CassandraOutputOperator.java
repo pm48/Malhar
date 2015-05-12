@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * CassandraOutputOperator class.</p>
  * A Generic implementation of AbstractCassandraTransactionableOutputOperatorPS which takes in any POJO.
+ *
  * @displayName Cassandra Output Operator
  * @category Output
  * @tags output operator
@@ -103,18 +104,18 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
 
   public void processFirstTuple(Object tuple)
   {
-     com.datastax.driver.core.ResultSet rs = store.getSession().execute("select * from " + store.keyspace +"."+tablename);
+    com.datastax.driver.core.ResultSet rs = store.getSession().execute("select * from " + store.keyspace + "." + tablename);
 
-      ColumnDefinitions rsMetaData = rs.getColumnDefinitions();
+    ColumnDefinitions rsMetaData = rs.getColumnDefinitions();
 
-      int numberOfColumns = 0;
+    int numberOfColumns = 0;
 
-      numberOfColumns = rsMetaData.size();
-      for (int i = 0; i < numberOfColumns; i++) {
-        // get the designated column's data type.
-        DataType type = rsMetaData.getType(i);
-        columnDataTypes.add(type);
-      }
+    numberOfColumns = rsMetaData.size();
+    for (int i = 0; i < numberOfColumns; i++) {
+      // get the designated column's data type.
+      DataType type = rsMetaData.getType(i);
+      columnDataTypes.add(type);
+    }
     Class<?> fqcn = tuple.getClass();
     int size = columnDataTypes.size();
     for (int i = 0; i < size; i++) {
@@ -124,7 +125,7 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
         GetterString getVarchar = PojoUtils.createGetterString(fqcn, getterExpression);
         getters.add(getVarchar);
       }
-       else if (type.equals(DataType.uuid())) {
+      else if (type.equals(DataType.uuid())) {
         GetterObject getObject = PojoUtils.createGetterObject(fqcn, getterExpression);
         getters.add(getObject);
       }
@@ -148,8 +149,7 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
         GetterDouble getDouble = PojoUtils.createGetterDouble(fqcn, getterExpression);
         getters.add(getDouble);
       }
-      else
-      {
+      else {
         GetterObject getObject = PojoUtils.createGetterObject(fqcn, getterExpression);
         getters.add(getObject);
       }
@@ -164,7 +164,7 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
     StringBuilder queryfields = new StringBuilder("");
     StringBuilder values = new StringBuilder("");
     for (int i = 0; i < columns.size(); i++) {
-      if (queryfields.length()==0) {
+      if (queryfields.length() == 0) {
         queryfields.append(columns.get(i));
         values.append("?");
       }
@@ -183,6 +183,7 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   protected Statement setStatementParameters(PreparedStatement updateCommand, Object tuple) throws DriverException
   {
     if (getters.isEmpty()) {
@@ -192,21 +193,21 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
     int size = columnDataTypes.size();
     for (int i = 0; i < size; i++) {
       DataType type = columnDataTypes.get(i);
-       switch (type.getName()) {
+      switch (type.getName()) {
         case UUID:
-         UUID id = (UUID)(((GetterObject)getters.get(i)).get(tuple));
-         boundStmnt.setUUID(i, id);
+          UUID id = (UUID)(((GetterObject)getters.get(i)).get(tuple));
+          boundStmnt.setUUID(i, id);
           break;
         case ASCII:
-         String ascii= ((GetterString)getters.get(i)).get(tuple);
-         boundStmnt.setString(i, ascii);
+          String ascii = ((GetterString)getters.get(i)).get(tuple);
+          boundStmnt.setString(i, ascii);
           break;
         case VARCHAR:
-         String varchar = ((GetterString)getters.get(i)).get(tuple);
-         boundStmnt.setString(i, varchar);
+          String varchar = ((GetterString)getters.get(i)).get(tuple);
+          boundStmnt.setString(i, varchar);
           break;
         case TEXT:
-          String text= ((GetterString)getters.get(i)).get(tuple);
+          String text = ((GetterString)getters.get(i)).get(tuple);
           boundStmnt.setString(i, text);
           break;
         case BOOLEAN:
@@ -238,15 +239,15 @@ public class CassandraOutputOperator extends AbstractCassandraTransactionableOut
           boundStmnt.setDecimal(i, decimal);
           break;
         case SET:
-          Set set = (Set)((GetterObject)getters.get(i)).get(tuple);
+          @SuppressWarnings({"unchecked", "rawtypes"}) Set set = (Set)((GetterObject)getters.get(i)).get(tuple);
           boundStmnt.setSet(i, set);
           break;
         case MAP:
-          Map map = (Map)((GetterObject)getters.get(i)).get(tuple);
+          @SuppressWarnings({"unchecked", "rawtypes"}) Map map = (Map)((GetterObject)getters.get(i)).get(tuple);
           boundStmnt.setMap(i, map);
           break;
         case LIST:
-          List list = (List)((GetterObject)getters.get(i)).get(tuple);
+          @SuppressWarnings({"unchecked", "rawtypes"}) List list = (List)((GetterObject)getters.get(i)).get(tuple);
           boundStmnt.setList(i, list);
           break;
         case TIMESTAMP:

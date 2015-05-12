@@ -284,7 +284,8 @@ public class CassandraOperatorTest
     outputOperator.getEventsInStore();
   }
 
-  //@Test
+  //This Test needs to be improved.
+  @Test
   public void TestCassandraInputOperator()
   {
     CassandraStore store = new CassandraStore();
