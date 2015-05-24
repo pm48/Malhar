@@ -16,15 +16,14 @@
 package com.datatorrent.contrib.hive;
 
 import com.datatorrent.lib.util.PojoUtils;
+import com.datatorrent.lib.util.PojoUtils.Getter;
 import com.datatorrent.lib.util.PojoUtils.GetterBoolean;
 import com.datatorrent.lib.util.PojoUtils.GetterChar;
 import com.datatorrent.lib.util.PojoUtils.GetterDouble;
 import com.datatorrent.lib.util.PojoUtils.GetterFloat;
 import com.datatorrent.lib.util.PojoUtils.GetterInt;
 import com.datatorrent.lib.util.PojoUtils.GetterLong;
-import com.datatorrent.lib.util.PojoUtils.GetterObject;
 import com.datatorrent.lib.util.PojoUtils.GetterShort;
-import com.datatorrent.lib.util.PojoUtils.GetterString;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.sql.Date;
@@ -39,19 +38,19 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
   private ArrayList<String> hiveColumns;
   private ArrayList<FIELD_TYPE> hiveColumnsDataTypes;
   private transient ArrayList<Object> getters;
-  private ArrayList<String> expression;
+  private ArrayList<String> expressions;
 
   /*
    * A list of Java expressions in which each expression yields the specific table column value and partition column value in hive table from the input POJO.
    */
-  public ArrayList<String> getExpression()
+  public ArrayList<String> getExpressions()
   {
-    return expression;
+    return expressions;
   }
 
-  public void setExpression(ArrayList<String> expression)
+  public void setExpression(ArrayList<String> expressions)
   {
-    this.expression = expression;
+    this.expressions = expressions;
   }
 
   public FSRollingPOJOImplementation()
@@ -60,48 +59,49 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     getters = new ArrayList<Object>();
   }
 
-  private Object getGetter(Object tuple, int index, FIELD_TYPE type)
+  @SuppressWarnings("unchecked")
+  private Object getValue(Object tuple, int index, FIELD_TYPE type)
   {
-    Object getter;
+    Object value = null;
     switch (type) {
       case CHARACTER:
-        getter = ((GetterChar)getters.get(index)).get(tuple);
+        value = ((GetterChar<Object>)getters.get(index)).get(tuple);
+        System.out.println("character value is" + value);
         break;
       case STRING:
-        getter = ((GetterString)getters.get(index)).get(tuple);
+        value = ((Getter<Object, String>) getters.get(index)).get(tuple);
+        System.out.println("string value is" + value);
         break;
       case BOOLEAN:
-        getter = ((GetterBoolean)getters.get(index)).get(tuple);
+        value = ((GetterBoolean<Object>)getters.get(index)).get(tuple);
         break;
       case SHORT:
-        getter = ((GetterShort)getters.get(index)).get(tuple);
+        value = ((GetterShort<Object>)getters.get(index)).get(tuple);
         break;
       case INTEGER:
-        getter = ((GetterInt)getters.get(index)).get(tuple);
+        value = ((GetterInt<Object>)getters.get(index)).get(tuple);
+        System.out.println("integer value is" + value);
         break;
       case LONG:
-        getter = ((GetterLong)getters.get(index)).get(tuple);
+        value = ((GetterLong<Object>)getters.get(index)).get(tuple);
         break;
       case FLOAT:
-        getter = ((GetterFloat)getters.get(index)).get(tuple);
+        value = ((GetterFloat<Object>)getters.get(index)).get(tuple);
         break;
       case DOUBLE:
-        getter = ((GetterDouble)getters.get(index)).get(tuple);
+        value = ((GetterDouble<Object>)getters.get(index)).get(tuple);
         break;
       case DATE:
-        getter = (Date)((GetterObject)getters.get(index)).get(tuple);
+        value = ((Getter<Object,Date>)getters.get(index)).get(tuple);
         break;
       case TIMESTAMP:
-        getter = (Timestamp)((GetterObject)getters.get(index)).get(tuple);
+        value = ((Getter<Object,Timestamp>)getters.get(index)).get(tuple);
         break;
       case OTHER:
-        getter = (Timestamp)((GetterObject)getters.get(index)).get(tuple);
-        break;
-      default:
-        getter = ((GetterObject)getters.get(index)).get(tuple);
+        value = ((Getter<Object,Object>)getters.get(index)).get(tuple);
         break;
     }
-    return getter;
+    return value;
   }
 
   public enum FIELD_TYPE
@@ -158,11 +158,11 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     int sizeOfPartitionColumns = hivePartitionColumns.size();
     int size = sizeOfColumns + sizeOfPartitionColumns;
     ArrayList<String> hivePartitionColumnValues = new ArrayList<String>();
-    Object getter;
+    Object partitionColumnValue;
     for (int i = sizeOfColumns; i < size; i++) {
       FIELD_TYPE type = hiveColumnsDataTypes.get(i);
-      getter = getGetter(tuple, sizeOfColumns, type);
-      hivePartitionColumnValues.add(getter.toString());
+      partitionColumnValue = getValue(tuple, sizeOfColumns, type);
+      hivePartitionColumnValues.add(partitionColumnValue.toString());
     }
     return hivePartitionColumnValues;
   }
@@ -176,59 +176,54 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     super.processTuple(tuple);
   }
 
+  @SuppressWarnings("unchecked")
   public void processFirstTuple(Object tuple)
   {
     Class<?> fqcn = tuple.getClass();
     int size = hiveColumns.size() + hivePartitionColumns.size();
     for (int i = 0; i < size; i++) {
       FIELD_TYPE type = hiveColumnsDataTypes.get(i);
-      String getterExpression = expression.get(i);
-      if (type == FIELD_TYPE.CHARACTER) {
-        GetterChar getChar = PojoUtils.createGetterChar(fqcn, getterExpression);
-        getters.add(getChar);
-      }
-      else if (type == FIELD_TYPE.STRING) {
-        GetterString getString = PojoUtils.createGetterString(fqcn, getterExpression);
-        getters.add(getString);
-      }
-      else if (type == FIELD_TYPE.BOOLEAN) {
-        GetterBoolean getBoolean = PojoUtils.createGetterBoolean(fqcn, getterExpression);
-        getters.add(getBoolean);
-      }
-      else if (type == FIELD_TYPE.SHORT) {
-        GetterShort getShort = PojoUtils.createGetterShort(fqcn, getterExpression);
-        getters.add(getShort);
-      }
-      else if (type == FIELD_TYPE.INTEGER) {
-        GetterInt getInt = PojoUtils.createGetterInt(fqcn, getterExpression);
-        getters.add(getInt);
-      }
-      else if (type == FIELD_TYPE.LONG) {
-        GetterLong getLong = PojoUtils.createExpressionGetterLong(fqcn, getterExpression);
-        getters.add(getLong);
-      }
-      else if (type == FIELD_TYPE.FLOAT) {
-        GetterFloat getFloat = PojoUtils.createGetterFloat(fqcn, getterExpression);
-        getters.add(getFloat);
-      }
-      else if (type == FIELD_TYPE.DOUBLE) {
-        GetterDouble getDouble = PojoUtils.createGetterDouble(fqcn, getterExpression);
-        getters.add(getDouble);
-      }
-      else if (type == FIELD_TYPE.DATE) {
-        GetterObject getObject = PojoUtils.createGetterObject(fqcn, getterExpression);
-        getters.add(getObject);
-      }
-      else if (type == FIELD_TYPE.TIMESTAMP) {
-        GetterObject getObject = PojoUtils.createGetterObject(fqcn, getterExpression);
-        getters.add(getObject);
-      }
-      else if (type == FIELD_TYPE.OTHER) {
-        GetterObject getObject = PojoUtils.createGetterObject(fqcn, getterExpression);
-        getters.add(getObject);
+      final Object getter;
+      final String getterExpression = expressions.get(i);
+      switch (type) {
+        case CHARACTER:
+          getter = PojoUtils.createGetterChar(fqcn, getterExpression);
+          break;
+        case STRING:
+          getter = PojoUtils.createGetter(fqcn, getterExpression, String.class);
+          break;
+        case BOOLEAN:
+          getter = PojoUtils.createGetterBoolean(fqcn, getterExpression);
+          break;
+        case SHORT:
+          getter = PojoUtils.createGetterShort(fqcn, getterExpression);
+          break;
+        case INTEGER:
+          getter = PojoUtils.createGetterInt(fqcn, getterExpression);
+          break;
+        case LONG:
+          getter = PojoUtils.createGetterLong(fqcn, getterExpression);
+          break;
+        case FLOAT:
+          getter = PojoUtils.createGetterFloat(fqcn, getterExpression);
+          break;
+        case DOUBLE:
+          getter = PojoUtils.createGetterDouble(fqcn, getterExpression);
+          break;
+        case DATE:
+          getter = PojoUtils.createGetter(fqcn, getterExpression, Date.class);
+          break;
+        case TIMESTAMP:
+          getter = PojoUtils.createGetter(fqcn, getterExpression, Timestamp.class);
+          break;
+        default:
+          getter = PojoUtils.createGetter(fqcn, getterExpression, Object.class);
       }
 
+      getters.add(getter);
+
     }
+
   }
 
   @Override
@@ -236,11 +231,11 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
   {
     int size = hiveColumns.size();
     StringBuilder result = new StringBuilder();
-    Object getter;
+    Object value;
     for (int i = 0; i < size; i++) {
       FIELD_TYPE type = hiveColumnsDataTypes.get(i);
-      getter = getGetter(tuple, i, type);
-      result.append(getter).append("\n");
+      value = getValue(tuple, i, type);
+      result.append(value).append("\n");
     }
     return (result.toString()).getBytes();
   }

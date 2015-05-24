@@ -15,7 +15,7 @@
   <properties>
     <!-- skip tests by default as they depend on manual setup -->
     <skip.contrib.module.tests>false</skip.contrib.module.tests>
-    <skipTests>true</skipTests>
+    <skipTests>false</skipTests>
   </properties>
   <repositories>
     <repository>
@@ -597,13 +597,13 @@
       <version>4.10.1</version>
       <optional>true</optional>
     </dependency>
-    <dependency>
+    <!--dependency>
       <groupId>org.couchbase.mock</groupId>
       <artifactId>CouchbaseMock</artifactId>
       <version>0.8-SNAPSHOT</version>
       <scope>test</scope>
       <type>jar</type>
-    </dependency>
+    </dependency-->
       <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-plus</artifactId>
@@ -658,6 +658,12 @@
       <artifactId>jriengine</artifactId>
       <version>1.0</version>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-core</artifactId>
+      <version>1.9.10</version>
+      <type>jar</type>
     </dependency>
   </dependencies>
 </project>
