@@ -29,7 +29,9 @@ import java.util.ArrayList;
 import java.sql.Date;
 
 /*
- * An Implementation of AbstractFSRollingOutputOperator which takes any POJO as input.
+ * An Implementation of AbstractFSRollingOutputOperator which takes any POJO as input and
+ * writes text files to hdfs which are inserted
+ * into hive on committed window callback
  * @displayName: FSRollingPOJOImplementation
  */
 public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator<Object>

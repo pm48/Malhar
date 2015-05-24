@@ -15,7 +15,7 @@
  */
 package com.datatorrent.contrib.splunk;
 
-import com.splunk.*;
+import com.splunk.*; 
 
 import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
