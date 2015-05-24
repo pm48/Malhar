@@ -44,6 +44,7 @@ import com.datatorrent.common.util.DTThrowable;
  * goes to a specific operator partition by passing FSRollingOutputOperator to the stream codec.
  * Also filename is determined uniquely for each tuple going to a specific hive partition.
  *
+ * @param <T>
  * @since 2.1.0
  */
 public abstract class AbstractFSRollingOutputOperator<T> extends AbstractFileOutputOperator<T> implements CheckpointListener
