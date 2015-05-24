@@ -29,12 +29,11 @@ import java.util.ArrayList;
 import java.sql.Date;
 
 /*
- * An Implementation of AbstractFSRollingOutputOperator which takes any POJO as input and
- * writes text files to hdfs which are inserted
- * into hive on committed window callback
- * @displayName: FSRollingPOJOImplementation
+ * An Implementation of AbstractFSRollingOutputOperator which takes any POJO as input, serializes the POJO as Hive delimiter separated values.
+ * which are written in text files to hdfs. This operator can handle outputting to multiple files when the output file depends on the tuple.
+ * @displayName: FSPojoToHiveOperator
  */
-public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator<Object>
+public class FSPojoToHiveOperator extends AbstractFSRollingOutputOperator<Object>
 {
   private ArrayList<String> hivePartitionColumns;
   private ArrayList<String> hiveColumns;
@@ -55,7 +54,7 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     this.expressions = expressions;
   }
 
-  public FSRollingPOJOImplementation()
+  public FSPojoToHiveOperator()
   {
     super();
     getters = new ArrayList<Object>();
@@ -68,11 +67,9 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
     switch (type) {
       case CHARACTER:
         value = ((GetterChar<Object>)getters.get(index)).get(tuple);
-        System.out.println("character value is" + value);
         break;
       case STRING:
         value = ((Getter<Object, String>) getters.get(index)).get(tuple);
-        System.out.println("string value is" + value);
         break;
       case BOOLEAN:
         value = ((GetterBoolean<Object>)getters.get(index)).get(tuple);
@@ -82,7 +79,6 @@ public class FSRollingPOJOImplementation extends AbstractFSRollingOutputOperator
         break;
       case INTEGER:
         value = ((GetterInt<Object>)getters.get(index)).get(tuple);
-        System.out.println("integer value is" + value);
         break;
       case LONG:
         value = ((GetterLong<Object>)getters.get(index)).get(tuple);
