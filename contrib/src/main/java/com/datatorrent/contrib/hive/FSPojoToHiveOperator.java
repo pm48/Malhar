@@ -29,8 +29,8 @@ import java.util.ArrayList;
 import java.sql.Date;
 
 /*
- * An Implementation of AbstractFSRollingOutputOperator which takes any POJO as input, serializes the POJO as Hive delimiter separated values.
- * which are written in text files to hdfs. This operator can handle outputting to multiple files when the output file depends on the tuple.
+ * An Implementation of AbstractFSRollingOutputOperator which takes any POJO as input, serializes the POJO as Hive delimiter separated values
+ * which are written in text files to hdfs, and are inserted into hive on committed window callback.This operator can handle outputting to multiple files when the output file depends on the tuple.
  * @displayName: FSPojoToHiveOperator
  */
 public class FSPojoToHiveOperator extends AbstractFSRollingOutputOperator<Object>
