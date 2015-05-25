@@ -24,6 +24,10 @@ import javax.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/*
+ * An implementation of Couchbase Output Operator which takes a POJO,serializes it into key,value
+ * pair and then writes to couchbase.
+ */
 public class CouchbaseOutputOperator extends AbstractCouchBaseSetOperator<Object>
 {
   private static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
