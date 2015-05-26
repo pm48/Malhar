@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  * An implementation of Couchbase Output Operator which takes a POJO,serializes it into key,value
  * pair and then writes to couchbase.
  */
-public class CouchbaseOutputOperator extends AbstractCouchBaseSetOperator<Object>
+public class CouchbasePOJOOutputOperator extends AbstractCouchBaseSetOperator<Object>
 {
   private static final Logger logger = LoggerFactory.getLogger(CouchBaseStore.class);
   //Key stored in couchbase is always a string.
