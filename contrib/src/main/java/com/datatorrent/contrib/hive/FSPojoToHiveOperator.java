@@ -98,6 +98,8 @@ public class FSPojoToHiveOperator extends AbstractFSRollingOutputOperator<Object
       case OTHER:
         value = ((Getter<Object,Object>)getters.get(index)).get(tuple);
         break;
+      default:
+        throw new RuntimeException("unsupported data type " + type);
     }
     return value;
   }
