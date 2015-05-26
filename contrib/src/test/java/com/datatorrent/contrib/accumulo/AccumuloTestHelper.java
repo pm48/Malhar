@@ -40,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datatorrent.common.util.DTThrowable;
+import org.apache.accumulo.core.client.mock.MockInstance;
 
 
 public class AccumuloTestHelper {
@@ -114,12 +115,14 @@ public class AccumuloTestHelper {
   }
 
   public static AccumuloTuple findTuple(List<AccumuloTuple> tuples,
-      String row, String colFamily, String colName) {
+      String row, String colFamily,String colQualifier,Long timestamp,String colVisibility) {
     AccumuloTuple mtuple = null;
     for (AccumuloTuple tuple : tuples) {
       if (tuple.getRow().equals(row)
-          && tuple.getColFamily().equals(colFamily)
-          && tuple.getColName().equals(colName)) {
+          && tuple.getColumnFamily().equals(colFamily)
+          && tuple.getColumnQualifier().equals(colQualifier)
+          && tuple.getColumnVisibility().equals(colVisibility)
+          && tuple.getTimestamp()==(timestamp)) {
         mtuple = tuple;
         break;
       }
@@ -148,9 +151,12 @@ public class AccumuloTestHelper {
   }
 
   public static void getConnector() {
+    //MockInstance instance = new MockInstance();
     Instance instance = new ZooKeeperInstance("instance", "127.0.0.1");
     try {
-      con = instance.getConnector("root", "pass");
+       logger.debug("connecting..");
+       con=instance.getConnector("root","".getBytes());
+       logger.debug("connection done..");
     } catch (AccumuloException e) {
       logger.error("error in test helper");
       DTThrowable.rethrow(e);
@@ -179,9 +185,9 @@ public class AccumuloTestHelper {
     for (Entry<Key, Value> entry : scan) {
       AccumuloTuple tuple = new AccumuloTuple();
       tuple.setRow(entry.getKey().getRow().toString());
-      tuple.setColFamily(entry.getKey().getColumnFamily().toString());
-      tuple.setColName(entry.getKey().getColumnQualifier().toString());
-      tuple.setColValue(entry.getValue().toString());
+      tuple.setColumnFamily(entry.getKey().getColumnFamily().toString());
+      tuple.setColumnQualifier(entry.getKey().getColumnQualifier().toString());
+      tuple.setColumnValue(entry.getValue().toString());
       return tuple;
     }
     return null;

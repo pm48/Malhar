@@ -16,7 +16,6 @@
 package com.datatorrent.contrib.accumulo;
 
 
-import org.apache.accumulo.core.data.Mutation;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -25,24 +24,65 @@ import org.slf4j.LoggerFactory;
 import com.datatorrent.api.Attribute;
 import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.Context.OperatorContext;
+import com.datatorrent.api.DAG;
+import com.datatorrent.common.util.DTThrowable;
+import com.datatorrent.lib.helper.OperatorContextTestHelper;
+import java.util.ArrayList;
+import org.apache.accumulo.core.client.*;
 
 public class AccumuloOutputOperatorTest {
+  private static String APP_ID = "AccumuloOutputOperatorTest";
+  private static int OPERATOR_ID = 0;
+
   private static final Logger logger = LoggerFactory
       .getLogger(AccumuloOutputOperatorTest.class);
 
   @Test
   public void testPut() throws Exception {
 
-    AccumuloTestHelper.getConnector();
-    AccumuloTestHelper.clearTable();
-    TestAccumuloOutputOperator atleastOper = new TestAccumuloOutputOperator();
+    //MockInstance instance = new MockInstance();
+    Connector con = null;
+    Instance instance = new ZooKeeperInstance("accumulo", "localhost");
+    try {
+       logger.debug("connecting..");
+       con=instance.getConnector("root","");
+       con.tableOperations().create("tabs");
 
-    atleastOper.getStore().setTableName("tab1");
-    atleastOper.getStore().setZookeeperHost("127.0.0.1");
-    atleastOper.getStore().setInstanceName("instance");
+       logger.debug("connection done..");
+    } catch (AccumuloException e) {
+      logger.error("error in test helper");
+      DTThrowable.rethrow(e);
+    } catch (AccumuloSecurityException e) {
+      logger.error("error in test helper");
+      DTThrowable.rethrow(e);
+    }
+    //AccumuloTestHelper.clearTable();
+    AccumuloPOJOOutputOperator atleastOper = new AccumuloPOJOOutputOperator();
+
+    atleastOper.getStore().setTableName("tabs");
+    atleastOper.getStore().setZookeeperHost("node28.morado.com");
+    atleastOper.getStore().setInstanceName("accumulo");
     atleastOper.getStore().setUserName("root");
-    atleastOper.getStore().setPassword("pass");
+    atleastOper.getStore().setPassword("root");
+    ArrayList<String> expressions = new ArrayList<String>();
+    expressions.add("getRow()");
+    expressions.add("getColumnFamily()");
+    expressions.add("getColumnQualifier()");
+    expressions.add("getColumnVisibility()");
+    expressions.add("getColumnValue()");
+    expressions.add("getTimestamp()");
+    atleastOper.setExpressions(expressions);
+    ArrayList<String> dataTypes = new ArrayList<String>();
+    dataTypes.add("string");
+    dataTypes.add("string");
+    dataTypes.add("string");
+    dataTypes.add("string");
+    dataTypes.add("string");
+    dataTypes.add("long");
 
+    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
+    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
+    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
     atleastOper.setup(new OperatorContext() {
 
       @Override
@@ -69,30 +109,26 @@ public class AccumuloOutputOperatorTest {
     });
     atleastOper.beginWindow(0);
     AccumuloTuple a=new AccumuloTuple();
-    a.setRow("john");a.setColFamily("colfam0");a.setColName("street");a.setColValue("patrick");
+    a.setRow("E001");
+    a.setColumnFamily("name");
+    a.setColumnQualifier("bob");
+    a.setColumnValue("0");
+    a.setColumnVisibility("public");
+    a.setTimestamp(System.currentTimeMillis());
     atleastOper.input.process(a);
     atleastOper.endWindow();
     AccumuloTuple tuple;
 
     tuple = AccumuloTestHelper
-        .getAccumuloTuple("john", "colfam0", "street");
+        .getAccumuloTuple("E001", "name", "bob");
 
     Assert.assertNotNull("Tuple", tuple);
-    Assert.assertEquals("Tuple row", tuple.getRow(), "john");
-    Assert.assertEquals("Tuple column family", tuple.getColFamily(),"colfam0");
-    Assert.assertEquals("Tuple column name", tuple.getColName(),"street");
-    Assert.assertEquals("Tuple column value", tuple.getColValue(), "patrick");
-
-  }
-  public static class TestAccumuloOutputOperator extends AbstractAccumuloOutputOperator<AccumuloTuple> {
-
-    @Override
-    public Mutation operationMutation(AccumuloTuple t) {
-      Mutation mutation = new Mutation(t.getRow().getBytes());
-      mutation.put(t.getColFamily().getBytes(),t.getColName().getBytes(),t.getColValue().getBytes());
-      return mutation;
-    }
+    Assert.assertEquals("Tuple row", "E001", tuple.getRow());
+    Assert.assertEquals("Tuple column family","name", tuple.getColumnFamily());
+    Assert.assertEquals("Tuple column qualifier","bob", tuple.getColumnQualifier());
+    Assert.assertEquals("Tuple column value", "0", tuple.getColumnValue());
 
   }
 
 }
+
