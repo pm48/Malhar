@@ -42,7 +42,7 @@ public class AccumuloOutputOperatorTest {
 
     //MockInstance instance = new MockInstance();
     Connector con = null;
-    Instance instance = new ZooKeeperInstance("accumulo", "node28.morado.com");
+    Instance instance = new ZooKeeperInstance("accumulo", "localhost");
     try {
        logger.debug("connecting..");
        con=instance.getConnector("root","");
@@ -57,7 +57,7 @@ public class AccumuloOutputOperatorTest {
       DTThrowable.rethrow(e);
     }
     //AccumuloTestHelper.clearTable();
-    AccumuloOutputOperator atleastOper = new AccumuloOutputOperator();
+    AccumuloPOJOOutputOperator atleastOper = new AccumuloPOJOOutputOperator();
 
     atleastOper.getStore().setTableName("tabs");
     atleastOper.getStore().setZookeeperHost("node28.morado.com");

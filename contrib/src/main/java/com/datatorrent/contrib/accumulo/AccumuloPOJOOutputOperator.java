@@ -30,7 +30,7 @@ import org.apache.hadoop.io.Text;
  * An implementation of AbstractAccumuloOutputOperator which gets data types of key columns and value column
  * from user and creates a mutation to be stored in Accumulo table accordingly.
  */
-public class AccumuloOutputOperator extends AbstractAccumuloOutputOperator<Object>
+public class AccumuloPOJOOutputOperator extends AbstractAccumuloOutputOperator<Object>
 {
   @NotNull
   private ArrayList<String> expressions;
