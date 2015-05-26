@@ -33,7 +33,7 @@ import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.DAG;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.datatorrent.contrib.couchbase.CouchbaseOutputOperator.FIELD_TYPE;
+import com.datatorrent.contrib.couchbase.CouchbasePOJOOutputOperator.FIELD_TYPE;
 
 public class CouchBaseOutputOperatorTest
 {
@@ -141,7 +141,7 @@ public class CouchBaseOutputOperatorTest
 
   }
 
-  private static class CouchbaseOutputTestOperator extends CouchbaseOutputOperator
+  private static class CouchbaseOutputTestOperator extends CouchbasePOJOOutputOperator
   {
     public int getNumOfEventsInStore()
     {
