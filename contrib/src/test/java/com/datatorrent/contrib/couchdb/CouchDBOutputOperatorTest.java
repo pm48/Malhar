@@ -69,6 +69,73 @@ public class CouchDBOutputOperatorTest
     Assert.assertEquals("output-type", "map", docNode.get("output-type").getTextValue());
   }
 
+  @Test
+  public void testCouchDBPOJOOutputOperator()
+  {
+    String testDocumentId = "TestDocument";
+    TestPOJO tuple = new TestPOJO();
+    tuple.setId(testDocumentId);
+    tuple.setName("TD");
+    tuple.setType("test");
+    CouchDbPOJOOutputOperator dbOutputOper = new CouchDbPOJOOutputOperator();
+    CouchDbStore store = new CouchDbStore();
+    store.setDbName(CouchDBTestHelper.TEST_DB);
+    dbOutputOper.setStore(store);
+
+    dbOutputOper.setup(new OperatorContextTestHelper.TestIdOperatorContext(1));
+    dbOutputOper.beginWindow(0);
+    dbOutputOper.input.process(tuple);
+    dbOutputOper.endWindow();
+
+    //Test if the document was persisted
+    JsonNode docNode = CouchDBTestHelper.fetchDocument(testDocumentId);
+    Assert.assertNotNull("Document saved", docNode);
+
+    Assert.assertEquals("name of document", "TD", docNode.get("name").getTextValue());
+    Assert.assertEquals("type of document", "test", docNode.get("type").getTextValue());
+    Assert.assertEquals("output-type", "map", docNode.get("output-type").getTextValue());
+
+  }
+
+  private class TestPOJO
+  {
+    String _id;
+
+    public String getId()
+    {
+      return _id;
+    }
+
+    public void setId(String _id)
+    {
+      this._id = _id;
+    }
+
+    public String getName()
+    {
+      return name;
+    }
+
+    public void setName(String name)
+    {
+      this.name = name;
+    }
+
+    public String getType()
+    {
+      return type;
+    }
+
+    public void setType(String type)
+    {
+      this.type = type;
+    }
+
+    String name;
+    String type;
+
+  }
+
   @BeforeClass
   public static void setup()
   {
@@ -80,4 +147,5 @@ public class CouchDBOutputOperatorTest
   {
     CouchDBTestHelper.teardown();
   }
+
 }
