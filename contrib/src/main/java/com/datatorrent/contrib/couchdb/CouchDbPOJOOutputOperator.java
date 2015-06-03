@@ -20,23 +20,24 @@ import com.datatorrent.lib.util.PojoUtils.Getter;
 
 public class CouchDbPOJOOutputOperator extends AbstractCouchDBOutputOperator<Object>
 {
-  private Getter<Object, String> getterString;
-  private String getterExpr;
+  private transient Getter<Object, String> getterString;
+  private String expressionForDocId;
 
-  public String getGetterExpr()
+  public String getExpressionForDocId()
   {
-    return getterExpr;
+    return expressionForDocId;
   }
 
-  public void setGetterExpr(String getterExpr)
+  public void setExpressionForDocId(String expressionForDocId)
   {
-    this.getterExpr = getterExpr;
+    this.expressionForDocId = expressionForDocId;
   }
+
 
   @Override
   public String getDocumentId(Object tuple)
   {
-    getterString = PojoUtils.createGetter(tuple.getClass(), getterExpr, String.class);
+    getterString = PojoUtils.createGetter(tuple.getClass(), expressionForDocId, String.class);
     String docId = getterString.get(tuple);
     return docId;
   }
