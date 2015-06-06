@@ -37,8 +37,10 @@ public class CouchDbPOJOOutputOperator extends AbstractCouchDBOutputOperator<Obj
   @Override
   public String getDocumentId(Object tuple)
   {
+    System.out.println("in get doc id");
     getterString = PojoUtils.createGetter(tuple.getClass(), expressionForDocId, String.class);
     String docId = getterString.get(tuple);
+    System.out.println("doc id is "+docId);
     return docId;
   }
 

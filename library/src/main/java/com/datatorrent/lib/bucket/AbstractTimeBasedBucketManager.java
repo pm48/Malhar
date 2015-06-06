@@ -232,6 +232,7 @@ public abstract class AbstractTimeBasedBucketManager<T> extends AbstractBucketMa
   @Override
   public AbstractTimeBasedBucketManager<T> clone() throws CloneNotSupportedException
   {
+    @SuppressWarnings("unchecked")
     AbstractTimeBasedBucketManager<T> clone = (AbstractTimeBasedBucketManager<T>)super.clone();
     clone.maxTimesPerBuckets = maxTimesPerBuckets.clone();
     return clone;

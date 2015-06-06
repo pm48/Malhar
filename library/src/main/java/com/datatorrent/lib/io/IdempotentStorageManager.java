@@ -97,7 +97,7 @@ public interface IdempotentStorageManager extends StorageAgent, Component<Contex
    */
   public static class FSIdempotentStorageManager implements IdempotentStorageManager
   {
-    private static final String DEF_RECOVERY_PATH = "idempotentState";
+    private static final String DEF_RECOVERY_PATH = "recovery";
 
     protected transient FSStorageAgent storageAgent;
 
