@@ -18,9 +18,20 @@ package com.datatorrent.contrib.couchdb;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Getter;
 
+/**
+ * Implementation of {@link AbstractCouchDBOutputOperator} that saves a POJO in the couch database. <br/>
+ * <p>
+ * @displayName POJO Based CouchDb Output Operator
+ * @category Database
+ * @tags output operator
+ * @since 0.3.5
+ */
 public class CouchDbPOJOOutputOperator extends AbstractCouchDBOutputOperator<Object>
 {
   private transient Getter<Object, String> getterString;
+  /*
+   * An Expression to extract value of document Id from input POJO.
+   */
   private String expressionForDocId;
 
   public String getExpressionForDocId()
@@ -37,10 +48,8 @@ public class CouchDbPOJOOutputOperator extends AbstractCouchDBOutputOperator<Obj
   @Override
   public String getDocumentId(Object tuple)
   {
-    System.out.println("in get doc id");
     getterString = PojoUtils.createGetter(tuple.getClass(), expressionForDocId, String.class);
     String docId = getterString.get(tuple);
-    System.out.println("doc id is "+docId);
     return docId;
   }
 

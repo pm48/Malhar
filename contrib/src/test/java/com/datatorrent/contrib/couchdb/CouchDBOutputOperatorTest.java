@@ -27,7 +27,6 @@ import org.junit.Test;
 import com.google.common.collect.Maps;
 
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
-import java.util.ArrayList;
 
 /**
  * Test for {@link MapBasedCouchDbOutputOperator}
@@ -89,7 +88,6 @@ public class CouchDBOutputOperatorTest
     dbOutputOper.input.process(tuple);
     dbOutputOper.endWindow();
 
-
     dbOutputOper.beginWindow(1);
     dbOutputOper.input.process(tuple);
     dbOutputOper.endWindow();
@@ -134,8 +132,6 @@ public class CouchDBOutputOperatorTest
 
     }
 
-
-
     public String getName()
     {
       return name;
@@ -172,5 +168,4 @@ public class CouchDBOutputOperatorTest
   {
     CouchDBTestHelper.teardown();
   }
-
 }
