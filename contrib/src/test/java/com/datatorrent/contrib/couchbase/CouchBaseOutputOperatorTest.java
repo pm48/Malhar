@@ -16,19 +16,18 @@
 package com.datatorrent.contrib.couchbase;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.python.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
-
 
 import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.DAG;
@@ -47,10 +46,11 @@ public class CouchBaseOutputOperatorTest
   protected static ArrayList<String> keyList;
   private static String uri = "127.0.0.1:8091";
 
-  public static class TestEvent implements Serializable
+  public static class TestEvent
   {
 
     String key;
+    Integer value;
 
     public String getKey()
     {
@@ -71,16 +71,17 @@ public class CouchBaseOutputOperatorTest
     {
       this.value = value;
     }
-    Integer value;
 
-    TestEvent(){
+
+    TestEvent()
+    {
 
     }
 
     TestEvent(String key, int val)
     {
       this.key = key;
-      this.value = new Integer(value);
+      this.value = val;
     }
 
   }
@@ -104,7 +105,7 @@ public class CouchBaseOutputOperatorTest
     }
     store.getInstance().flush();
     store.getMetaInstance().flush();
-    CouchBaseOutputOperator outputOperator = new CouchBaseOutputOperator();
+    CouchbaseSetTestOperator outputOperator = new CouchbaseSetTestOperator();
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
@@ -112,6 +113,11 @@ public class CouchBaseOutputOperatorTest
     outputOperator.setStore(store);
 
     outputOperator.setup(context);
+    ArrayList<String> expressions = new ArrayList<String>();
+    expressions.add("getKey()");
+    expressions.add("getValue()");
+    outputOperator.setExpressions(expressions);
+    outputOperator.setValueType(CouchbasePOJOSetOperator.FieldType.NUMBER);
     CouchBaseJSONSerializer serializer = new CouchBaseJSONSerializer();
     outputOperator.setSerializer(serializer);
     List<TestEvent> events = Lists.newArrayList();
@@ -122,47 +128,25 @@ public class CouchBaseOutputOperatorTest
 
     logger.info("keylist is " + keyList.toString());
     outputOperator.beginWindow(0);
-    logger.info("after begin window");
     for (TestEvent event: events) {
-      logger.info("before process window");
-      //outputOperator.getKey(event);
-      //outputOperator.getValue(event);
       outputOperator.input.process(event);
-      logger.info("after process window");
     }
-    logger.info("before endwindow");
     outputOperator.endWindow();
-    logger.info("after endwindow");
     Map<String, Object> keyValues = store.getInstance().getBulk(keyList);
     logger.info("keyValues is" + keyValues.toString());
     logger.info("size is " + keyValues.size());
-    int k = outputOperator.getNumOfEventsInStore();
     Assert.assertEquals("rows in couchbase", 1000, keyValues.size());
 
   }
 
-  private static class CouchBaseOutputOperator extends AbstractCouchBaseSetOperator<TestEvent>
+  private static class CouchbaseSetTestOperator extends CouchbasePOJOSetOperator
   {
-
     public int getNumOfEventsInStore()
     {
       Map<String, Object> keyValues = store.client.getBulk(keyList);
       logger.info("keyValues is" + keyValues.toString());
       logger.info("size is " + keyValues.size());
       return keyValues.size();
-    }
-
-    @Override
-    public String getKey(TestEvent tuple)
-    {
-      return tuple.key;
-    }
-
-    @Override
-    public Object getValue(TestEvent tuple)
-    {
-      //tuple.value = 20;
-      return tuple.value;
     }
 
   }
