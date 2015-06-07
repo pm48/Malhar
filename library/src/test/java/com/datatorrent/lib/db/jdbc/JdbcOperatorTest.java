@@ -16,6 +16,7 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.common.util.DTThrowable;
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import com.datatorrent.lib.testbench.CollectorTestSink;
+import java.util.ArrayList;
 
 /**
  * Tests for {@link AbstractJdbcTransactionableOutputOperator} and {@link AbstractJdbcInputOperator}
@@ -26,6 +27,7 @@ public class JdbcOperatorTest
   public static final String URL = "jdbc:hsqldb:mem:test;sql.syntax_mys=true";
 
   private static final String TABLE_NAME = "test_event_table";
+  private static final String TABLE_POJO_NAME = "test_pojo_event_table";
   private static String APP_ID = "JdbcOperatorTest";
   private static int OPERATOR_ID = 0;
 
@@ -37,6 +39,45 @@ public class JdbcOperatorTest
     {
       this.id = id;
     }
+
+  }
+
+  public static class TestPOJOEvent
+  {
+    private int id;
+
+    public int getId()
+    {
+      return id;
+    }
+
+    public void setId(int id)
+    {
+      this.id = id;
+    }
+
+    public String getName()
+    {
+      return name;
+    }
+
+    public void setName(String name)
+    {
+      this.name = name;
+    }
+
+    private String name;
+
+    public TestPOJOEvent()
+    {
+    }
+
+    public TestPOJOEvent(int id, String name)
+    {
+      this.id = id;
+      this.name = name;
+    }
+
   }
 
   @BeforeClass
@@ -48,16 +89,19 @@ public class JdbcOperatorTest
       Connection con = DriverManager.getConnection(URL);
       Statement stmt = con.createStatement();
 
-      String createMetaTable = "CREATE TABLE IF NOT EXISTS " + JdbcTransactionalStore.DEFAULT_META_TABLE + " ( " +
-        JdbcTransactionalStore.DEFAULT_APP_ID_COL + " VARCHAR(100) NOT NULL, " +
-        JdbcTransactionalStore.DEFAULT_OPERATOR_ID_COL + " INT NOT NULL, " +
-        JdbcTransactionalStore.DEFAULT_WINDOW_COL + " BIGINT NOT NULL, " +
-        "UNIQUE (" + JdbcTransactionalStore.DEFAULT_APP_ID_COL + ", " + JdbcTransactionalStore.DEFAULT_OPERATOR_ID_COL + ", " + JdbcTransactionalStore.DEFAULT_WINDOW_COL + ") " +
-        ")";
+      String createMetaTable = "CREATE TABLE IF NOT EXISTS " + JdbcTransactionalStore.DEFAULT_META_TABLE + " ( "
+              + JdbcTransactionalStore.DEFAULT_APP_ID_COL + " VARCHAR(100) NOT NULL, "
+              + JdbcTransactionalStore.DEFAULT_OPERATOR_ID_COL + " INT NOT NULL, "
+              + JdbcTransactionalStore.DEFAULT_WINDOW_COL + " BIGINT NOT NULL, "
+              + "UNIQUE (" + JdbcTransactionalStore.DEFAULT_APP_ID_COL + ", " + JdbcTransactionalStore.DEFAULT_OPERATOR_ID_COL + ", " + JdbcTransactionalStore.DEFAULT_WINDOW_COL + ") "
+              + ")";
       stmt.executeUpdate(createMetaTable);
 
       String createTable = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (ID INTEGER)";
       stmt.executeUpdate(createTable);
+      String createPOJOTable = "CREATE TABLE IF NOT EXISTS " + TABLE_POJO_NAME + "(id INTEGER not NULL,name VARCHAR(255), PRIMARY KEY ( id ))";
+      stmt.executeUpdate(createPOJOTable);
+
     }
     catch (Throwable e) {
       DTThrowable.rethrow(e);
@@ -119,6 +163,29 @@ public class JdbcOperatorTest
         throw new RuntimeException("fetching count", e);
       }
     }
+
+  }
+
+  private static class TestPOJOOutputOperator extends JdbcPOJOOutputOperator
+  {
+
+    public int getNumOfEventsInStore()
+    {
+      Connection con;
+      try {
+        con = DriverManager.getConnection(URL);
+        Statement stmt = con.createStatement();
+
+        String countQuery = "SELECT count(*) from " + TABLE_POJO_NAME;
+        ResultSet resultSet = stmt.executeQuery(countQuery);
+        resultSet.next();
+        return resultSet.getInt(1);
+      }
+      catch (SQLException e) {
+        throw new RuntimeException("fetching count", e);
+      }
+    }
+
   }
 
   private static class TestInputOperator extends AbstractJdbcInputOperator<TestEvent>
@@ -164,6 +231,7 @@ public class JdbcOperatorTest
         throw new RuntimeException(e);
       }
     }
+
   }
 
   @Test
@@ -189,7 +257,47 @@ public class JdbcOperatorTest
     }
 
     outputOperator.beginWindow(0);
-    for (TestEvent event : events) {
+    for (TestEvent event: events) {
+      outputOperator.input.process(event);
+    }
+    outputOperator.endWindow();
+
+    Assert.assertEquals("rows in db", 10, outputOperator.getNumOfEventsInStore());
+  }
+
+  @Test
+  public void testJdbcPOJOOutputOperator()
+  {
+    JdbcTransactionalStore transactionalStore = new JdbcTransactionalStore();
+    transactionalStore.setDatabaseDriver(DB_DRIVER);
+    transactionalStore.setDatabaseUrl(URL);
+
+    com.datatorrent.api.Attribute.AttributeMap.DefaultAttributeMap attributeMap = new com.datatorrent.api.Attribute.AttributeMap.DefaultAttributeMap();
+    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
+    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
+
+    TestPOJOOutputOperator outputOperator = new TestPOJOOutputOperator();
+    outputOperator.setBatchSize(3);
+    outputOperator.setTablename(TABLE_POJO_NAME);
+    ArrayList<String> dataColumns = new ArrayList<String>();
+    dataColumns.add("id");
+    dataColumns.add("name");
+    outputOperator.setDataColumns(dataColumns);
+    outputOperator.setStore(transactionalStore);
+    ArrayList<String> expressions = new ArrayList<String>();
+    expressions.add("getId()");
+    expressions.add("getName()");
+    outputOperator.setExpressions(expressions);
+
+    outputOperator.setup(context);
+
+    List<TestPOJOEvent> events = Lists.newArrayList();
+    for (int i = 0; i < 10; i++) {
+      events.add(new TestPOJOEvent(i, "test" + i));
+    }
+
+    outputOperator.beginWindow(0);
+    for (TestPOJOEvent event: events) {
       outputOperator.input.process(event);
     }
     outputOperator.endWindow();
@@ -222,5 +330,5 @@ public class JdbcOperatorTest
 
     Assert.assertEquals("rows from db", 10, sink.collectedTuples.size());
   }
-}
 
+}
