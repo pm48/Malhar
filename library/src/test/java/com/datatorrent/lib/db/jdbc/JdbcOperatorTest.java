@@ -39,7 +39,6 @@ public class JdbcOperatorTest
     {
       this.id = id;
     }
-
   }
 
   public static class TestPOJOEvent
@@ -101,7 +100,6 @@ public class JdbcOperatorTest
       stmt.executeUpdate(createTable);
       String createPOJOTable = "CREATE TABLE IF NOT EXISTS " + TABLE_POJO_NAME + "(id INTEGER not NULL,name VARCHAR(255), PRIMARY KEY ( id ))";
       stmt.executeUpdate(createPOJOTable);
-
     }
     catch (Throwable e) {
       DTThrowable.rethrow(e);
@@ -163,7 +161,6 @@ public class JdbcOperatorTest
         throw new RuntimeException("fetching count", e);
       }
     }
-
   }
 
   private static class TestPOJOOutputOperator extends JdbcPOJOOutputOperator
@@ -231,7 +228,6 @@ public class JdbcOperatorTest
         throw new RuntimeException(e);
       }
     }
-
   }
 
   @Test
@@ -257,12 +253,13 @@ public class JdbcOperatorTest
     }
 
     outputOperator.beginWindow(0);
-    for (TestEvent event: events) {
+    for (TestEvent event : events) {
       outputOperator.input.process(event);
     }
     outputOperator.endWindow();
 
     Assert.assertEquals("rows in db", 10, outputOperator.getNumOfEventsInStore());
+    cleanTable();
   }
 
   @Test
@@ -330,5 +327,5 @@ public class JdbcOperatorTest
 
     Assert.assertEquals("rows from db", 10, sink.collectedTuples.size());
   }
-
 }
+
