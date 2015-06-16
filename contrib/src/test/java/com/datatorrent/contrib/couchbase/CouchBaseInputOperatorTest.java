@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2015 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,16 +25,13 @@ import com.couchbase.client.CouchbaseConnectionFactory;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
 import com.google.common.collect.Lists;
 
-import org.couchbase.mock.Bucket;
 import org.couchbase.mock.Bucket.BucketType;
 import org.couchbase.mock.BucketConfiguration;
 import org.couchbase.mock.CouchbaseMock;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.junit.Assert.assertEquals;
 
 import com.datatorrent.lib.helper.OperatorContextTestHelper;
 import com.datatorrent.lib.partitioner.StatelessPartitionerTest.PartitioningContextImpl;
@@ -45,20 +42,20 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.Partitioner.Partition;
 
 import com.datatorrent.common.util.DTThrowable;
+import com.datatorrent.contrib.couchbase.TestPojoInput.Address;
+import org.junit.BeforeClass;
 
 public class CouchBaseInputOperatorTest
 {
   private static final Logger logger = LoggerFactory.getLogger(CouchBaseInputOperatorTest.class);
-  private static String APP_ID = "CouchBaseInputOperatorTest";
-  private static String bucket = "default";
-  private static String password = "";
-  private static int OPERATOR_ID = 0;
+  private static final String APP_ID = "CouchBaseInputOperatorTest";
+  private static final String password = "";
+  private static final int OPERATOR_ID = 0;
   protected static ArrayList<String> keyList;
   private TestInputOperator inputOperator = null;
   protected static CouchbaseClient client = null;
-  private int numNodes = 2;
-  private int numVBuckets = 8;
-  private int numReplicas = 3;
+  private final int numNodes = 2;
+  private final int numReplicas = 3;
 
   protected CouchbaseConnectionFactory connectionFactory;
 
@@ -106,7 +103,6 @@ public class CouchBaseInputOperatorTest
     // couchbaseBucket.getCouchServers();
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
-    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
@@ -147,14 +143,112 @@ public class CouchBaseInputOperatorTest
     for (AbstractCouchBaseInputOperator<String> o: opers){
      o.teardown();
     }
-    if (mockCouchbase1 != null) {
+
       mockCouchbase1.stop();
-      mockCouchbase1 = null;
-    }
-    if (mockCouchbase2 != null) {
+
       mockCouchbase2.stop();
-      mockCouchbase2 = null;
+
+  }
+
+  @Test
+  public void TestPOJO() throws InterruptedException, Exception
+  {
+
+    BucketConfiguration bucketConfiguration = new BucketConfiguration();
+    CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
+    CouchbaseMock mockCouchbase1 = createMock("default", "",bucketConfiguration);
+    CouchbaseMock mockCouchbase2 = createMock("default", "",bucketConfiguration);
+    mockCouchbase1.start();
+    mockCouchbase1.waitForStartup();
+    mockCouchbase2.start();
+    mockCouchbase2.waitForStartup();
+    int port2 = mockCouchbase2.getHttpPort();
+    logger.debug("port is {}", port2);
+    List<URI> uriList = new ArrayList<URI>();
+    int port1 = mockCouchbase1.getHttpPort();
+    logger.debug("port is {}", port1);
+    uriList.add(new URI("http", null, "localhost", port1, "/pools", "", ""));
+    connectionFactory = cfb.buildCouchbaseConnection(uriList, bucketConfiguration.name, bucketConfiguration.password);
+    client = new CouchbaseClient(connectionFactory);
+
+    CouchBaseStore store = new CouchBaseStore();
+    keyList = new ArrayList<String>();
+    store.setBucket(bucketConfiguration.name);
+    store.setPasswordConfig(password);
+    store.setPassword(bucketConfiguration.password);
+    store.setUriString("localhost:" + port1);
+
+    // couchbaseBucket.getCouchServers();
+    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
+    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
+    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
+
+    TestInputPOJOOperator inputPOJOOperator = new TestInputPOJOOperator();
+    inputPOJOOperator.setStore(store);
+    //inputPOJOOperator.insertEventInTable();
+    ArrayList<String> expressions = new ArrayList<String>();
+    expressions.add("name");
+    expressions.add("id");
+    inputPOJOOperator.setExpressionForValue(expressions);
+    ArrayList<String> keylist = new ArrayList<String>();
+    keylist.add("key1");
+    keylist.add("key2");
+    keylist.add("key3");
+    keylist.add("key4");
+    inputPOJOOperator.setKeys(keylist);
+    inputPOJOOperator.setObjectClass("com.datatorrent.contrib.couchbase.TestPojoInput");
+    CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
+    inputPOJOOperator.outputPort.setSink(sink);
+    List<Partition<AbstractCouchBaseInputOperator<Object>>> partitions = Lists.newArrayList();
+    Collection<Partition<AbstractCouchBaseInputOperator<Object>>> newPartitions = inputPOJOOperator.definePartitions(partitions, new PartitioningContextImpl(null, 0));
+    List<AbstractCouchBaseInputOperator<Object>> opers = Lists.newArrayList();
+    for (Partition<AbstractCouchBaseInputOperator<Object>> p: newPartitions) {
+      TestInputPOJOOperator oi = (TestInputPOJOOperator)p.getPartitionedInstance();
+      oi.setServerURIString("localhost:" + port1);
+      oi.setStore(store);
+      oi.setKeys(keylist);
+      oi.setExpressionForValue(expressions);
+      oi.setup(null);
+       oi.insertEventInTable();
+
+    //  oi.outputPort.setSink(sink);
+      opers.add(oi);
+      port1 = port2;
+
     }
+
+   // sink.clear();
+    int wid = 0;
+    for (AbstractCouchBaseInputOperator<Object> o: opers) {
+        o.beginWindow(wid);
+        o.emitTuples();
+        o.endWindow();
+      }
+
+   int count =0;
+     for (Object o : sink.collectedTuples) {
+       logger.debug("collected tuples are {}",sink.collectedTuples.size());
+       count++;
+      TestPojoInput object = (TestPojoInput)o;
+      if(count == 1){
+      logger.debug("name is {} count 1",object.getName());
+      Assert.assertEquals("name set in testpojo", "test1", object.getName());
+       Assert.assertEquals("id set in testpojo", "123", object.getId().toString());
+      }
+      if(count == 2){
+       logger.debug("name is {} count 2",object.getName());
+       Assert.assertEquals("id set in testpojo", "321", object.getId().toString());
+      }
+     }
+
+    for (AbstractCouchBaseInputOperator<Object> o: opers){
+     o.teardown();
+    }
+
+      mockCouchbase1.stop();
+
+      mockCouchbase2.stop();
+
   }
 
   public static class TestInputOperator extends AbstractCouchBaseInputOperator<String>
@@ -177,8 +271,8 @@ public class CouchBaseInputOperatorTest
 
     public void insertEventsInTable(int numEvents)
     {
-      String key = null;
-      Integer value = null;
+      String key ;
+      Integer value ;
       logger.debug("number of events is {}", numEvents);
       for (int i = 0; i < numEvents; i++) {
         key = String.valueOf("Key" + i * 10);
@@ -194,6 +288,30 @@ public class CouchBaseInputOperatorTest
           DTThrowable.rethrow(ex);
         }
       }
+      client.shutdown();
+      client = null;
+    }
+
+  }
+
+   public static class TestInputPOJOOperator extends CouchBasePOJOInputOperator
+  {
+
+    public void insertEventInTable()
+    {
+        try {
+          client.set("Key1", "test1").get();
+          client.set("Key2", "test2").get();
+          client.set("Key3", 123).get();
+          client.set("Key4", 321).get();
+        }
+        catch (InterruptedException ex) {
+          DTThrowable.rethrow(ex);
+        }
+        catch (ExecutionException ex) {
+          DTThrowable.rethrow(ex);
+        }
+
       client.shutdown();
       client = null;
     }
