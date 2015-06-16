@@ -140,6 +140,7 @@ public class CassandraPOJOInputOperator extends AbstractCassandraInputOperator<O
 
     if (setters.isEmpty()) {
       try {
+        // This code will be replaced after integration of creating POJOs on the fly utility.
         objectClass = Class.forName(outputClass);
       }
       catch (ClassNotFoundException ex) {
@@ -213,7 +214,7 @@ public class CassandraPOJOInputOperator extends AbstractCassandraInputOperator<O
     catch (IllegalAccessException ex) {
       throw new RuntimeException(ex);
     }
-    
+
     final int size = columnDataTypes.size();
     for (int i = 0; i < size; i++) {
       final DataType type = columnDataTypes.get(i);
