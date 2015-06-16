@@ -41,11 +41,13 @@ public class CassandraOperatorTest
   public static final String KEYSPACE = "demo";
 
   private static final String TABLE_NAME = "test";
+  private static final String TABLE_NAME_INPUT = "testinput";
   private static String APP_ID = "CassandraOperatorTest";
   private static int OPERATOR_ID = 0;
   private static Cluster cluster = null;
   private static Session session = null;
 
+  @SuppressWarnings("unused")
   private static class TestEvent
   {
     int id;
@@ -74,6 +76,8 @@ public class CassandraOperatorTest
       session.execute(createMetaTable);
       String createTable = "CREATE TABLE IF NOT EXISTS " + KEYSPACE + "." + TABLE_NAME + " (id uuid PRIMARY KEY,age int,lastname text,test boolean,floatvalue float,doubleValue double,set1 set<int>,list1 list<int>,map1 map<text,int>,last_visited timestamp);";
       session.execute(createTable);
+      createTable = "CREATE TABLE IF NOT EXISTS " + KEYSPACE + "." + TABLE_NAME_INPUT + " (id uuid PRIMARY KEY,lastname text,age int);";
+      session.execute(createTable);
     }
     catch (Throwable e) {
       DTThrowable.rethrow(e);
@@ -94,7 +98,7 @@ public class CassandraOperatorTest
   }
 
 
-  private static class TestOutputOperator extends CassandraOutputOperator
+  private static class TestOutputOperator extends CassandraPOJOOutputOperator
   {
     public long getNumOfEventsInStore()
     {
@@ -176,27 +180,8 @@ public class CassandraOperatorTest
 
   }
 
-  private static class TestInputOperator extends AbstractCassandraInputOperator<TestEvent>
+  private static class TestInputOperator extends CassandraPOJOInputOperator
   {
-
-    private static final String retrieveQuery = "SELECT * FROM " + KEYSPACE + "." + TABLE_NAME + ";";
-
-    @Override
-    public TestEvent getTuple(Row row)
-    {
-      try {
-        return new TestEvent(row.getInt(0));
-      }
-      catch (DriverException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    @Override
-    public String queryToRetrieveData()
-    {
-      return retrieveQuery;
-    }
 
     public void insertEventsInTable(int numEvents)
     {
@@ -284,10 +269,10 @@ public class CassandraOperatorTest
     outputOperator.getEventsInStore();
   }
 
-  //This Test needs to be improved.
   @Test
   public void TestCassandraInputOperator()
   {
+    String retrieveQuery = "SELECT * FROM " + KEYSPACE + "." + TABLE_NAME_INPUT + ";";
     CassandraStore store = new CassandraStore();
     store.setNode(NODE);
     store.setKeyspace(KEYSPACE);
@@ -298,7 +283,24 @@ public class CassandraOperatorTest
 
     TestInputOperator inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
-    inputOperator.insertEventsInTable(10);
+    inputOperator.setOutputClass("com.datatorrent.contrib.cassandra.TestInputPojo");
+    inputOperator.setTablename(TABLE_NAME_INPUT);
+    inputOperator.setRetrieveQuery(retrieveQuery);
+    ArrayList<String> columns = new ArrayList<String>();
+    columns.add("id");
+    columns.add("age");
+    columns.add("lastname");
+
+    inputOperator.setColumns(columns);
+    ArrayList<String> expressions = new ArrayList<String>();
+    expressions.add("id");
+    expressions.add("age");
+    expressions.add("lastname");
+    inputOperator.setExpressions(expressions);
+
+    inputOperator.setStore(store);
+    //Inserting events in cassandra table through shell to check the unique id generated.
+    // inputOperator.insertEventsInTable(2);
 
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputOperator.outputPort.setSink(sink);
@@ -307,13 +309,28 @@ public class CassandraOperatorTest
     inputOperator.beginWindow(0);
     inputOperator.emitTuples();
     inputOperator.endWindow();
+    Assert.assertEquals("rows from db", 2, sink.collectedTuples.size());
+     int count =0;
+     for (Object o : sink.collectedTuples) {
+       count++;
+      TestInputPojo object = (TestInputPojo)o;
+      if(count == 1){
+      Assert.assertEquals("id set in testpojo", "1878a0a0-139d-11e5-87bf-dd30f8d32bb8", object.getId().toString());
+      Assert.assertEquals("name set in testpojo", "test2", object.getLastname());
+      Assert.assertEquals("age set in testpojo", 13, object.getAge());
+      }
+      if(count == 2){
+       Assert.assertEquals("id set in testpojo", "2196c3b0-139d-11e5-87bf-dd30f8d32bb8", object.getId().toString());
+       Assert.assertEquals("name set in testpojo", "test4", object.getLastname());
+       Assert.assertEquals("age set in testpojo", 15, object.getAge());
+      }
+     }
 
-    Assert.assertEquals("rows from db", 10, sink.collectedTuples.size());
   }
 
   public static class TestPojo
   {
-    private TestPojo(UUID randomUUID, int i, String string, boolean b, float d, double d0, Set<Integer> set1, List<Integer> list1, Map<String, Integer> map1, Date date)
+    public TestPojo(UUID randomUUID, int i, String string, boolean b, float d, double d0, Set<Integer> set1, List<Integer> list1, Map<String, Integer> map1, Date date)
     {
       this.id = randomUUID;
       this.age = i;
@@ -439,7 +456,7 @@ public class CassandraOperatorTest
     }
 
   }
+  private static final Logger LOG = LoggerFactory.getLogger(CassandraOperatorTest.class);
 
-  private static transient final Logger LOG = LoggerFactory.getLogger(CassandraOperatorTest.class);
 
 }
