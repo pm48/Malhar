@@ -42,7 +42,7 @@ import com.datatorrent.common.util.DTThrowable;
 public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggregateTransactionableStoreOutputOperator<T, CouchBaseWindowStore>
 {
   private static final transient Logger logger = LoggerFactory.getLogger(AbstractCouchBaseOutputOperator.class);
-  protected transient HashMap<OperationFuture, Long> mapFuture;
+  protected transient HashMap<OperationFuture<?>, Long> mapFuture;
   protected int numTuples;
   protected CouchBaseSerializer serializer;
   protected TreeMap<Long, T> mapTuples;
@@ -53,7 +53,7 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
 
   public AbstractCouchBaseOutputOperator()
   {
-    mapFuture = new HashMap<OperationFuture, Long>();
+    mapFuture = new HashMap<OperationFuture<?>, Long>();
     mapTuples = new TreeMap<Long, T>();
     store = new CouchBaseWindowStore();
     listener = new CompletionListener();
@@ -107,7 +107,7 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
     if (serializer != null) {
       value = serializer.serialize(value);
     }
-    OperationFuture<Boolean> future = processKeyValue(key, value);
+    OperationFuture<?> future = processKeyValue(key, value);
     synchronized (syncObj) {
       future.addListener(listener);
       mapFuture.put(future, id);
@@ -190,6 +190,6 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
 
   public abstract Object getValue(T tuple);
 
-  protected abstract OperationFuture processKeyValue(String key, Object value);
+  protected abstract OperationFuture<?> processKeyValue(String key, Object value);
 
 }
