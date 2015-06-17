@@ -208,6 +208,7 @@ public class CouchBaseStore implements Connectable
   @Override
   public void connect() throws IOException
   {
+    System.setProperty("viewmode", "development");
     String[] tokens = uriString.split(",");
     URI uri = null;
     for (String url : tokens) {
