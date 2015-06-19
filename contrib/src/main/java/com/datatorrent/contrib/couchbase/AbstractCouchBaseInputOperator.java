@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.protocol.views.DesignDocument;
-import com.couchbase.client.protocol.views.ViewDesign;
 import com.couchbase.client.vbucket.config.Config;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
@@ -39,18 +37,15 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import com.datatorrent.lib.db.AbstractStoreInputOperator;
 
 import com.datatorrent.api.Context;
-import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
 
 import com.datatorrent.common.util.DTThrowable;
-import java.util.Iterator;
 
 /**
  * AbstractCouchBaseInputOperator which extends AbstractStoreInputOperator.
  * Classes extending from this operator should implement the abstract functionality of getTuple and getKeys.
  *
- * @param <T>
  * @since 2.0.0
  */
 public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInputOperator<T, CouchBaseStore> implements Partitioner<AbstractCouchBaseInputOperator<T>>
@@ -64,29 +59,6 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
 
   // URL specific to a server.
   protected String serverURIString;
-
-  private String designDocumentName;
-
-  public String getDesignDocumentName()
-  {
-    return designDocumentName;
-  }
-
-  public void setDesignDocumentName(String designDocumentName)
-  {
-    this.designDocumentName = designDocumentName;
-  }
-
-  public String getViewName()
-  {
-    return viewName;
-  }
-
-  public void setViewName(String viewName)
-  {
-    this.viewName = viewName;
-  }
-  private String viewName;
 
   public String getServerURIString()
   {
@@ -128,18 +100,6 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
         DTThrowable.rethrow(ex);
       }
     }
-    DesignDocument designDoc = new DesignDocument(designDocumentName);
-
-    String mapFunction =
-            "function (doc, meta) {\n" +
-            "  if(doc.type && doc.type == \"beer\") {\n" +
-            "    emit(doc.name);\n" +
-            "  }\n" +
-            "}";
-
-    ViewDesign viewDesign = new ViewDesign(viewName,mapFunction);
-    designDoc.getViews().add(viewDesign);
-    store.getInstance().createDesignDoc( designDoc );
   }
 
   @Override
@@ -154,22 +114,12 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   @Override
   public void emitTuples()
   {
-    View view = client.getView("beer", "by_name");
-Query query = new Query();
-query.setIncludeDocs(true).setLimit(20);
-query.setStale( Stale.FALSE );
-ViewResponse result = client.query(view, query);
-
-for(ViewRow row : result) {
-  row.getDocument(); // deal with the document/data
-}
     List<String> keys = getKeys();
     Object result = null;
     for (String key: keys) {
         int master = conf.getMaster(conf.getVbucketByKey(key));
         if (master == getServerIndex()) {
           result = clientPartition.get(key);
-          logger.debug("result is {}",result);
         }
       }
 

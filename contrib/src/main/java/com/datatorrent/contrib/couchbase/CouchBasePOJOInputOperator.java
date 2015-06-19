@@ -15,12 +15,15 @@
  */
 package com.datatorrent.contrib.couchbase;
 
+import com.couchbase.client.protocol.views.*;
+import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Setter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javax.validation.constraints.Min;
+import org.ektorp.ViewQuery;
+import org.ektorp.ViewResult;
 
 public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<Object>
 {
@@ -28,6 +31,65 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   //Value stored in Couchbase can be of these data types: boolean,numeric,string,arrays,object,null.
   private final transient ArrayList<Setter<Object, Object>> valueSetters;
   private Class<?> className;
+  private String mapFunctionQuery;
+  private String startkey;
+  @Min(1)
+  private int limit = 10;
+  @Min(1)
+  private int skip=1;
+  private String designDocumentName;
+
+  public String getDesignDocumentName()
+  {
+    return designDocumentName;
+  }
+
+  public void setDesignDocumentName(String designDocumentName)
+  {
+    this.designDocumentName = designDocumentName;
+  }
+
+  public String getViewName()
+  {
+    return viewName;
+  }
+
+  public void setViewName(String viewName)
+  {
+    this.viewName = viewName;
+  }
+  private String viewName;
+
+  public int getSkip()
+  {
+    return skip;
+  }
+
+  public void setSkip(int skip)
+  {
+    this.skip = skip;
+  }
+
+  public int getLimit()
+  {
+    return limit;
+  }
+
+  public void setLimit(int limit)
+  {
+    this.limit = limit;
+  }
+
+  public String getStartkey()
+  {
+    return startkey;
+  }
+
+  public void setStartkey(String startkey)
+  {
+    this.startkey = startkey;
+  }
+
 
   private ArrayList<String> expressionForValue;
 
@@ -41,6 +103,15 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     this.expressionForValue = expressionForValue;
   }
 
+  public String getMapFunctionQuery()
+  {
+    return mapFunctionQuery;
+  }
+
+  public void setMapFunctionQuery(String mapFunctionQuery)
+  {
+    this.mapFunctionQuery = mapFunctionQuery;
+  }
 
   private transient ArrayList<String> keys;
 
@@ -65,6 +136,45 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     super();
     valueSetters = new ArrayList<Setter<Object, Object>>();
   }
+
+  @Override
+  public void setup(OperatorContext context)
+  {
+    super.setup(context);
+    DesignDocument designDoc = new DesignDocument(designDocumentName);
+
+    ViewDesign viewDesign = new ViewDesign(viewName,getMapFunction());
+    designDoc.getViews().add(viewDesign);
+    store.getInstance().createDesignDoc( designDoc );
+  }
+
+  @Override
+  public void emitTuples()
+  {
+    /*ViewResult result = bucket.query(ViewQuery.from("designdoc", "myview"));
+
+// Iterate through the returned ViewRows
+for (ViewRow row : result) {
+    System.out.println(row);
+}
+
+for(ViewRow row : result) {
+  row.getDocument(); // deal with the document/data
+}
+Object result = null;*/
+    for (String key: keys) {
+        int master = conf.getMaster(conf.getVbucketByKey(key));
+        if (master == getServerIndex()) {
+          result = clientPartition.get(key);
+        }
+      }
+
+      if (result != null) {
+        T tuple = getTuple(result);
+        outputPort.emit(tuple);
+      }
+  }
+
 
   @Override
   public Object getTuple(Object couchbaseObject)
@@ -101,6 +211,12 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   public List<String> getKeys()
   {
     return keys;
+  }
+
+  @Override
+  protected String getMapFunction()
+  {
+    return mapFunctionQuery;
   }
 
 }
