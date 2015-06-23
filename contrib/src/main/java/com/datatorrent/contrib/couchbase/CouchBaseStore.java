@@ -185,7 +185,7 @@ public class CouchBaseStore implements Connectable
     this.uriString = uriString;
   }
 
-  public Config getConf()
+  public Bucket getConf()
   {
     try {
       connect();
@@ -202,7 +202,7 @@ public class CouchBaseStore implements Connectable
     catch (IOException ex) {
       DTThrowable.rethrow(ex);
     }
-    return conf;
+    return configBucket;
   }
 
   @Override
@@ -222,7 +222,7 @@ public class CouchBaseStore implements Connectable
     }
     try {
       CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
-      cfb.setOpTimeout(timeout);  // wait up to 10 seconds for an operation to succeed
+      cfb.setOpTimeout(75000);  // wait up to 10 seconds for an operation to succeed
       cfb.setOpQueueMaxBlockTime(blockTime); // wait up to 10 second when trying to enqueue an operation
       client = new CouchbaseClient(cfb.buildCouchbaseConnection(baseURIs, bucket, password));
       //client = new CouchbaseClient(baseURIs, "default", "");

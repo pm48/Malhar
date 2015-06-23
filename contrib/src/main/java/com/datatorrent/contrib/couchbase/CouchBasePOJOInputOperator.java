@@ -32,7 +32,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   private final transient ArrayList<Setter<Object, Object>> valueSetters;
   private Class<?> className;
   private String mapFunctionQuery;
-  private String startkey="key1";
+  private String startkey;
   @Min(1)
   private int limit = 10;
   @Min(0)
@@ -177,20 +177,23 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     else{
       skip =1;
     }
-    query1.skip(skip);
+    query1.skip(0);
     query1.includeDocs(true).limit(limit);
-
-     View view = store.getInstance().getView(designDocumentName, viewName);
+   store.setTimeout(75);
+   View view = store.getInstance().getView(designDocumentName, viewName);
 
    Query query = new Query();
    query.setRangeStart(startkey);
-
    query.setIncludeDocs(true).setLimit(10);
 
-   query.setStale( Stale.FALSE );
+   query.setStale( Stale.OK );
+   ViewResponse result =null;
 
-   ViewResponse result = store.getInstance().query(view, query);
-
+   for(int i=0;i<10;i++){
+     result = store.getInstance().query(view, query);
+     if (result!=null)
+       break;
+   }
    for(ViewRow row : result) {
 
      System.out.println("document is " + row.getDocument().toString()); // deal with the document/data
