@@ -20,7 +20,6 @@ import com.couchbase.client.protocol.views.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Setter;
-import com.jcraft.jsch.Logger;
 import java.util.ArrayList;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
