@@ -15,7 +15,6 @@
  */
 package com.datatorrent.contrib.couchbase;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +39,6 @@ import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
 
-import com.datatorrent.common.util.DTThrowable;
 
 /**
  * AbstractCouchBaseInputOperator which extends AbstractStoreInputOperator.

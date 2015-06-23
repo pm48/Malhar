@@ -43,6 +43,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   private String designDocumentName;
   private transient ArrayList<String> keys;
 
+  @Override
   public ArrayList<String> getKeys()
   {
     return keys;
@@ -179,7 +180,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     }
     query1.skip(0);
     query1.includeDocs(true).limit(limit);
-   store.setTimeout(75);
    View view = store.getInstance().getView(designDocumentName, viewName);
 
    Query query = new Query();

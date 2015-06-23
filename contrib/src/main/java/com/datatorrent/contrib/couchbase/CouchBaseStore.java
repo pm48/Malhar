@@ -15,6 +15,8 @@
  */
 package com.datatorrent.contrib.couchbase;
 
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -25,12 +27,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.Min;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
-import com.couchbase.client.vbucket.ConfigurationProvider;
-import com.couchbase.client.vbucket.ConfigurationProviderHTTP;
-import com.couchbase.client.vbucket.config.Bucket;
-import com.couchbase.client.vbucket.config.Config;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,7 +182,7 @@ public class CouchBaseStore implements Connectable
     this.uriString = uriString;
   }
 
-  public Bucket getConf()
+  /*public Config getConf()
   {
     try {
       connect();
@@ -203,7 +200,7 @@ public class CouchBaseStore implements Connectable
       DTThrowable.rethrow(ex);
     }
     return configBucket;
-  }
+  }*/
 
   @Override
   public void connect() throws IOException
