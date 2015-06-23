@@ -212,8 +212,8 @@ public class CouchBaseInputOperatorTest
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputPOJOOperator.setServerURIString("localhost:" + port1);
     inputPOJOOperator.outputPort.setSink(sink);
-    inputPOJOOperator.setup(null);
-         inputPOJOOperator.createAndFetchViewQuery(store.getInstance());
+    inputPOJOOperator.setup(context);
+         inputPOJOOperator.createAndFetchViewQuery();
 
      inputPOJOOperator.beginWindow(0);
       inputPOJOOperator.emitTuples();
@@ -338,18 +338,28 @@ public class CouchBaseInputOperatorTest
       }
     }
 
-    public void createAndFetchViewQuery(CouchbaseClient client)
+     public void createAndFetchViewQuery()
     {
-      DesignDocument designDoc = new DesignDocument(DESIGN_DOC_ID);
+      DesignDocument designDoc = new DesignDocument("dev_beer");
 
-      String mapFunction ="\"function(doc){emit(doc._id, null)}\"";
- logger.debug("mapfunction is {}",mapFunction);
-    ViewDesign viewDesign = new ViewDesign(TEST_VIEW, mapFunction);
+    String viewName = "by_name";
+    String mapFunction =
+            "function (doc, meta) {\n" +
+            "  if(doc.type && doc.type == \"beer\") {\n" +
+            "    emit(doc.name);\n" +
+            "  }\n" +
+            "}";
 
-        designDoc.getViews().add(viewDesign);
-
-        client.createDesignDoc(designDoc);
+    ViewDesign viewDesign = new ViewDesign(viewName,mapFunction);
+    designDoc.getViews().add(viewDesign);
+    while(client.createDesignDoc( designDoc )!=true){
+      try {
+        Thread.sleep(1000);
         //return new ViewQuery().designDocId(DESIGN_DOC_ID).viewName(TEST_VIEW).includeDocs(true);
+      }
+      catch (InterruptedException ex) {
+      }
+    }
       }
 
     }

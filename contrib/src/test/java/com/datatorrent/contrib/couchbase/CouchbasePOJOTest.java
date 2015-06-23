@@ -24,6 +24,7 @@ import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.DAG;
 
 import com.datatorrent.common.util.DTThrowable;
+import java.util.logging.Level;
 import org.junit.Test;
 
 public class CouchbasePOJOTest
@@ -60,6 +61,8 @@ public class CouchbasePOJOTest
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     TestInputOperator inputOperator = new TestInputOperator();
+      //  inputOperator.setServerURIString(uri);
+
     inputOperator.setStore(store);
     inputOperator.insertEventsInTable(100);
 
@@ -67,9 +70,9 @@ public class CouchbasePOJOTest
     inputOperator.outputPort.setSink(sink);
 
     inputOperator.setup(context);
-    inputOperator.createAndFetchViewQuery();
-    inputOperator.setDesignDocumentName(DESIGN_DOC_ID);
-    inputOperator.setViewName(TEST_VIEW);
+   // inputOperator.createAndFetchViewQuery();
+    inputOperator.setDesignDocumentName("_design/_dev1");
+    inputOperator.setViewName("test");
     inputOperator.beginWindow(0);
     inputOperator.emitTuples();
     inputOperator.endWindow();
@@ -103,20 +106,27 @@ public class CouchbasePOJOTest
 
      public void createAndFetchViewQuery()
     {
-      DesignDocument designDoc = new DesignDocument(DESIGN_DOC_ID);
+      DesignDocument designDoc = new DesignDocument("dev_beer");
 
-      String mapFunction ="function(doc, meta)\n" +
-"{\n" +
-"  emit(doc.name, [doc.city, doc.salary]);\n" +
-"}";
-      
- logger.debug("mapfunction is {}",mapFunction);
-    ViewDesign viewDesign = new ViewDesign(TEST_VIEW, mapFunction);
+    String viewName = "by_name";
+    String mapFunction =
+            "function (doc, meta) {\n" +
+            "  if(doc.type && doc.type == \"beer\") {\n" +
+            "    emit(doc.name);\n" +
+            "  }\n" +
+            "}";
 
-        designDoc.getViews().add(viewDesign);
-
-        store.client.createDesignDoc(designDoc);
+    ViewDesign viewDesign = new ViewDesign(viewName,mapFunction);
+    designDoc.getViews().add(viewDesign);
+    while(store.client.createDesignDoc( designDoc )!=true){
+      try {
+        Thread.sleep(1000);
         //return new ViewQuery().designDocId(DESIGN_DOC_ID).viewName(TEST_VIEW).includeDocs(true);
+      }
+      catch (InterruptedException ex) {
+        java.util.logging.Logger.getLogger(CouchbasePOJOTest.class.getName()).log(Level.SEVERE, null, ex);
+      }
+    }
       }
 
 

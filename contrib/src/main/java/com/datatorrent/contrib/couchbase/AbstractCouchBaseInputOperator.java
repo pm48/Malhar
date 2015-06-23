@@ -89,7 +89,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   @Override
   public void setup(Context.OperatorContext context)
   {
-    if (clientPartition == null) {
+   /* if (clientPartition == null) {
       if (conf == null) {
         conf = store.getConf();
       }
@@ -99,7 +99,8 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
       catch (IOException ex) {
         DTThrowable.rethrow(ex);
       }
-    }
+    }*/
+    super.setup(context);
   }
 
   @Override

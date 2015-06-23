@@ -21,7 +21,9 @@ import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Setter;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
@@ -169,7 +171,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     boolean hasRow = true;
     Query query = new Query();
     query.setStale(Stale.FALSE);
-   query.setRangeStart(startkey);
+   query.setRangeStart("Key1");
    while(hasRow){
      hasRow = false;
     if(page == 0){
@@ -182,7 +184,20 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     query.setIncludeDocs(true).setLimit(limit);
 
     View view = store.getInstance().getView(designDocumentName, viewName);
-    ViewResponse response = store.getInstance().query(view, query);
+    ViewResponse response = null;
+      try {
+        while((response = store.getInstance().query(view, query))!=null)
+        {
+          Thread.sleep(10000);
+        }
+      }
+
+      catch (InterruptedException ex) {
+        Logger.getLogger(CouchBasePOJOInputOperator.class.getName()).log(Level.SEVERE, null, ex);
+      }
+    for (ViewRow row : response) {
+				System.out.println(row.getKey() + " : " + row.getId());
+			}
     Iterator<ViewRow> iterRow =  response.iterator();
     keys = new ArrayList<String>();
     while(iterRow.hasNext())
