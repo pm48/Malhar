@@ -548,6 +548,7 @@
           <artifactId>httpcore</artifactId>
         </exclusion>
       </exclusions>
+      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.apache.hive</groupId>

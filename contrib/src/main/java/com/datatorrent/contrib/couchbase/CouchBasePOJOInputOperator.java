@@ -15,17 +15,16 @@
  */
 package com.datatorrent.contrib.couchbase;
 
+
 import com.couchbase.client.protocol.views.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Setter;
+import com.jcraft.jsch.Logger;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
+import org.ektorp.ViewQuery;
 
 public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<Object>
 {
@@ -169,9 +168,8 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   {
     int skip =0;
     boolean hasRow = true;
-    Query query = new Query();
-    query.setStale(Stale.FALSE);
-   query.setRangeStart("Key1");
+    ViewQuery query1 = new ViewQuery();
+    query1.startKey(startkey);
    while(hasRow){
      hasRow = false;
     if(page == 0){
@@ -180,25 +178,30 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     else{
       skip =1;
     }
-    query.setSkip(skip);
-    query.setIncludeDocs(true).setLimit(limit);
+    query1.skip(skip);
+    query1.includeDocs(true).limit(limit);
 
-    View view = store.getInstance().getView(designDocumentName, viewName);
-    ViewResponse response = null;
-      try {
-        while((response = store.getInstance().query(view, query))!=null)
-        {
-          Thread.sleep(10000);
-        }
-      }
+     View view = store.getInstance().getView(designDocumentName, viewName);
 
-      catch (InterruptedException ex) {
-        Logger.getLogger(CouchBasePOJOInputOperator.class.getName()).log(Level.SEVERE, null, ex);
-      }
-    for (ViewRow row : response) {
-				System.out.println(row.getKey() + " : " + row.getId());
-			}
-    Iterator<ViewRow> iterRow =  response.iterator();
+   Query query = new Query();
+   query.setRangeStart(startkey);
+
+   query.setIncludeDocs(true).setLimit(10);
+
+   query.setStale( Stale.FALSE );
+
+   ViewResponse result = store.getInstance().query(view, query);
+
+   for(ViewRow row : result) {
+
+     System.out.println("document is " + row.getDocument().toString()); // deal with the document/data
+
+   }
+
+    //for (ViewRow row : result) {
+    //System.out.println(row);
+//}
+    /*Iterator<ViewRow> iterRow =  response.iterator();
     keys = new ArrayList<String>();
     while(iterRow.hasNext())
     {
@@ -214,7 +217,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
         outputPort.emit(tuple);
       }
 
-    }
+    }*/
 
   }
   }
