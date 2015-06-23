@@ -23,6 +23,9 @@ import java.util.concurrent.ExecutionException;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactory;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
+import com.couchbase.client.protocol.views.DesignDocument;
+import com.couchbase.client.protocol.views.Query;
+import com.couchbase.client.protocol.views.ViewDesign;
 import com.google.common.collect.Lists;
 
 import org.couchbase.mock.Bucket.BucketType;
@@ -42,8 +45,10 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.Partitioner.Partition;
 
 import com.datatorrent.common.util.DTThrowable;
-import com.datatorrent.contrib.couchbase.TestPojoInput.Address;
-import org.junit.BeforeClass;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
+import org.ektorp.ViewQuery;
 
 public class CouchBaseInputOperatorTest
 {
@@ -56,10 +61,12 @@ public class CouchBaseInputOperatorTest
   protected static CouchbaseClient client = null;
   private final int numNodes = 2;
   private final int numReplicas = 3;
+  private static final String DESIGN_DOC_ID = "_design/CouchbaseTest";
+  private static final String TEST_VIEW = "testView";
 
   protected CouchbaseConnectionFactory connectionFactory;
 
-  protected CouchbaseMock createMock(String name, String password,BucketConfiguration bucketConfiguration) throws Exception
+  protected CouchbaseMock createMock(String name, String password, BucketConfiguration bucketConfiguration) throws Exception
   {
     bucketConfiguration.numNodes = numNodes;
     bucketConfiguration.numReplicas = numReplicas;
@@ -78,8 +85,8 @@ public class CouchBaseInputOperatorTest
   {
     BucketConfiguration bucketConfiguration = new BucketConfiguration();
     CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
-    CouchbaseMock mockCouchbase1 = createMock("default", "",bucketConfiguration);
-    CouchbaseMock mockCouchbase2 = createMock("default", "",bucketConfiguration);
+    CouchbaseMock mockCouchbase1 = createMock("default", "", bucketConfiguration);
+    CouchbaseMock mockCouchbase2 = createMock("default", "", bucketConfiguration);
     mockCouchbase1.start();
     mockCouchbase1.waitForStartup();
     List<URI> uriList = new ArrayList<URI>();
@@ -140,13 +147,13 @@ public class CouchBaseInputOperatorTest
       wid++;
     }
     Assert.assertEquals("Tuples read should be same ", 10, sink.collectedTuples.size());
-    for (AbstractCouchBaseInputOperator<String> o: opers){
-     o.teardown();
+    for (AbstractCouchBaseInputOperator<String> o: opers) {
+      o.teardown();
     }
 
-      mockCouchbase1.stop();
+    mockCouchbase1.stop();
 
-      mockCouchbase2.stop();
+    mockCouchbase2.stop();
 
   }
 
@@ -156,8 +163,8 @@ public class CouchBaseInputOperatorTest
 
     BucketConfiguration bucketConfiguration = new BucketConfiguration();
     CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
-    CouchbaseMock mockCouchbase1 = createMock("default", "",bucketConfiguration);
-    CouchbaseMock mockCouchbase2 = createMock("default", "",bucketConfiguration);
+    CouchbaseMock mockCouchbase1 = createMock("default", "", bucketConfiguration);
+    CouchbaseMock mockCouchbase2 = createMock("default", "", bucketConfiguration);
     mockCouchbase1.start();
     mockCouchbase1.waitForStartup();
     mockCouchbase2.start();
@@ -172,11 +179,12 @@ public class CouchBaseInputOperatorTest
     client = new CouchbaseClient(connectionFactory);
 
     CouchBaseStore store = new CouchBaseStore();
-    keyList = new ArrayList<String>();
+
     store.setBucket(bucketConfiguration.name);
     store.setPasswordConfig(password);
     store.setPassword(bucketConfiguration.password);
     store.setUriString("localhost:" + port1);
+    System.setProperty("viewmode", "development");
 
     // couchbaseBucket.getCouchServers();
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
@@ -190,65 +198,82 @@ public class CouchBaseInputOperatorTest
     expressions.add("name");
     expressions.add("id");
     inputPOJOOperator.setExpressionForValue(expressions);
-    ArrayList<String> keylist = new ArrayList<String>();
-    keylist.add("key1");
-    keylist.add("key2");
-    keylist.add("key3");
-    keylist.add("key4");
+     ArrayList<String> keylist = new ArrayList<String>();
+     keylist.add("key1");
+     keylist.add("key2");
+     keylist.add("key3");
+     keylist.add("key4");
     inputPOJOOperator.setKeys(keylist);
     inputPOJOOperator.setObjectClass("com.datatorrent.contrib.couchbase.TestPojoInput");
+    inputPOJOOperator.setViewName(TEST_VIEW);
+    inputPOJOOperator.insertEventInTable();
+    inputPOJOOperator.setDesignDocumentName(DESIGN_DOC_ID);
+   // inputPOJOOperator.setQuery(query.allDocs());
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
+    inputPOJOOperator.setServerURIString("localhost:" + port1);
     inputPOJOOperator.outputPort.setSink(sink);
-    List<Partition<AbstractCouchBaseInputOperator<Object>>> partitions = Lists.newArrayList();
-    Collection<Partition<AbstractCouchBaseInputOperator<Object>>> newPartitions = inputPOJOOperator.definePartitions(partitions, new PartitioningContextImpl(null, 0));
+    inputPOJOOperator.setup(null);
+         inputPOJOOperator.createAndFetchViewQuery(store.getInstance());
+
+     inputPOJOOperator.beginWindow(0);
+      inputPOJOOperator.emitTuples();
+      inputPOJOOperator.endWindow();
+    /*List<Partition<AbstractCouchBaseInputOperator<Object>>> partitions = Lists.newArrayList();
+    //Collection<Partition<AbstractCouchBaseInputOperator<Object>>> newPartitions = inputPOJOOperator.definePartitions(partitions, new PartitioningContextImpl(null, 0));
     List<AbstractCouchBaseInputOperator<Object>> opers = Lists.newArrayList();
-    for (Partition<AbstractCouchBaseInputOperator<Object>> p: newPartitions) {
+   /* for (Partition<AbstractCouchBaseInputOperator<Object>> p: newPartitions) {
       TestInputPOJOOperator oi = (TestInputPOJOOperator)p.getPartitionedInstance();
       oi.setServerURIString("localhost:" + port1);
       oi.setStore(store);
-      oi.setKeys(keylist);
+      // oi.setKeys(keylist);
       oi.setExpressionForValue(expressions);
       oi.setup(null);
-       oi.insertEventInTable();
+      oi.insertEventInTable();
 
-    //  oi.outputPort.setSink(sink);
+      //  oi.outputPort.setSink(sink);
       opers.add(oi);
       port1 = port2;
 
     }
 
-   // sink.clear();
+     sink.clear();
     int wid = 0;
     for (AbstractCouchBaseInputOperator<Object> o: opers) {
-        o.beginWindow(wid);
-        o.emitTuples();
-        o.endWindow();
-      }
+      o.beginWindow(wid);
+      o.emitTuples();
+      o.endWindow();
+    }*/
 
-   int count =0;
-     for (Object o : sink.collectedTuples) {
-       logger.debug("collected tuples are {}",sink.collectedTuples.size());
-       count++;
+    int count = 0;
+    for (Object o: sink.collectedTuples) {
+      logger.debug("collected tuples are {}", sink.collectedTuples.size());
+      count++;
       TestPojoInput object = (TestPojoInput)o;
-      if(count == 1){
-      logger.debug("name is {} count 1",object.getName());
-      Assert.assertEquals("name set in testpojo", "test1", object.getName());
-       Assert.assertEquals("id set in testpojo", "123", object.getId().toString());
+      if (count == 1) {
+        logger.debug("name is {} count 1", object.getName());
+        Assert.assertEquals("name set in testpojo", "test1", object.getName());
+        Assert.assertEquals("id set in testpojo", "123", object.getId().toString());
       }
-      if(count == 2){
-       logger.debug("name is {} count 2",object.getName());
-       Assert.assertEquals("id set in testpojo", "321", object.getId().toString());
+      if (count == 2) {
+        logger.debug("name is {} count 2", object.getName());
+        Assert.assertEquals("id set in testpojo", "321", object.getId().toString());
       }
-     }
-
-    for (AbstractCouchBaseInputOperator<Object> o: opers){
-     o.teardown();
     }
 
-      mockCouchbase1.stop();
+  /*  for (AbstractCouchBaseInputOperator<Object> o: opers) {
+      o.teardown();
+    }*/
 
-      mockCouchbase2.stop();
+    mockCouchbase1.stop();
 
+    mockCouchbase2.stop();
+
+  }
+
+  public void teardown()
+  {
+    client.shutdown();
+    client = null;
   }
 
   public static class TestInputOperator extends AbstractCouchBaseInputOperator<String>
@@ -271,8 +296,8 @@ public class CouchBaseInputOperatorTest
 
     public void insertEventsInTable(int numEvents)
     {
-      String key ;
-      Integer value ;
+      String key;
+      Integer value;
       logger.debug("number of events is {}", numEvents);
       for (int i = 0; i < numEvents; i++) {
         key = String.valueOf("Key" + i * 10);
@@ -294,28 +319,39 @@ public class CouchBaseInputOperatorTest
 
   }
 
-   public static class TestInputPOJOOperator extends CouchBasePOJOInputOperator
+  public static class TestInputPOJOOperator extends CouchBasePOJOInputOperator
   {
 
     public void insertEventInTable()
     {
-        try {
-          client.set("Key1", "test1").get();
-          client.set("Key2", "test2").get();
-          client.set("Key3", 123).get();
-          client.set("Key4", 321).get();
-        }
-        catch (InterruptedException ex) {
-          DTThrowable.rethrow(ex);
-        }
-        catch (ExecutionException ex) {
-          DTThrowable.rethrow(ex);
-        }
+      try {
+        client.set("Key1", "test1").get();
+        client.set("Key2", "test2").get();
+        client.set("Key3", 123).get();
+        client.set("Key4", 321).get();
+      }
+      catch (InterruptedException ex) {
+        DTThrowable.rethrow(ex);
+      }
+      catch (ExecutionException ex) {
+        DTThrowable.rethrow(ex);
+      }
+    }
 
-      client.shutdown();
-      client = null;
+    public void createAndFetchViewQuery(CouchbaseClient client)
+    {
+      DesignDocument designDoc = new DesignDocument(DESIGN_DOC_ID);
+
+      String mapFunction ="\"function(doc){emit(doc._id, null)}\"";
+ logger.debug("mapfunction is {}",mapFunction);
+    ViewDesign viewDesign = new ViewDesign(TEST_VIEW, mapFunction);
+
+        designDoc.getViews().add(viewDesign);
+
+        client.createDesignDoc(designDoc);
+        //return new ViewQuery().designDocId(DESIGN_DOC_ID).viewName(TEST_VIEW).includeDocs(true);
+      }
+
     }
 
   }
-
-}

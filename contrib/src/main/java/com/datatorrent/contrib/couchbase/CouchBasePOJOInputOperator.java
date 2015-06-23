@@ -20,10 +20,10 @@ import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Setter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import javax.validation.constraints.Min;
-import org.ektorp.ViewQuery;
-import org.ektorp.ViewResult;
+import javax.validation.constraints.NotNull;
 
 public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<Object>
 {
@@ -32,12 +32,47 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   private final transient ArrayList<Setter<Object, Object>> valueSetters;
   private Class<?> className;
   private String mapFunctionQuery;
-  private String startkey;
+  private String startkey="key1";
   @Min(1)
   private int limit = 10;
-  @Min(1)
-  private int skip=1;
+  @Min(0)
+  private int page;
+  private String startDocId;
+  @NotNull
+  //private Query query;
   private String designDocumentName;
+  private transient ArrayList<String> keys;
+
+  public ArrayList<String> getKeys()
+  {
+    return keys;
+  }
+
+  public void setKeys(ArrayList<String> keys)
+  {
+    this.keys = keys;
+  }
+
+
+  /*public Query getQuery()
+  {
+    return query;
+  }
+
+  public void setQuery(Query query)
+  {
+    this.query = query;
+  }*/
+
+  public String getStartDocId()
+  {
+    return startDocId;
+  }
+
+  public void setStartDocId(String startDocId)
+  {
+    this.startDocId = startDocId;
+  }
 
   public String getDesignDocumentName()
   {
@@ -60,15 +95,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   }
   private String viewName;
 
-  public int getSkip()
-  {
-    return skip;
-  }
-
-  public void setSkip(int skip)
-  {
-    this.skip = skip;
-  }
 
   public int getLimit()
   {
@@ -113,14 +139,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     this.mapFunctionQuery = mapFunctionQuery;
   }
 
-  private transient ArrayList<String> keys;
-
-  public void setKeys(ArrayList<String> keys)
-  {
-    this.keys = keys;
-  }
-
-
   public String getObjectClass()
   {
     return objectClass;
@@ -141,38 +159,49 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   public void setup(OperatorContext context)
   {
     super.setup(context);
-    DesignDocument designDoc = new DesignDocument(designDocumentName);
-
-    ViewDesign viewDesign = new ViewDesign(viewName,getMapFunction());
-    designDoc.getViews().add(viewDesign);
-    store.getInstance().createDesignDoc( designDoc );
   }
 
+  //This application loops on all the pages until the end of the index
   @Override
   public void emitTuples()
   {
-    /*ViewResult result = bucket.query(ViewQuery.from("designdoc", "myview"));
+    int skip =0;
+    boolean hasRow = true;
+    Query query = new Query();
+    query.setStale(Stale.FALSE);
+   query.setRangeStart(startkey);
+   while(hasRow){
+     hasRow = false;
+    if(page == 0){
+      skip =0;
+    }
+    else{
+      skip =1;
+    }
+    query.setSkip(skip);
+    query.setIncludeDocs(true).setLimit(limit);
 
-// Iterate through the returned ViewRows
-for (ViewRow row : result) {
-    System.out.println(row);
-}
+    View view = store.getInstance().getView(designDocumentName, viewName);
+    ViewResponse response = store.getInstance().query(view, query);
+    Iterator<ViewRow> iterRow =  response.iterator();
+    keys = new ArrayList<String>();
+    while(iterRow.hasNext())
+    {
+      hasRow = true;
+      System.out.println("row key and docid are " + iterRow.next().getKey() + iterRow.next().getId());
+      startkey = iterRow.next().getKey();
+      startDocId = iterRow.next().getId();
+      Object result = iterRow.next().getDocument();
+      keys.add(startkey);
 
-for(ViewRow row : result) {
-  row.getDocument(); // deal with the document/data
-}
-Object result = null;*/
-    for (String key: keys) {
-        int master = conf.getMaster(conf.getVbucketByKey(key));
-        if (master == getServerIndex()) {
-          result = clientPartition.get(key);
-        }
-      }
-
-      if (result != null) {
-        T tuple = getTuple(result);
+         if (result != null) {
+        Object tuple = getTuple(result);
         outputPort.emit(tuple);
       }
+
+    }
+
+  }
   }
 
 
@@ -207,16 +236,6 @@ Object result = null;*/
     return outputObj;
   }
 
-  @Override
-  public List<String> getKeys()
-  {
-    return keys;
-  }
 
-  @Override
-  protected String getMapFunction()
-  {
-    return mapFunctionQuery;
-  }
 
 }
