@@ -42,6 +42,7 @@ public class CouchbasePOJOTest
   public void TestCouchBaseInputOperator()
   {
     CouchBaseWindowStore store = new CouchBaseWindowStore();
+    System.setProperty("viewmode", "development");
     keyList = new ArrayList<String>();
     store.setBucket(bucket);
     store.setPassword(password);
@@ -89,7 +90,7 @@ public class CouchbasePOJOTest
       TestPojoInput object = (TestPojoInput)o;
       if (count == 1) {
         logger.debug("key is {} count 1", object.getKey());
-       // Assert.assertEquals("name set in testpojo", "test1", object.getName());
+   //     Assert.assertEquals("name set in testpojo", "test1", object.getName());
         Assert.assertEquals(" set in testpojo", "123", object.getKey());
       }
       if (count == 2) {
@@ -97,6 +98,7 @@ public class CouchbasePOJOTest
        // Assert.assertEquals("id set in testpojo", "321", object.getId().toString());
       }
     }
+    store.client.deleteDesignDoc("dev_beer");
   }
 
   public static class TestInputOperator extends CouchBasePOJOInputOperator
@@ -105,23 +107,23 @@ public class CouchbasePOJOTest
     private void insertEventsInTable(int numEvents)
     {
       logger.info("number of events is" + numEvents);
-        TestPojoInput inputPojo = new TestPojoInput();
+        /*TestPojoInput inputPojo = new TestPojoInput();
         TestPojoInput inputPojo2 = new TestPojoInput();
         inputPojo.setKey("Key1");
         inputPojo.setAge(23);
         TestPojoInput.Address address = new  TestPojoInput.Address();
         address.setCity("chandigarh");
         address.setHousenumber(34);
-        inputPojo.setAddress(address);
+      //  inputPojo.setAddress(address);
         inputPojo2.setKey("Key2");
         inputPojo2.setAge(32);
         TestPojoInput.Address address2 = new  TestPojoInput.Address();
         address2.setCity("delhi");
         address2.setHousenumber(43);
-        inputPojo2.setAddress(address2);
+        //inputPojo2.setAddress(address2);*/
         try {
-          store.client.set("Key1", inputPojo).get();
-          store.client.set("Key2", inputPojo2).get();
+          store.client.set("Key1", 123).get();
+          store.client.set("Key2", "{\"name\":\"test\",\"map\":{\"test\":12345},\"phone\":123344555}").get();
         }
         catch (InterruptedException ex) {
           DTThrowable.rethrow(ex);
@@ -134,18 +136,18 @@ public class CouchbasePOJOTest
 
     public void createAndFetchViewQuery()
     {
+
       DesignDocument designDoc = new DesignDocument("dev_beer");
 
       String viewName = "by_name";
       String mapFunction
               = "function (doc, meta) {\n"
-              + //  "  if(doc.type && doc.type == \"beer\") {\n" +
-              "    emit(meta.id, null);\n"
-              + "  }\n"
+              +  "    emit(meta.id, null);\n"
               + "}";
 
       ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
       designDoc.getViews().add(viewDesign);
+      store.client.createDesignDoc(designDoc) ;
       while (store.client.createDesignDoc(designDoc) != true) {
         try {
           Thread.sleep(1000);

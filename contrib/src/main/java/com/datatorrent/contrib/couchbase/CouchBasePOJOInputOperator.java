@@ -21,6 +21,7 @@ import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Setter;
 import java.util.ArrayList;
+import java.util.Iterator;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import org.ektorp.ViewQuery;
@@ -29,7 +30,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
 {
   private String objectClass;
   //Value stored in Couchbase can be of these data types: boolean,numeric,string,arrays,object,null.
-  private final transient ArrayList<Setter<Object, Object>> valueSetters;
+  private final transient Setter<Object, Object> valueSetter;
   private Class<?> className;
   private String mapFunctionQuery;
   private String startkey;
@@ -142,7 +143,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   public CouchBasePOJOInputOperator()
   {
     super();
-    valueSetters = new ArrayList<Setter<Object, Object>>();
+    valueSetter = new Setter<Object, Object>
   }
 
   @Override
@@ -156,24 +157,36 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   {
     boolean hasRow = true;
     Query query = new Query();
-    query.setRangeStart(startkey);
-    query.setIncludeDocs(true).setLimit(limit);
+    query.setStale( Stale.FALSE );
+   // query.setIncludeDocs(true).setLimit(limit);
     //skip parameter should be set to 0 for better results as specified in couchbase documentation.
-    query.setSkip(0);
+    //query.setSkip(0);
    while(hasRow){
      hasRow = false;
-
+//query.setRangeStart(startkey);
+//query.setStartkeyDocID(startDocId);
    View view = store.getInstance().getView(designDocumentName, viewName);
 
-   query.setStale( Stale.OK );
    ViewResponse result =store.getInstance().query(view, query);
+Iterator<ViewRow> iterRow =  result.iterator();
+ while(iterRow.hasNext())
+    {
+      hasRow = true;
+      System.out.println("row key and docid are " + iterRow.next().getKey() + iterRow.next().getId());
+      startkey = iterRow.next().getKey();
+      startDocId = iterRow.next().getId();
+      Object result1 = iterRow.next().getDocument();
+      keys.add(startkey);
 
+         if (result1 != null) {
+        Object tuple = getTuple(result);
+        outputPort.emit(tuple);
+      }
 
-   for(ViewRow row : result) {
+    }
 
-     System.out.println("document is " + row.getDocument().toString()); // deal with the document/data
+   System.out.println("size of result is "+result.size());
 
-   }
 
     //for (ViewRow row : result) {
     //System.out.println(row);
