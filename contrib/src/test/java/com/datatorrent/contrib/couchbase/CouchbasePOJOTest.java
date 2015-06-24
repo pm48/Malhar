@@ -124,6 +124,7 @@ public class CouchbasePOJOTest
         try {
           store.client.set("Key1", 123).get();
           store.client.set("Key2", "{\"name\":\"test\",\"map\":{\"test\":12345},\"phone\":123344555}").get();
+          store.client.set("Key3", "{\"name\":\"test1\",\"map\":{\"test2\":12345},\"phone\":123344666}").get();
         }
         catch (InterruptedException ex) {
           DTThrowable.rethrow(ex);
@@ -148,15 +149,6 @@ public class CouchbasePOJOTest
       ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
       designDoc.getViews().add(viewDesign);
       store.client.createDesignDoc(designDoc) ;
-      while (store.client.createDesignDoc(designDoc) != true) {
-        try {
-          Thread.sleep(1000);
-          //return new ViewQuery().designDocId(DESIGN_DOC_ID).viewName(TEST_VIEW).includeDocs(true);
-        }
-        catch (InterruptedException ex) {
-          java.util.logging.Logger.getLogger(CouchbasePOJOTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
-      }
     }
 
   }

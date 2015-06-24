@@ -30,19 +30,18 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
 {
   private String objectClass;
   //Value stored in Couchbase can be of these data types: boolean,numeric,string,arrays,object,null.
-  private final transient Setter<Object, Object> valueSetter;
+  private transient Setter<Object, Object> setter;
   private Class<?> className;
   private String mapFunctionQuery;
   private String startkey;
   @Min(1)
   private int limit = 10;
-  @Min(0)
-  private int page;
   private String startDocId;
   @NotNull
   //private Query query;
   private String designDocumentName;
   private transient ArrayList<String> keys;
+  private String expressionForValue;
 
   @Override
   public ArrayList<String> getKeys()
@@ -108,18 +107,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   }
 
 
-  private ArrayList<String> expressionForValue;
-
-  public ArrayList<String> getExpressionForValue()
-  {
-    return expressionForValue;
-  }
-
-  public void setExpressionForValue(ArrayList<String> expressionForValue)
-  {
-    this.expressionForValue = expressionForValue;
-  }
-
   public String getMapFunctionQuery()
   {
     return mapFunctionQuery;
@@ -140,17 +127,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     this.objectClass = objectClass;
   }
 
-  public CouchBasePOJOInputOperator()
-  {
-    super();
-    valueSetter = new Setter<Object, Object>
-  }
-
-  @Override
-  public void setup(OperatorContext context)
-  {
-    super.setup(context);
-  }
 
   @Override
   public void emitTuples()
@@ -158,13 +134,11 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     boolean hasRow = true;
     Query query = new Query();
     query.setStale( Stale.FALSE );
-   // query.setIncludeDocs(true).setLimit(limit);
-    //skip parameter should be set to 0 for better results as specified in couchbase documentation.
-    //query.setSkip(0);
+    query.setLimit(limit);
+
    while(hasRow){
      hasRow = false;
-//query.setRangeStart(startkey);
-//query.setStartkeyDocID(startDocId);
+query.setRangeStart(startkey);
    View view = store.getInstance().getView(designDocumentName, viewName);
 
    ViewResponse result =store.getInstance().query(view, query);
@@ -172,7 +146,7 @@ Iterator<ViewRow> iterRow =  result.iterator();
  while(iterRow.hasNext())
     {
       hasRow = true;
-      System.out.println("row key and docid are " + iterRow.next().getKey() + iterRow.next().getId());
+      System.out.println("row key and " + iterRow.next().getKey());
       startkey = iterRow.next().getKey();
       startDocId = iterRow.next().getId();
       Object result1 = iterRow.next().getDocument();
@@ -216,17 +190,16 @@ Iterator<ViewRow> iterRow =  result.iterator();
   @Override
   public Object getTuple(Object couchbaseObject)
   {
-    int size = expressionForValue.size();
-    if (valueSetters.isEmpty()) {
+    if (setter == null) {
       try {
         className = Class.forName(objectClass);
       }
       catch (ClassNotFoundException ex) {
         throw new RuntimeException(ex);
       }
-      for(int i=0;i<size;i++){
-      valueSetters.add(PojoUtils.createSetter(className, expressionForValue.get(i), Object.class));
-      }
+      //for(int i=0;i<size;i++){
+      setter = PojoUtils.createSetter(className, expressionForValue, Object.class);
+      //}
     }
     Object outputObj = null;
     try {
@@ -238,9 +211,8 @@ Iterator<ViewRow> iterRow =  result.iterator();
     catch (IllegalAccessException ex) {
       throw new RuntimeException(ex);
     }
-    for(int i=0;i<size;i++){
-    valueSetters.get(i).set(outputObj, couchbaseObject);
-    }
+    setter.set(outputObj, couchbaseObject);
+
     return outputObj;
   }
 

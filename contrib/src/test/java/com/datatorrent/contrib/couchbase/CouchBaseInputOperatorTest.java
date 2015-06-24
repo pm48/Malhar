@@ -194,10 +194,10 @@ public class CouchBaseInputOperatorTest
     TestInputPOJOOperator inputPOJOOperator = new TestInputPOJOOperator();
     inputPOJOOperator.setStore(store);
     //inputPOJOOperator.insertEventInTable();
-    ArrayList<String> expressions = new ArrayList<String>();
-    expressions.add("name");
-    expressions.add("id");
-    inputPOJOOperator.setExpressionForValue(expressions);
+    //ArrayList<String> expressions = new ArrayList<String>();
+    //expressions.add("name");
+    //expressions.add("id");
+    //inputPOJOOperator.setExpressionForValue(expressions);
      ArrayList<String> keylist = new ArrayList<String>();
      keylist.add("key1");
      keylist.add("key2");
@@ -244,7 +244,7 @@ public class CouchBaseInputOperatorTest
       o.endWindow();
     }*/
 
-  
+
 
   /*  for (AbstractCouchBaseInputOperator<Object> o: opers) {
       o.teardown();
