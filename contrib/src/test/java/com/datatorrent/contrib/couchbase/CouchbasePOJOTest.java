@@ -148,7 +148,14 @@ public class CouchbasePOJOTest
 
       ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
       designDoc.getViews().add(viewDesign);
-      store.client.createDesignDoc(designDoc) ;
+      while(store.client.createDesignDoc(designDoc) !=true)
+      {
+        try {
+          Thread.sleep(1000);
+        }
+        catch (InterruptedException ex) {
+        }
+      }
     }
 
   }
