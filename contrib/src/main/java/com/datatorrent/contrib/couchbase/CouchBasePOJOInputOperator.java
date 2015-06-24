@@ -54,17 +54,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     this.keys = keys;
   }
 
-
-  /*public Query getQuery()
-  {
-    return query;
-  }
-
-  public void setQuery(Query query)
-  {
-    this.query = query;
-  }*/
-
   public String getStartDocId()
   {
     return startDocId;
@@ -162,38 +151,24 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     super.setup(context);
   }
 
-  //This application loops on all the pages until the end of the index
   @Override
   public void emitTuples()
   {
-    int skip =0;
     boolean hasRow = true;
-    ViewQuery query1 = new ViewQuery();
-    query1.startKey(startkey);
+    Query query = new Query();
+    query.setRangeStart(startkey);
+    query.setIncludeDocs(true).setLimit(limit);
+    //skip parameter should be set to 0 for better results as specified in couchbase documentation.
+    query.setSkip(0);
    while(hasRow){
      hasRow = false;
-    if(page == 0){
-      skip =0;
-    }
-    else{
-      skip =1;
-    }
-    query1.skip(0);
-    query1.includeDocs(true).limit(limit);
+
    View view = store.getInstance().getView(designDocumentName, viewName);
 
-   Query query = new Query();
-   query.setRangeStart(startkey);
-   query.setIncludeDocs(true).setLimit(10);
-
    query.setStale( Stale.OK );
-   ViewResponse result =null;
+   ViewResponse result =store.getInstance().query(view, query);
 
-   for(int i=0;i<10;i++){
-     result = store.getInstance().query(view, query);
-     if (result!=null)
-       break;
-   }
+
    for(ViewRow row : result) {
 
      System.out.println("document is " + row.getDocument().toString()); // deal with the document/data

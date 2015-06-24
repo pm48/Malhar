@@ -38,6 +38,8 @@ import com.datatorrent.lib.db.AbstractStoreInputOperator;
 import com.datatorrent.api.Context;
 import com.datatorrent.api.DefaultPartition;
 import com.datatorrent.api.Partitioner;
+import com.datatorrent.common.util.DTThrowable;
+import java.io.IOException;
 
 
 /**
@@ -87,7 +89,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
   @Override
   public void setup(Context.OperatorContext context)
   {
-   /* if (clientPartition == null) {
+    if (clientPartition == null) {
       if (conf == null) {
         conf = store.getConf();
       }
@@ -97,7 +99,7 @@ public abstract class AbstractCouchBaseInputOperator<T> extends AbstractStoreInp
       catch (IOException ex) {
         DTThrowable.rethrow(ex);
       }
-    }*/
+    }
     super.setup(context);
   }
 

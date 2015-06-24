@@ -6,19 +6,28 @@ package com.datatorrent.contrib.couchbase;
 
 public class TestPojoInput
 {
-  private String name;
-  private Integer id;
-  private Address address;
+  private String key;
+  private Integer age;
 
-
-  public Integer getId()
+  public Integer getAge()
   {
-    return id;
+    return age;
   }
 
-  public void setId(Integer id)
+  public void setAge(Integer age)
   {
-    this.id = id;
+    this.age = age;
+  }
+  private Address address;
+
+  public String getKey()
+  {
+    return key;
+  }
+
+  public void setKey(String key)
+  {
+    this.key = key;
   }
 
   public Address getAddress()
@@ -31,17 +40,8 @@ public class TestPojoInput
     this.address = address;
   }
 
-  public String getName()
-  {
-    return name;
-  }
 
-  public void setName(String name)
-  {
-    this.name = name;
-  }
-
-  protected static class Address
+  public static class Address
   {
     private int housenumber;
 

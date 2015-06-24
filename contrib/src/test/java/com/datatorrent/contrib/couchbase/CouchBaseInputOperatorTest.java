@@ -244,21 +244,7 @@ public class CouchBaseInputOperatorTest
       o.endWindow();
     }*/
 
-    int count = 0;
-    for (Object o: sink.collectedTuples) {
-      logger.debug("collected tuples are {}", sink.collectedTuples.size());
-      count++;
-      TestPojoInput object = (TestPojoInput)o;
-      if (count == 1) {
-        logger.debug("name is {} count 1", object.getName());
-        Assert.assertEquals("name set in testpojo", "test1", object.getName());
-        Assert.assertEquals("id set in testpojo", "123", object.getId().toString());
-      }
-      if (count == 2) {
-        logger.debug("name is {} count 2", object.getName());
-        Assert.assertEquals("id set in testpojo", "321", object.getId().toString());
-      }
-    }
+  
 
   /*  for (AbstractCouchBaseInputOperator<Object> o: opers) {
       o.teardown();
