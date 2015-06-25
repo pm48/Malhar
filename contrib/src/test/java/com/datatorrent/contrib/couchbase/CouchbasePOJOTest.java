@@ -143,7 +143,9 @@ public class CouchbasePOJOTest
       String viewName = "by_name";
       String mapFunction
               = "function (doc, meta) {\n"
-              +  "    emit(meta.id, null);\n"
+              +  "  if (meta.type == \"json\") {"
+              +  "    emit(doc);\n"
+              +  "    }\n"
               + "}";
 
       ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
