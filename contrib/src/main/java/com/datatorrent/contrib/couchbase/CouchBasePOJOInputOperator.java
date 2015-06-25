@@ -28,7 +28,7 @@ import org.ektorp.ViewQuery;
 
 public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<Object>
 {
-  private transient List<Setter<Object, String>> setters;
+  private transient List<Setter<Object, Object>> setters;
   private transient Class<?> className = null;
   private transient ArrayList<String> keys;
   private final transient List<Class<?>> fieldType;
@@ -143,6 +143,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   public void setup(OperatorContext context)
   {
     super.setup(context);
+    setters = new ArrayList<Setter<Object, Object>>();
     try {
       className = Class.forName(outputClass);
     }
@@ -162,7 +163,7 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
         throw new RuntimeException(ex);
       }
       fieldType.add(type);
-      setters.add(PojoUtils.createSetter(className, columns.get(i), String.class));
+      setters.add(PojoUtils.createSetter(className, columns.get(i), type));
 
     }
   }
@@ -212,7 +213,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
         }
 
         outputPort.emit(outputObj);
-        System.out.println("size of result is " + result.size());
 
       }
     }
