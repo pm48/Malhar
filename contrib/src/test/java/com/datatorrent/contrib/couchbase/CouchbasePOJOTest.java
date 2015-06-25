@@ -44,7 +44,7 @@ public class CouchbasePOJOTest
   private static final int OPERATOR_ID = 0;
   protected static ArrayList<URI> nodes = new ArrayList<URI>();
   protected static ArrayList<String> keyList;
-  private static final String uri = "node13.morado.com:8091";
+  private static final String uri = "localhost:8091";
   private static final String DESIGN_DOC_ID1 = "dev_test1";
   private static final String TEST_VIEW1 = "testView1";
 
@@ -64,12 +64,7 @@ public class CouchbasePOJOTest
       DTThrowable.rethrow(ex);
     }
     store.getInstance().flush();
-    try {
-      Thread.sleep(1000);
-    }
-    catch (InterruptedException ex) {
-      throw new RuntimeException(ex);
-    }
+
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
@@ -77,8 +72,20 @@ public class CouchbasePOJOTest
     inputOperator.setStore(store);
     inputOperator.setOutputClass("com.datatorrent.contrib.couchbase.TestComplexPojoInput");
     inputOperator.insertEventsInTable(2);
+    try {
+      Thread.sleep(10000);
+    }
+    catch (InterruptedException ex) {
+      throw new RuntimeException(ex);
+    }
     inputOperator.createAndFetchViewQuery1();
 
+    try {
+      Thread.sleep(1000);
+    }
+    catch (InterruptedException ex) {
+      throw new RuntimeException(ex);
+    }
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputOperator.outputPort.setSink(sink);
 
@@ -89,7 +96,7 @@ public class CouchbasePOJOTest
     inputOperator.emitTuples();
     inputOperator.endWindow();
 
-   logger.debug("collected tuples are {}", sink.collectedTuples.size());
+    logger.debug("collected tuples are {}", sink.collectedTuples.size());
 
     int count = 0;
     for (Object o: sink.collectedTuples) {
@@ -103,13 +110,12 @@ public class CouchbasePOJOTest
       if (count == 2) {
         Assert.assertEquals("name set in testpojo", "test1", object.getName());
         Assert.assertEquals("map in testpojo", "{test2=12345}", object.getMap().toString());
-        Assert.assertEquals("age in testpojo","12", object.getAge().toString());
+        Assert.assertEquals("age in testpojo", "12", object.getAge().toString());
       }
     }
     sink.clear();
-    inputOperator.teardown();
-
     store.client.deleteDesignDoc(DESIGN_DOC_ID1);
+    inputOperator.teardown();
   }
 
   public static class TestInputOperator extends CouchBasePOJOInputOperator

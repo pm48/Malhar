@@ -24,6 +24,20 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import org.codehaus.jackson.map.ObjectMapper;
 
+/**
+ * <p>
+ * CouchBasePOJOInputOperator</p>
+ * A generic implementation of AbstractStoreInputOperator that fetches rows of data from Couchbase store and emits them as POJOs.
+ * Each row is converted to a POJO.User needs to specify the design document name and view name against which he wants to query.
+ * User should also provide a mapping function to fetch the specific fields from database.
+ * Example:
+ * function (doc) {
+ *   emit(doc._id, [doc.username, doc.first_name, doc.last_name, doc.last_login]);
+ * }
+ * @displayName Couchbase POJO Input Operator
+ * @category Input
+ * @tags input operator
+ */
 public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Object, CouchBaseStore>
 {
   private transient Class<?> className = null;
@@ -66,6 +80,9 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
     this.startDocId = startDocId;
   }
 
+  /*
+   * Name of the design document in which the view to be queried is added.
+   */
   public String getDesignDocumentName()
   {
     return designDocumentName;
@@ -76,6 +93,9 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
     this.designDocumentName = designDocumentName;
   }
 
+  /*
+   * Name of the view against which a user wants to query.
+   */
   public String getViewName()
   {
     return viewName;
@@ -140,12 +160,7 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
     Iterator<ViewRow> iterRow = result.iterator();
     while (iterRow.hasNext()) {
       ViewRow row = iterRow.next();
-      System.out.println("row key is " + row.getKey());
-      System.out.println("row id is " + row.getId());
-      String value = row.getValue();
-      System.out.println("value is " + value);
       Object document = row.getDocument();
-      System.out.println("doc is " + document.toString());
       Object outputObj = null;
       try {
         outputObj = objectMapper.readValue(document.toString(), className);
@@ -153,7 +168,11 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
       catch (IOException ex) {
         throw new RuntimeException(ex);
       }
-
+      //Update start key if it is specified.
+      if(startkey!=null)
+      {
+        startkey = row.getKey();
+      }
       outputPort.emit(outputObj);
 
     }
