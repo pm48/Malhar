@@ -65,11 +65,15 @@ public class CouchbasePOJOTest
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
-
+    ArrayList<String> columns = new ArrayList<String>();
+    columns.add("key");
+    columns.add("name");
+    columns.add("map");
+    columns.add("age");
     TestInputOperator inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
     inputOperator.setServerURIString(uri);
-
+    inputOperator.setColumns(columns);
     inputOperator.setOutputClass("com.datatorrent.contrib.couchbase.TestComplexPojoInput");
     inputOperator.insertEventsInTable(2);
 
