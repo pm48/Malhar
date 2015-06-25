@@ -15,33 +15,63 @@
  */
 package com.datatorrent.contrib.couchbase;
 
-
 import com.couchbase.client.protocol.views.*;
 import com.datatorrent.api.Context.OperatorContext;
 import com.datatorrent.lib.util.PojoUtils;
 import com.datatorrent.lib.util.PojoUtils.Setter;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import org.ektorp.ViewQuery;
 
 public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<Object>
 {
-  private String objectClass;
-  //Value stored in Couchbase can be of these data types: boolean,numeric,string,arrays,object,null.
-  private transient Setter<Object, Object> setter;
-  private Class<?> className;
-  private String mapFunctionQuery;
+  private transient List<Setter<Object, String>> setters;
+  private transient Class<?> className = null;
+  private transient ArrayList<String> keys;
+  private final transient List<Class<?>> fieldType;
+  //User has the option to specify a start key.
   private String startkey;
   @Min(1)
   private int limit = 10;
   private String startDocId;
   @NotNull
-  //private Query query;
   private String designDocumentName;
-  private transient ArrayList<String> keys;
-  private String expressionForValue;
+  @NotNull
+  private ArrayList<String> columns;
+
+  @NotNull
+  private String viewName;
+  /*
+   * POJO class which is generated as output from this operator.
+   * Example:
+   * public class TestPOJO{ int intfield; public int getInt(){} public void setInt(){} }
+   * outputClass = TestPOJO
+   * POJOs will be generated on fly in later implementation.
+   */
+  private String outputClass;
+
+  public String getOutputClass()
+  {
+    return outputClass;
+  }
+
+  public void setOutputClass(String outputClass)
+  {
+    this.outputClass = outputClass;
+  }
+
+  public ArrayList<String> getColumns()
+  {
+    return columns;
+  }
+
+  public void setColumns(ArrayList<String> columns)
+  {
+    this.columns = columns;
+  }
 
   @Override
   public ArrayList<String> getKeys()
@@ -83,8 +113,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   {
     this.viewName = viewName;
   }
-  private String viewName;
-
 
   public int getLimit()
   {
@@ -106,116 +134,95 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
     this.startkey = startkey;
   }
 
-
-  public String getMapFunctionQuery()
+  public CouchBasePOJOInputOperator()
   {
-    return mapFunctionQuery;
+    fieldType = new ArrayList<Class<?>>();
   }
 
-  public void setMapFunctionQuery(String mapFunctionQuery)
+  @Override
+  public void setup(OperatorContext context)
   {
-    this.mapFunctionQuery = mapFunctionQuery;
-  }
+    super.setup(context);
+    try {
+      className = Class.forName(outputClass);
+    }
+    catch (ClassNotFoundException ex) {
+      throw new RuntimeException(ex);
+    }
 
-  public String getObjectClass()
-  {
-    return objectClass;
-  }
+    for (int i = 0; i < columns.size(); i++) {
+      Class<?> type = null;
+      try {
+        type = className.getDeclaredField(columns.get(i)).getType();
+      }
+      catch (NoSuchFieldException ex) {
+        throw new RuntimeException(ex);
+      }
+      catch (SecurityException ex) {
+        throw new RuntimeException(ex);
+      }
+      fieldType.add(type);
+      setters.add(PojoUtils.createSetter(className, columns.get(i), String.class));
 
-  public void setObjectClass(String objectClass)
-  {
-    this.objectClass = objectClass;
+    }
   }
-
 
   @Override
   public void emitTuples()
   {
     boolean hasRow = true;
     Query query = new Query();
-    query.setStale( Stale.FALSE );
+    query.setStale(Stale.FALSE);
     query.setLimit(limit);
-
-   while(hasRow){
-     hasRow = false;
-query.setRangeStart(startkey);
-   View view = store.getInstance().getView(designDocumentName, viewName);
-
-   ViewResponse result =store.getInstance().query(view, query);
-Iterator<ViewRow> iterRow =  result.iterator();
- while(iterRow.hasNext())
-    {
-      hasRow = true;
-      System.out.println("row key and " + iterRow.next().getKey());
-      startkey = iterRow.next().getKey();
-      startDocId = iterRow.next().getId();
-      Object result1 = iterRow.next().getDocument();
-      keys.add(startkey);
-
-         if (result1 != null) {
-        Object tuple = getTuple(result);
-        outputPort.emit(tuple);
+    while (hasRow) {
+      hasRow = false;
+      if (startkey != null) {
+        query.setRangeStart(startkey);
       }
+      View view = store.getInstance().getView(designDocumentName, viewName);
 
+      ViewResponse result = store.getInstance().query(view, query);
+      Iterator<ViewRow> iterRow = result.iterator();
+      while (iterRow.hasNext()) {
+        hasRow = true;
+        System.out.println("row key is " + iterRow.next().getKey());
+        System.out.println("row id is " + iterRow.next().getId());
+        startkey = iterRow.next().getKey();
+        startDocId = iterRow.next().getId();
+        String value = iterRow.next().getValue();
+        System.out.println("value is " + value);
+        keys.add(startkey);
+        String[] values = null;
+        if (value != null) {
+          values = value.split(",");
+        }
+
+        Object outputObj = null;
+        try {
+          outputObj = className.newInstance();
+        }
+        catch (InstantiationException ex) {
+          throw new RuntimeException(ex);
+        }
+        catch (IllegalAccessException ex) {
+          throw new RuntimeException(ex);
+        }
+        for (int i = 0; i < setters.size(); i++) {
+          setters.get(i).set(outputObj, values[i]);
+        }
+
+        outputPort.emit(outputObj);
+        System.out.println("size of result is " + result.size());
+
+      }
     }
-
-   System.out.println("size of result is "+result.size());
-
-
-    //for (ViewRow row : result) {
-    //System.out.println(row);
-//}
-    /*Iterator<ViewRow> iterRow =  response.iterator();
-    keys = new ArrayList<String>();
-    while(iterRow.hasNext())
-    {
-      hasRow = true;
-      System.out.println("row key and docid are " + iterRow.next().getKey() + iterRow.next().getId());
-      startkey = iterRow.next().getKey();
-      startDocId = iterRow.next().getId();
-      Object result = iterRow.next().getDocument();
-      keys.add(startkey);
-
-         if (result != null) {
-        Object tuple = getTuple(result);
-        outputPort.emit(tuple);
-      }
-
-    }*/
-
-  }
   }
 
-
+  //This method is not required in current concrete implementation of AbstractCouchBaseInputOperator.
   @Override
-  public Object getTuple(Object couchbaseObject)
+  public Object getTuple(Object value)
   {
-    if (setter == null) {
-      try {
-        className = Class.forName(objectClass);
-      }
-      catch (ClassNotFoundException ex) {
-        throw new RuntimeException(ex);
-      }
-      //for(int i=0;i<size;i++){
-      setter = PojoUtils.createSetter(className, expressionForValue, Object.class);
-      //}
-    }
-    Object outputObj = null;
-    try {
-      outputObj = className.newInstance();
-    }
-    catch (InstantiationException ex) {
-      throw new RuntimeException(ex);
-    }
-    catch (IllegalAccessException ex) {
-      throw new RuntimeException(ex);
-    }
-    setter.set(outputObj, couchbaseObject);
-
-    return outputObj;
+    return null;
   }
-
-
 
 }

@@ -22,21 +22,23 @@ import com.datatorrent.api.Attribute.AttributeMap;
 import com.datatorrent.api.DAG;
 
 import com.datatorrent.common.util.DTThrowable;
-import java.util.logging.Level;
 import org.junit.Test;
 
 public class CouchbasePOJOTest
 {
   private static final Logger logger = LoggerFactory.getLogger(CouchBaseInputOperatorTest.class);
-  private static String APP_ID = "CouchBaseInputOperatorTest";
-  private static String bucket = "default";
-  private static String password = "";
-  private static int OPERATOR_ID = 0;
+  private static final String APP_ID = "CouchBaseInputOperatorTest";
+  private static final String bucket = "default";
+  private static final String password = "";
+  private static final int OPERATOR_ID = 0;
   protected static ArrayList<URI> nodes = new ArrayList<URI>();
   protected static ArrayList<String> keyList;
-  private static String uri = "node13.morado.com:8091";
-  private static final String DESIGN_DOC_ID = "_design/CouchbaseTest";
-  private static final String TEST_VIEW = "testView";
+  private static final String uri = "node13.morado.com:8091";
+  private static final String DESIGN_DOC_ID1 = "dev_test1";
+  private static final String DESIGN_DOC_ID2 = "dev_test1";
+  private static final String TEST_VIEW1 = "testView1";
+  private static final String TEST_VIEW2 = "testView2";
+
 
   @Test
   public void TestCouchBaseInputOperator()
@@ -53,8 +55,13 @@ public class CouchbasePOJOTest
     catch (IOException ex) {
       DTThrowable.rethrow(ex);
     }
-
     store.getInstance().flush();
+    try {
+      Thread.sleep(1000);
+    }
+    catch (InterruptedException ex) {
+      throw new RuntimeException(ex);
+    }
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
@@ -63,22 +70,16 @@ public class CouchbasePOJOTest
     inputOperator.setStore(store);
     inputOperator.setServerURIString(uri);
 
-    ArrayList<String> keylist = new ArrayList<String>();
-     keylist.add("key1");
-     keylist.add("key2");
-     keylist.add("key3");
-     keylist.add("key4");
-    inputOperator.setKeys(keylist);
-    inputOperator.setObjectClass("com.datatorrent.contrib.couchbase.TestPojoInput");
+    inputOperator.setOutputClass("com.datatorrent.contrib.couchbase.TestComplexPojoInput");
     inputOperator.insertEventsInTable(2);
 
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputOperator.outputPort.setSink(sink);
 
     inputOperator.setup(context);
-    inputOperator.createAndFetchViewQuery();
-    inputOperator.setDesignDocumentName("dev_beer");
-    inputOperator.setViewName("by_name");
+    inputOperator.createAndFetchViewQuery1();
+    inputOperator.setDesignDocumentName(DESIGN_DOC_ID1);
+    inputOperator.setViewName(TEST_VIEW1);
     inputOperator.beginWindow(0);
     inputOperator.emitTuples();
     inputOperator.endWindow();
@@ -87,19 +88,39 @@ public class CouchbasePOJOTest
     for (Object o: sink.collectedTuples) {
       logger.debug("collected tuples are {}", sink.collectedTuples.size());
       count++;
-      TestPojoInput object = (TestPojoInput)o;
+      TestComplexPojoInput object = (TestComplexPojoInput)o;
       if (count == 1) {
-        logger.debug("key is {} count 1", object.getKey());
-   //     Assert.assertEquals("name set in testpojo", "test1", object.getName());
-        Assert.assertEquals(" set in testpojo", "123", object.getKey());
+        Assert.assertEquals("key is", "Key2", object.getKey());
+        Assert.assertEquals("name set in testpojo", "test", object.getName());
+        Assert.assertEquals("map in testpojo", "\"test\":12345", object.getMap());
+        Assert.assertEquals("age in testpojo", 23, object.getAge());
       }
       if (count == 2) {
-        //logger.debug("name is {} count 2",object.get);
-       // Assert.assertEquals("id set in testpojo", "321", object.getId().toString());
+       Assert.assertEquals("map in testpojo", "\"test2\":12345", object.getMap());
+       Assert.assertEquals("age in testpojo", 12, object.getAge());
+       Assert.assertEquals("key is", "Key3", object.getKey());
+       Assert.assertEquals("name set in testpojo", "test1", object.getName());
       }
     }
-    store.client.deleteDesignDoc("dev_beer");
+    sink.clear();
+    inputOperator.teardown();
+
+    inputOperator.setOutputClass("com.datatorrent.contrib.couchbase.TestSimplePojoInput");
+    inputOperator.setup(context);
+    inputOperator.createAndFetchViewQuery2();
+    inputOperator.setDesignDocumentName(DESIGN_DOC_ID2);
+    inputOperator.setViewName(TEST_VIEW2);
+    inputOperator.beginWindow(0);
+    inputOperator.emitTuples();
+    inputOperator.endWindow();
+
+     Assert.assertEquals("name set in testpojo", 431, (TestSimplePojoInput)sink.collectedTuples.get(0));
+
+    store.client.deleteDesignDoc(DESIGN_DOC_ID1);
+    store.client.deleteDesignDoc(DESIGN_DOC_ID2);
   }
+
+
 
   public static class TestInputOperator extends CouchBasePOJOInputOperator
   {
@@ -107,24 +128,10 @@ public class CouchbasePOJOTest
     private void insertEventsInTable(int numEvents)
     {
       logger.info("number of events is" + numEvents);
-        /*TestPojoInput inputPojo = new TestPojoInput();
-        TestPojoInput inputPojo2 = new TestPojoInput();
-        inputPojo.setKey("Key1");
-        inputPojo.setAge(23);
-        TestPojoInput.Address address = new  TestPojoInput.Address();
-        address.setCity("chandigarh");
-        address.setHousenumber(34);
-      //  inputPojo.setAddress(address);
-        inputPojo2.setKey("Key2");
-        inputPojo2.setAge(32);
-        TestPojoInput.Address address2 = new  TestPojoInput.Address();
-        address2.setCity("delhi");
-        address2.setHousenumber(43);
-        //inputPojo2.setAddress(address2);*/
         try {
-          store.client.set("Key1", 123).get();
-          store.client.set("Key2", "{\"name\":\"test\",\"map\":{\"test\":12345},\"phone\":123344555}").get();
-          store.client.set("Key3", "{\"name\":\"test1\",\"map\":{\"test2\":12345},\"phone\":123344666}").get();
+          store.client.set("Key1", 431);
+          store.client.set("Key2", "{\"name\":\"test\",\"map\":{\"test\":12345},\"age\":23}").get();
+          store.client.set("Key3", "{\"name\":\"test1\",\"map\":{\"test2\":12345},\"age\":12}").get();
         }
         catch (InterruptedException ex) {
           DTThrowable.rethrow(ex);
@@ -135,29 +142,36 @@ public class CouchbasePOJOTest
 
     }
 
-    public void createAndFetchViewQuery()
+    public void createAndFetchViewQuery1()
     {
-
-      DesignDocument designDoc = new DesignDocument("dev_beer");
-
-      String viewName = "by_name";
-      String mapFunction
-              = "function (doc, meta) {\n"
-              +  "  if (meta.type == \"json\") {"
-              +  "    emit(doc);\n"
-              +  "    }\n"
-              + "}";
+      DesignDocument designDoc = new DesignDocument(DESIGN_DOC_ID1);
+      String viewName = TEST_VIEW1;
+      String mapFunction =
+            "function (doc, meta) {\n" +
+            "  if( meta.type == \"json\") {\n" +
+            "    emit(doc.key,[doc.name, doc.test, doc.map, doc.phone]);\n" +
+            "  }\n" +
+            " }";
 
       ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
       designDoc.getViews().add(viewDesign);
-      while(store.client.createDesignDoc(designDoc) !=true)
-      {
-        try {
-          Thread.sleep(1000);
-        }
-        catch (InterruptedException ex) {
-        }
-      }
+      store.client.createDesignDoc(designDoc);
+    }
+
+    public void createAndFetchViewQuery2()
+    {
+      DesignDocument designDoc = new DesignDocument(DESIGN_DOC_ID2);
+      String viewName = TEST_VIEW2;
+      String mapFunction =
+            "function (doc, meta) {\n" +
+            "  if( meta.type == \"json\") {\n" +
+            "    emit(doc.key,doc);\n" +
+            "  }\n" +
+            " }";
+
+      ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
+      designDoc.getViews().add(viewDesign);
+      store.client.createDesignDoc(designDoc);
     }
 
   }

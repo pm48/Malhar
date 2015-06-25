@@ -204,7 +204,7 @@ public class CouchBaseInputOperatorTest
      keylist.add("key3");
      keylist.add("key4");
     inputPOJOOperator.setKeys(keylist);
-    inputPOJOOperator.setObjectClass("com.datatorrent.contrib.couchbase.TestPojoInput");
+//    inputPOJOOperator.setObjectClass("com.datatorrent.contrib.couchbase.TestPojoInput");
     inputPOJOOperator.setViewName(TEST_VIEW);
     inputPOJOOperator.insertEventInTable();
     inputPOJOOperator.setDesignDocumentName(DESIGN_DOC_ID);
