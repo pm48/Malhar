@@ -17,21 +17,17 @@ package com.datatorrent.contrib.couchbase;
 
 import com.couchbase.client.protocol.views.*;
 import com.datatorrent.api.Context.OperatorContext;
-import com.datatorrent.lib.util.PojoUtils;
-import com.datatorrent.lib.util.PojoUtils.Setter;
-import java.util.ArrayList;
+import com.datatorrent.lib.db.AbstractStoreInputOperator;
+import java.io.IOException;
 import java.util.Iterator;
-import java.util.List;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
-import org.ektorp.ViewQuery;
+import org.codehaus.jackson.map.ObjectMapper;
 
-public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<Object>
+public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Object, CouchBaseStore>
 {
-  private transient List<Setter<Object, Object>> setters;
   private transient Class<?> className = null;
-  private transient ArrayList<String> keys;
-  private final transient List<Class<?>> fieldType;
+  private final transient ObjectMapper objectMapper;
   //User has the option to specify a start key.
   private String startkey;
   @Min(1)
@@ -39,9 +35,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   private String startDocId;
   @NotNull
   private String designDocumentName;
-  @NotNull
-  private ArrayList<String> columns;
-
   @NotNull
   private String viewName;
   /*
@@ -61,27 +54,6 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
   public void setOutputClass(String outputClass)
   {
     this.outputClass = outputClass;
-  }
-
-  public ArrayList<String> getColumns()
-  {
-    return columns;
-  }
-
-  public void setColumns(ArrayList<String> columns)
-  {
-    this.columns = columns;
-  }
-
-  @Override
-  public ArrayList<String> getKeys()
-  {
-    return keys;
-  }
-
-  public void setKeys(ArrayList<String> keys)
-  {
-    this.keys = keys;
   }
 
   public String getStartDocId()
@@ -136,93 +108,56 @@ public class CouchBasePOJOInputOperator extends AbstractCouchBaseInputOperator<O
 
   public CouchBasePOJOInputOperator()
   {
-    fieldType = new ArrayList<Class<?>>();
+    objectMapper = new ObjectMapper();
+    store = new CouchBaseStore();
   }
 
   @Override
   public void setup(OperatorContext context)
   {
     super.setup(context);
-    setters = new ArrayList<Setter<Object, Object>>();
     try {
       className = Class.forName(outputClass);
     }
     catch (ClassNotFoundException ex) {
       throw new RuntimeException(ex);
     }
-
-    for (int i = 0; i < columns.size(); i++) {
-      Class<?> type = null;
-      try {
-        type = className.getDeclaredField(columns.get(i)).getType();
-      }
-      catch (NoSuchFieldException ex) {
-        throw new RuntimeException(ex);
-      }
-      catch (SecurityException ex) {
-        throw new RuntimeException(ex);
-      }
-      fieldType.add(type);
-      setters.add(PojoUtils.createSetter(className, columns.get(i), type));
-
-    }
   }
 
   @Override
   public void emitTuples()
   {
-    boolean hasRow = true;
     Query query = new Query();
     query.setStale(Stale.FALSE);
+    query.setIncludeDocs(true);
     query.setLimit(limit);
-    while (hasRow) {
-      hasRow = false;
-      if (startkey != null) {
-        query.setRangeStart(startkey);
-      }
-      View view = store.getInstance().getView(designDocumentName, viewName);
-
-      ViewResponse result = store.getInstance().query(view, query);
-      Iterator<ViewRow> iterRow = result.iterator();
-      while (iterRow.hasNext()) {
-        hasRow = true;
-        System.out.println("row key is " + iterRow.next().getKey());
-        System.out.println("row id is " + iterRow.next().getId());
-        startkey = iterRow.next().getKey();
-        startDocId = iterRow.next().getId();
-        String value = iterRow.next().getValue();
-        System.out.println("value is " + value);
-        keys.add(startkey);
-        String[] values = null;
-        if (value != null) {
-          values = value.split(",");
-        }
-
-        Object outputObj = null;
-        try {
-          outputObj = className.newInstance();
-        }
-        catch (InstantiationException ex) {
-          throw new RuntimeException(ex);
-        }
-        catch (IllegalAccessException ex) {
-          throw new RuntimeException(ex);
-        }
-        for (int i = 0; i < setters.size(); i++) {
-          setters.get(i).set(outputObj, values[i]);
-        }
-
-        outputPort.emit(outputObj);
-
-      }
+    if (startkey != null) {
+      query.setRangeStart(startkey);
     }
-  }
+    View view = store.getInstance().getView(designDocumentName, viewName);
 
-  //This method is not required in current concrete implementation of AbstractCouchBaseInputOperator.
-  @Override
-  public Object getTuple(Object value)
-  {
-    return null;
+    ViewResponse result = store.getInstance().query(view, query);
+    Iterator<ViewRow> iterRow = result.iterator();
+    while (iterRow.hasNext()) {
+      ViewRow row = iterRow.next();
+      System.out.println("row key is " + row.getKey());
+      System.out.println("row id is " + row.getId());
+      String value = row.getValue();
+      System.out.println("value is " + value);
+      Object document = row.getDocument();
+      System.out.println("doc is " + document.toString());
+      Object outputObj = null;
+      try {
+        outputObj = objectMapper.readValue(document.toString(), className);
+      }
+      catch (IOException ex) {
+        throw new RuntimeException(ex);
+      }
+
+      outputPort.emit(outputObj);
+
+    }
+
   }
 
 }

@@ -15,11 +15,12 @@
  */
 package com.datatorrent.contrib.couchbase;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
 import java.io.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

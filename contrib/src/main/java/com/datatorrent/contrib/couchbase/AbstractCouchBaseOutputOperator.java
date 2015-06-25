@@ -43,7 +43,6 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
 {
   private static final transient Logger logger = LoggerFactory.getLogger(AbstractCouchBaseOutputOperator.class);
   protected transient HashMap<OperationFuture<Boolean>, Long> mapFuture;
-
   protected int numTuples;
   protected CouchBaseSerializer serializer;
   protected TreeMap<Long, T> mapTuples;
@@ -51,11 +50,9 @@ public abstract class AbstractCouchBaseOutputOperator<T> extends AbstractAggrega
   private final transient CompletionListener listener;
   private transient boolean failure;
   private final transient Object syncObj;
-  
 
   public AbstractCouchBaseOutputOperator()
   {
-
     mapFuture = new HashMap<OperationFuture<Boolean>, Long>();
     mapTuples = new TreeMap<Long, T>();
     store = new CouchBaseWindowStore();

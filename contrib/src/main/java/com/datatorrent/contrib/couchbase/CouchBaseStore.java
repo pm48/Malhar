@@ -15,12 +15,6 @@
  */
 package com.datatorrent.contrib.couchbase;
 
-import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
-import com.couchbase.client.vbucket.ConfigurationProvider;
-import com.couchbase.client.vbucket.ConfigurationProviderHTTP;
-import com.couchbase.client.vbucket.config.Bucket;
-import com.couchbase.client.vbucket.config.Config;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,7 +25,12 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import javax.validation.constraints.Min;
 
-
+import com.couchbase.client.CouchbaseClient;
+import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
+import com.couchbase.client.vbucket.ConfigurationProvider;
+import com.couchbase.client.vbucket.ConfigurationProviderHTTP;
+import com.couchbase.client.vbucket.config.Bucket;
+import com.couchbase.client.vbucket.config.Config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,7 +208,6 @@ public class CouchBaseStore implements Connectable
   @Override
   public void connect() throws IOException
   {
-    System.setProperty("viewmode", "development");
     String[] tokens = uriString.split(",");
     URI uri = null;
     for (String url : tokens) {
@@ -223,7 +221,7 @@ public class CouchBaseStore implements Connectable
     }
     try {
       CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
-      cfb.setOpTimeout(75000);  // wait up to 10 seconds for an operation to succeed
+      cfb.setOpTimeout(timeout);  // wait up to 10 seconds for an operation to succeed
       cfb.setOpQueueMaxBlockTime(blockTime); // wait up to 10 second when trying to enqueue an operation
       client = new CouchbaseClient(cfb.buildCouchbaseConnection(baseURIs, bucket, password));
       //client = new CouchbaseClient(baseURIs, "default", "");

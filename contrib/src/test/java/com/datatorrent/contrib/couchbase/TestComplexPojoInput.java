@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2015 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,19 +20,18 @@ import java.util.Map;
 public class TestComplexPojoInput
 {
   // Fields are configurable by user using map function.
-  private String key;
   private String name;
-  private int age;
+  private Integer age;
   private Map<String, Integer> map;
 
-  public String getKey()
+  public Integer getAge()
   {
-    return key;
+    return age;
   }
 
-  public void setKey(String key)
+  public void setAge(Integer age)
   {
-    this.key = key;
+    this.age = age;
   }
 
   public String getName()
@@ -43,16 +42,6 @@ public class TestComplexPojoInput
   public void setName(String name)
   {
     this.name = name;
-  }
-
-  public int getAge()
-  {
-    return age;
-  }
-
-  public void setAge(int age)
-  {
-    this.age = age;
   }
 
   public Map<String, Integer> getMap()

@@ -1,6 +1,17 @@
 /*
- *  Copyright (c) 2012-2015 Malhar, Inc.
- *  All Rights Reserved.
+ * Copyright (c) 2015 DataTorrent, Inc. ALL Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.datatorrent.contrib.couchbase;
 
@@ -35,10 +46,7 @@ public class CouchbasePOJOTest
   protected static ArrayList<String> keyList;
   private static final String uri = "node13.morado.com:8091";
   private static final String DESIGN_DOC_ID1 = "dev_test1";
-  private static final String DESIGN_DOC_ID2 = "dev_test1";
   private static final String TEST_VIEW1 = "testView1";
-  private static final String TEST_VIEW2 = "testView2";
-
 
   @Test
   public void TestCouchBaseInputOperator()
@@ -65,66 +73,44 @@ public class CouchbasePOJOTest
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
     OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
-    ArrayList<String> columns = new ArrayList<String>();
-    columns.add("key");
-    columns.add("name");
-    columns.add("map");
-    columns.add("age");
     TestInputOperator inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
-    inputOperator.setServerURIString(uri);
-    inputOperator.setColumns(columns);
     inputOperator.setOutputClass("com.datatorrent.contrib.couchbase.TestComplexPojoInput");
     inputOperator.insertEventsInTable(2);
+    inputOperator.createAndFetchViewQuery1();
 
     CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
     inputOperator.outputPort.setSink(sink);
 
     inputOperator.setup(context);
-    inputOperator.createAndFetchViewQuery1();
     inputOperator.setDesignDocumentName(DESIGN_DOC_ID1);
     inputOperator.setViewName(TEST_VIEW1);
     inputOperator.beginWindow(0);
     inputOperator.emitTuples();
     inputOperator.endWindow();
 
-     int count = 0;
+   logger.debug("collected tuples are {}", sink.collectedTuples.size());
+
+    int count = 0;
     for (Object o: sink.collectedTuples) {
-      logger.debug("collected tuples are {}", sink.collectedTuples.size());
       count++;
       TestComplexPojoInput object = (TestComplexPojoInput)o;
       if (count == 1) {
-        Assert.assertEquals("key is", "Key2", object.getKey());
         Assert.assertEquals("name set in testpojo", "test", object.getName());
-        Assert.assertEquals("map in testpojo", "\"test\":12345", object.getMap());
-        Assert.assertEquals("age in testpojo", 23, object.getAge());
+        Assert.assertEquals("map in testpojo", "{test=12345}", object.getMap().toString());
+        Assert.assertEquals("age in testpojo", "23", object.getAge().toString());
       }
       if (count == 2) {
-       Assert.assertEquals("map in testpojo", "\"test2\":12345", object.getMap());
-       Assert.assertEquals("age in testpojo", 12, object.getAge());
-       Assert.assertEquals("key is", "Key3", object.getKey());
-       Assert.assertEquals("name set in testpojo", "test1", object.getName());
+        Assert.assertEquals("name set in testpojo", "test1", object.getName());
+        Assert.assertEquals("map in testpojo", "{test2=12345}", object.getMap().toString());
+        Assert.assertEquals("age in testpojo","12", object.getAge().toString());
       }
     }
     sink.clear();
     inputOperator.teardown();
 
-    inputOperator.setOutputClass("com.datatorrent.contrib.couchbase.TestSimplePojoInput");
-    inputOperator.setup(context);
-    inputOperator.createAndFetchViewQuery2();
-    inputOperator.setDesignDocumentName(DESIGN_DOC_ID2);
-    inputOperator.setViewName(TEST_VIEW2);
-    inputOperator.beginWindow(0);
-    inputOperator.emitTuples();
-    inputOperator.endWindow();
-
-     Assert.assertEquals("name set in testpojo", 431, (TestSimplePojoInput)sink.collectedTuples.get(0));
-
     store.client.deleteDesignDoc(DESIGN_DOC_ID1);
-    store.client.deleteDesignDoc(DESIGN_DOC_ID2);
   }
-
-
 
   public static class TestInputOperator extends CouchBasePOJOInputOperator
   {
@@ -132,17 +118,17 @@ public class CouchbasePOJOTest
     private void insertEventsInTable(int numEvents)
     {
       logger.info("number of events is" + numEvents);
-        try {
-          store.client.set("Key1", 431);
-          store.client.set("Key2", "{\"name\":\"test\",\"map\":{\"test\":12345},\"age\":23}").get();
-          store.client.set("Key3", "{\"name\":\"test1\",\"map\":{\"test2\":12345},\"age\":12}").get();
-        }
-        catch (InterruptedException ex) {
-          DTThrowable.rethrow(ex);
-        }
-        catch (ExecutionException ex) {
-          DTThrowable.rethrow(ex);
-        }
+      try {
+        store.client.set("Key1", 431);
+        store.client.set("Key2", "{\"name\":\"test\",\"map\":{\"test\":12345},\"age\":23}").get();
+        store.client.set("Key3", "{\"name\":\"test1\",\"map\":{\"test2\":12345},\"age\":12}").get();
+      }
+      catch (InterruptedException ex) {
+        DTThrowable.rethrow(ex);
+      }
+      catch (ExecutionException ex) {
+        DTThrowable.rethrow(ex);
+      }
 
     }
 
@@ -150,28 +136,12 @@ public class CouchbasePOJOTest
     {
       DesignDocument designDoc = new DesignDocument(DESIGN_DOC_ID1);
       String viewName = TEST_VIEW1;
-      String mapFunction =
-            "function (doc, meta) {\n" +
-            "  if( meta.type == \"json\") {\n" +
-            "    emit(doc.key,[doc.name, doc.test, doc.map, doc.phone]);\n" +
-            "  }\n" +
-            " }";
-
-      ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
-      designDoc.getViews().add(viewDesign);
-      store.client.createDesignDoc(designDoc);
-    }
-
-    public void createAndFetchViewQuery2()
-    {
-      DesignDocument designDoc = new DesignDocument(DESIGN_DOC_ID2);
-      String viewName = TEST_VIEW2;
-      String mapFunction =
-            "function (doc, meta) {\n" +
-            "  if( meta.type == \"json\") {\n" +
-            "    emit(doc.key,doc);\n" +
-            "  }\n" +
-            " }";
+      String mapFunction
+              = "function (doc, meta) {\n"
+              + "  if( meta.type == \"json\") {\n"
+              + "    emit(doc.key,doc);\n"
+              + "  }\n"
+              + " }";
 
       ViewDesign viewDesign = new ViewDesign(viewName, mapFunction);
       designDoc.getViews().add(viewDesign);

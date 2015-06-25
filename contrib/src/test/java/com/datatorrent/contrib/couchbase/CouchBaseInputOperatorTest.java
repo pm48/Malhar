@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 DataTorrent, Inc. ALL Rights Reserved.
+ * Copyright (c) 2014 DataTorrent, Inc. ALL Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,6 @@ import java.util.concurrent.ExecutionException;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.CouchbaseConnectionFactory;
 import com.couchbase.client.CouchbaseConnectionFactoryBuilder;
-import com.couchbase.client.protocol.views.DesignDocument;
-import com.couchbase.client.protocol.views.Query;
-import com.couchbase.client.protocol.views.ViewDesign;
 import com.google.common.collect.Lists;
 
 import org.couchbase.mock.Bucket.BucketType;
@@ -45,10 +42,6 @@ import com.datatorrent.api.DAG;
 import com.datatorrent.api.Partitioner.Partition;
 
 import com.datatorrent.common.util.DTThrowable;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
-import org.ektorp.ViewQuery;
 
 public class CouchBaseInputOperatorTest
 {
@@ -61,12 +54,10 @@ public class CouchBaseInputOperatorTest
   protected static CouchbaseClient client = null;
   private final int numNodes = 2;
   private final int numReplicas = 3;
-  private static final String DESIGN_DOC_ID = "_design/CouchbaseTest";
-  private static final String TEST_VIEW = "testView";
 
   protected CouchbaseConnectionFactory connectionFactory;
 
-  protected CouchbaseMock createMock(String name, String password, BucketConfiguration bucketConfiguration) throws Exception
+  protected CouchbaseMock createMock(String name, String password,BucketConfiguration bucketConfiguration) throws Exception
   {
     bucketConfiguration.numNodes = numNodes;
     bucketConfiguration.numReplicas = numReplicas;
@@ -85,8 +76,8 @@ public class CouchBaseInputOperatorTest
   {
     BucketConfiguration bucketConfiguration = new BucketConfiguration();
     CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
-    CouchbaseMock mockCouchbase1 = createMock("default", "", bucketConfiguration);
-    CouchbaseMock mockCouchbase2 = createMock("default", "", bucketConfiguration);
+    CouchbaseMock mockCouchbase1 = createMock("default", "",bucketConfiguration);
+    CouchbaseMock mockCouchbase2 = createMock("default", "",bucketConfiguration);
     mockCouchbase1.start();
     mockCouchbase1.waitForStartup();
     List<URI> uriList = new ArrayList<URI>();
@@ -110,6 +101,7 @@ public class CouchBaseInputOperatorTest
     // couchbaseBucket.getCouchServers();
     AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
     attributeMap.put(DAG.APPLICATION_ID, APP_ID);
+    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
 
     inputOperator = new TestInputOperator();
     inputOperator.setStore(store);
@@ -147,119 +139,12 @@ public class CouchBaseInputOperatorTest
       wid++;
     }
     Assert.assertEquals("Tuples read should be same ", 10, sink.collectedTuples.size());
-    for (AbstractCouchBaseInputOperator<String> o: opers) {
-      o.teardown();
+    for (AbstractCouchBaseInputOperator<String> o: opers){
+     o.teardown();
     }
+      mockCouchbase1.stop();
+      mockCouchbase2.stop();
 
-    mockCouchbase1.stop();
-
-    mockCouchbase2.stop();
-
-  }
-
-  @Test
-  public void TestPOJO() throws InterruptedException, Exception
-  {
-
-    BucketConfiguration bucketConfiguration = new BucketConfiguration();
-    CouchbaseConnectionFactoryBuilder cfb = new CouchbaseConnectionFactoryBuilder();
-    CouchbaseMock mockCouchbase1 = createMock("default", "", bucketConfiguration);
-    CouchbaseMock mockCouchbase2 = createMock("default", "", bucketConfiguration);
-    mockCouchbase1.start();
-    mockCouchbase1.waitForStartup();
-    mockCouchbase2.start();
-    mockCouchbase2.waitForStartup();
-    int port2 = mockCouchbase2.getHttpPort();
-    logger.debug("port is {}", port2);
-    List<URI> uriList = new ArrayList<URI>();
-    int port1 = mockCouchbase1.getHttpPort();
-    logger.debug("port is {}", port1);
-    uriList.add(new URI("http", null, "localhost", port1, "/pools", "", ""));
-    connectionFactory = cfb.buildCouchbaseConnection(uriList, bucketConfiguration.name, bucketConfiguration.password);
-    client = new CouchbaseClient(connectionFactory);
-
-    CouchBaseStore store = new CouchBaseStore();
-
-    store.setBucket(bucketConfiguration.name);
-    store.setPasswordConfig(password);
-    store.setPassword(bucketConfiguration.password);
-    store.setUriString("localhost:" + port1);
-    System.setProperty("viewmode", "development");
-
-    // couchbaseBucket.getCouchServers();
-    AttributeMap.DefaultAttributeMap attributeMap = new AttributeMap.DefaultAttributeMap();
-    attributeMap.put(DAG.APPLICATION_ID, APP_ID);
-    OperatorContextTestHelper.TestIdOperatorContext context = new OperatorContextTestHelper.TestIdOperatorContext(OPERATOR_ID, attributeMap);
-
-    TestInputPOJOOperator inputPOJOOperator = new TestInputPOJOOperator();
-    inputPOJOOperator.setStore(store);
-    //inputPOJOOperator.insertEventInTable();
-    //ArrayList<String> expressions = new ArrayList<String>();
-    //expressions.add("name");
-    //expressions.add("id");
-    //inputPOJOOperator.setExpressionForValue(expressions);
-     ArrayList<String> keylist = new ArrayList<String>();
-     keylist.add("key1");
-     keylist.add("key2");
-     keylist.add("key3");
-     keylist.add("key4");
-    inputPOJOOperator.setKeys(keylist);
-//    inputPOJOOperator.setObjectClass("com.datatorrent.contrib.couchbase.TestPojoInput");
-    inputPOJOOperator.setViewName(TEST_VIEW);
-    inputPOJOOperator.insertEventInTable();
-    inputPOJOOperator.setDesignDocumentName(DESIGN_DOC_ID);
-   // inputPOJOOperator.setQuery(query.allDocs());
-    CollectorTestSink<Object> sink = new CollectorTestSink<Object>();
-    inputPOJOOperator.setServerURIString("localhost:" + port1);
-    inputPOJOOperator.outputPort.setSink(sink);
-    inputPOJOOperator.setup(context);
-         inputPOJOOperator.createAndFetchViewQuery();
-
-     inputPOJOOperator.beginWindow(0);
-      inputPOJOOperator.emitTuples();
-      inputPOJOOperator.endWindow();
-    /*List<Partition<AbstractCouchBaseInputOperator<Object>>> partitions = Lists.newArrayList();
-    //Collection<Partition<AbstractCouchBaseInputOperator<Object>>> newPartitions = inputPOJOOperator.definePartitions(partitions, new PartitioningContextImpl(null, 0));
-    List<AbstractCouchBaseInputOperator<Object>> opers = Lists.newArrayList();
-   /* for (Partition<AbstractCouchBaseInputOperator<Object>> p: newPartitions) {
-      TestInputPOJOOperator oi = (TestInputPOJOOperator)p.getPartitionedInstance();
-      oi.setServerURIString("localhost:" + port1);
-      oi.setStore(store);
-      // oi.setKeys(keylist);
-      oi.setExpressionForValue(expressions);
-      oi.setup(null);
-      oi.insertEventInTable();
-
-      //  oi.outputPort.setSink(sink);
-      opers.add(oi);
-      port1 = port2;
-
-    }
-
-     sink.clear();
-    int wid = 0;
-    for (AbstractCouchBaseInputOperator<Object> o: opers) {
-      o.beginWindow(wid);
-      o.emitTuples();
-      o.endWindow();
-    }*/
-
-
-
-  /*  for (AbstractCouchBaseInputOperator<Object> o: opers) {
-      o.teardown();
-    }*/
-
-    mockCouchbase1.stop();
-
-    mockCouchbase2.stop();
-
-  }
-
-  public void teardown()
-  {
-    client.shutdown();
-    client = null;
   }
 
   public static class TestInputOperator extends AbstractCouchBaseInputOperator<String>
@@ -305,49 +190,4 @@ public class CouchBaseInputOperatorTest
 
   }
 
-  public static class TestInputPOJOOperator extends CouchBasePOJOInputOperator
-  {
-
-    public void insertEventInTable()
-    {
-      try {
-        client.set("Key1", "test1").get();
-        client.set("Key2", "test2").get();
-        client.set("Key3", 123).get();
-        client.set("Key4", 321).get();
-      }
-      catch (InterruptedException ex) {
-        DTThrowable.rethrow(ex);
-      }
-      catch (ExecutionException ex) {
-        DTThrowable.rethrow(ex);
-      }
-    }
-
-     public void createAndFetchViewQuery()
-    {
-      DesignDocument designDoc = new DesignDocument("dev_beer");
-
-    String viewName = "by_name";
-    String mapFunction =
-            "function (doc, meta) {\n" +
-            "  if(doc.type && doc.type == \"beer\") {\n" +
-            "    emit(doc.name);\n" +
-            "  }\n" +
-            "}";
-
-    ViewDesign viewDesign = new ViewDesign(viewName,mapFunction);
-    designDoc.getViews().add(viewDesign);
-    while(client.createDesignDoc( designDoc )!=true){
-      try {
-        Thread.sleep(1000);
-        //return new ViewQuery().designDocId(DESIGN_DOC_ID).viewName(TEST_VIEW).includeDocs(true);
-      }
-      catch (InterruptedException ex) {
-      }
-    }
-      }
-
-    }
-
-  }
+}
