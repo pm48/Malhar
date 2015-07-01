@@ -37,8 +37,9 @@ import org.codehaus.jackson.map.ObjectMapper;
  * The skip parameter is reset if there are empty tuples.
  * Example:
  * function (doc) {
- *   emit(doc._id, [doc.username, doc.first_name, doc.last_name, doc.last_login]);
+ * emit(doc._id, [doc.username, doc.first_name, doc.last_name, doc.last_login]);
  * }
+ *
  * @displayName Couchbase POJO Input Operator
  * @category Input
  * @tags input operator
@@ -68,6 +69,7 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
    * POJOs will be generated on fly in later implementation.
    */
   private String outputClass;
+  //User gets the option to specify the order of documents.
   private boolean descending;
 
   public boolean isDescending()
@@ -178,10 +180,8 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
     query.setIncludeDocs(true);
     query.setLimit(limit);
     query.setDescending(descending);
-    if(keys!=null)
-    {
-      for(int i=0;i<keys.size();i++)
-      {
+    if (keys != null) {
+      for (int i = 0; i < keys.size(); i++) {
         query.setKey(keys.get(i));
       }
     }
@@ -193,7 +193,7 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
     if (startkey != null) {
       query.setRangeStart(startkey);
     }
-    if(skip == 1){
+    if (skip == 1) {
       query.setSkip(skip);
     }
     View view = store.getInstance().getView(designDocumentName, viewName);
@@ -201,24 +201,28 @@ public class CouchBasePOJOInputOperator extends AbstractStoreInputOperator<Objec
     ViewResponse result = store.getInstance().query(view, query);
 
     Iterator<ViewRow> iterRow = result.iterator();
-    while (iterRow.hasNext()) {
-      ViewRow row = iterRow.next();
-      Object document = row.getDocument();
-      Object outputObj = null;
-      try {
-        outputObj = objectMapper.readValue(document.toString(), className);
-      }
-      catch (IOException ex) {
-        throw new RuntimeException(ex);
-      }
-      //Update start key if it is specified.
-      if(startkey!=null)
-      {
-        startkey = row.getKey();
-        skip = 1;
-      }
-      outputPort.emit(outputObj);
+    if (!iterRow.hasNext()) {
+      skip = 0;
+    }
+    else {
+      while (iterRow.hasNext()) {
+        ViewRow row = iterRow.next();
+        Object document = row.getDocument();
+        Object outputObj = null;
+        try {
+          outputObj = objectMapper.readValue(document.toString(), className);
+        }
+        catch (IOException ex) {
+          throw new RuntimeException(ex);
+        }
+        //Update start key if it is specified.
+        if (startkey != null) {
+          startkey = row.getKey();
+          skip = 1;
+        }
+        outputPort.emit(outputObj);
 
+      }
     }
 
   }
