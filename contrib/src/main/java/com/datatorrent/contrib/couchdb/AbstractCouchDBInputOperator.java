@@ -120,7 +120,7 @@ public abstract class AbstractCouchDBInputOperator<T> extends AbstractStoreInput
    *
    * @param value a row of ViewResult that should be converted to a tuple.
    * @return emitted tuple.
-   * @throws IOException 
+   * @throws IOException
    */
   public abstract T getTuple(ViewResult.Row value) throws IOException;
 
